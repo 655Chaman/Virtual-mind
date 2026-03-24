@@ -1,0 +1,162 @@
+{
+    "name": "LinkedIn Job Scraper (RapidAPI)",
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "manual-trigger",
+            "name": "When clicking \"Execute Workflow\"",
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                0,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "values": {
+                    "string": [
+                        {
+                            "name": "keywords",
+                            "value": "Sales Development Representative"
+                        },
+                        {
+                            "name": "location",
+                            "value": "United States"
+                        },
+                        {
+                            "name": "date_posted",
+                            "value": "past_24_hours"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "set-search-params",
+            "name": "Set Search Params",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 2,
+            "position": [
+                200,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://fresh-linkedin-scraper-api.p.rapidapi.com/api/v1/job/search",
+                "method": "GET",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "keyword",
+                            "value": "={{ $json.keywords }}"
+                        },
+                        {
+                            "name": "location",
+                            "value": "={{ $json.location }}"
+                        },
+                        {
+                            "name": "date_posted",
+                            "value": "={{ $json.date_posted }}"
+                        },
+                        {
+                            "name": "page",
+                            "value": "1"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "rapid-api-linkedin",
+            "name": "HTTP - LinkedIn Scraper (RapidAPI)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                400,
+                0
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "RAPIDAPI_CREDENTIAL_ID",
+                    "name": "RapidAPI Fresh LinkedIn"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "keepOnlySet": true,
+                "values": {
+                    "string": [
+                        {
+                            "name": "job_title",
+                            "value": "={{ $json.job_title }}"
+                        },
+                        {
+                            "name": "company_name",
+                            "value": "={{ $json.company_name }}"
+                        },
+                        {
+                            "name": "job_location",
+                            "value": "={{ $json.job_location }}"
+                        },
+                        {
+                            "name": "job_url",
+                            "value": "={{ $json.job_url }}"
+                        },
+                        {
+                            "name": "posted_date",
+                            "value": "={{ $json.posted_date }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "clean-job-data",
+            "name": "Clean Job Data",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 2,
+            "position": [
+                600,
+                0
+            ]
+        }
+    ],
+    "connections": {
+        "When clicking \"Execute Workflow\"": {
+            "main": [
+                [
+                    {
+                        "node": "Set Search Params",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Set Search Params": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - LinkedIn Scraper (RapidAPI)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - LinkedIn Scraper (RapidAPI)": {
+            "main": [
+                [
+                    {
+                        "node": "Clean Job Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

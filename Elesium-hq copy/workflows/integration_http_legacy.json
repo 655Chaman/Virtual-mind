@@ -1,0 +1,480 @@
+{
+    "name": "Integration HTTP (legacy) - Converted (Refined)",
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "manual-trigger",
+            "name": "When clicking \"Execute Workflow\"",
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                0,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://fresh-linkedin-scraper-api.p.rapidapi.com/api/v1/job/search",
+                "method": "GET",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "headerAuth",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "keyword",
+                            "value": "sales representative"
+                        },
+                        {
+                            "name": "page",
+                            "value": "1"
+                        },
+                        {
+                            "name": "date_posted",
+                            "value": "past_24_hours"
+                        }
+                    ]
+                }
+            },
+            "id": "rapid-api-search",
+            "name": "HTTP - LinkedIn Scraper",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                250,
+                0
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "RAPIDAPI_CREDENTIAL_ID",
+                    "name": "RapidAPI Fresh LinkedIn"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "chat",
+                "operation": "chat",
+                "model": "gpt-4o",
+                "messages": {
+                    "values": [
+                        {
+                            "role": "user",
+                            "content": "=We are a lead generation agency for B2B companies. We are searching job portals for companies that need SDRs or positions related to lead generation.\n\nBased on the job title, you must classify the vacancy as valid or invalid.\n\nA position is valid if it is directly related to lead generation.\nA position is not valid if it is not related to lead generation, sales meetings, or business growth.\n\nSocial Media roles are not valid, as we use outbound strategies.\n\nIf the vacancy is valid - output: true\nIf the vacancy is not valid - output: false\n\nDo not add any characters or symbols before or after the response. You may only respond with true or false.\n---\n**Vacant_Title:** {{ $json.job_title }}"
+                        }
+                    ]
+                }
+            },
+            "id": "validate-vacancy",
+            "name": "OpenAI - Validate Vacancy",
+            "type": "n8n-nodes-base.openAi",
+            "typeVersion": 1,
+            "position": [
+                500,
+                0
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "OPENAI_CREDENTIAL_ID",
+                    "name": "OpenAI account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.content }}",
+                            "value2": "true"
+                        }
+                    ]
+                }
+            },
+            "id": "filter-valid-vacancy",
+            "name": "Valid Vacant?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                750,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://api.exa.ai/search",
+                "method": "POST",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "headerAuth",
+                "sendBody": true,
+                "contentType": "json",
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "query",
+                            "value": "=Search the company domain.\n\nThe company name is: {{ $('HTTP - LinkedIn Scraper').item.json.company_name }}\n\nThe company is based in: {{ $('HTTP - LinkedIn Scraper').item.json.job_location }}\n\nYou must search in this url: https://www.google.com/search?q={{ $('HTTP - LinkedIn Scraper').item.json.company_name }}+web"
+                        },
+                        {
+                            "name": "numResults",
+                            "value": 10
+                        },
+                        {
+                            "name": "includeContent",
+                            "value": false
+                        }
+                    ]
+                }
+            },
+            "id": "exa-domain-search",
+            "name": "HTTP - Exa Domain Search",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                1000,
+                0
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "EXA_CREDENTIAL_ID",
+                    "name": "Exa AI"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "chat",
+                "operation": "chat",
+                "model": "gpt-4o",
+                "messages": {
+                    "values": [
+                        {
+                            "role": "user",
+                            "content": "=Extract the domain name in {{ $json.results.map(r => r.url).join(', ') }} that matches the companyName: {{ $('HTTP - LinkedIn Scraper').item.json.company_name }}, \n\nTip: Most domains follow this format: companyName.com or companyName.es\n\nDont catch: LinkedIn.com or google-support.com domains\n\noutput the result only in the following JSON, Output the result only nothing else.\n\nThis is how the result should be:\n{\"domainName\":\"\"}\n\nIf the domain is not found - output: \n\n{\"domainName\":\"notfound\"}"
+                        }
+                    ]
+                }
+            },
+            "id": "extract-domain",
+            "name": "OpenAI - Extract Domain",
+            "type": "n8n-nodes-base.openAi",
+            "typeVersion": 1,
+            "position": [
+                1250,
+                0
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "OPENAI_CREDENTIAL_ID",
+                    "name": "OpenAI account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "id": "parse-domain-json",
+            "name": "Parse Domain JSON",
+            "type": "n8n-nodes-base.jsonParse",
+            "typeVersion": 1,
+            "position": [
+                1500,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.domainName }}",
+                            "operation": "notEqual",
+                            "value2": "notfound"
+                        }
+                    ]
+                }
+            },
+            "id": "filter-domain-found",
+            "name": "Domain Found?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                1750,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://api.exa.ai/search",
+                "method": "POST",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "headerAuth",
+                "sendBody": true,
+                "contentType": "json",
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "query",
+                            "value": "=Search the actual (2024/2025) CEO of {{ $('HTTP - LinkedIn Scraper').item.json.company_name }} in Spain.\n\nLook for it in this url: https://www.google.com/search?q={{ $('Parse Domain JSON').item.json.domainName }}+ceo+spain"
+                        },
+                        {
+                            "name": "numResults",
+                            "value": 10
+                        },
+                        {
+                            "name": "includeContent",
+                            "value": false
+                        }
+                    ]
+                }
+            },
+            "id": "exa-ceo-search",
+            "name": "HTTP - Exa CEO Search",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                2000,
+                0
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "EXA_CREDENTIAL_ID",
+                    "name": "Exa AI"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "chat",
+                "operation": "chat",
+                "model": "gpt-4o",
+                "messages": {
+                    "values": [
+                        {
+                            "role": "user",
+                            "content": "=Extract the CEO fisrtName and lastName in {{ $json.results.map(r => r.title).join('|') }} that matches the company: {{ $('HTTP - LinkedIn Scraper').item.json.company_name }}. He must be the actual (2024/2025) CEO in Spain or South Europe.\n\nOutput the result only in the following JSON, Output the result only nothing else.\n\nThis is how the result should be:\n{\"ceoName\":\"result\"}\n\nIf the ceoName is not found the result should be:\n{\"ceoName\":\"notfound\"}"
+                        }
+                    ]
+                }
+            },
+            "id": "extract-ceo",
+            "name": "OpenAI - Extract CEO",
+            "type": "n8n-nodes-base.openAi",
+            "typeVersion": 1,
+            "position": [
+                2250,
+                0
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "OPENAI_CREDENTIAL_ID",
+                    "name": "OpenAI account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "id": "parse-ceo-json",
+            "name": "Parse CEO JSON",
+            "type": "n8n-nodes-base.jsonParse",
+            "typeVersion": 1,
+            "position": [
+                2500,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.ceoName }}",
+                            "operation": "notEqual",
+                            "value2": "notfound"
+                        }
+                    ]
+                }
+            },
+            "id": "filter-ceo-found",
+            "name": "CEO Found?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                2750,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://api.anymailfinder.com/v5.0/search/person.json",
+                "method": "POST",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "headerAuth",
+                "sendBody": true,
+                "contentType": "json",
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "domain",
+                            "value": "={{ $('Parse Domain JSON').item.json.domainName }}"
+                        },
+                        {
+                            "name": "full_name",
+                            "value": "={{ $json.ceoName }}"
+                        }
+                    ]
+                }
+            },
+            "id": "anymail-finder",
+            "name": "HTTP - AnyMail Finder",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                3000,
+                0
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "ANYMAIL_CREDENTIAL_ID",
+                    "name": "AnyMail Finder"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "When clicking \"Execute Workflow\"": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - LinkedIn Scraper",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - LinkedIn Scraper": {
+            "main": [
+                [
+                    {
+                        "node": "OpenAI - Validate Vacancy",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "OpenAI - Validate Vacancy": {
+            "main": [
+                [
+                    {
+                        "node": "Valid Vacant?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Valid Vacant?": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Exa Domain Search",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Exa Domain Search": {
+            "main": [
+                [
+                    {
+                        "node": "OpenAI - Extract Domain",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "OpenAI - Extract Domain": {
+            "main": [
+                [
+                    {
+                        "node": "Parse Domain JSON",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Parse Domain JSON": {
+            "main": [
+                [
+                    {
+                        "node": "Domain Found?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Domain Found?": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - Exa CEO Search",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP - Exa CEO Search": {
+            "main": [
+                [
+                    {
+                        "node": "OpenAI - Extract CEO",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "OpenAI - Extract CEO": {
+            "main": [
+                [
+                    {
+                        "node": "Parse CEO JSON",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Parse CEO JSON": {
+            "main": [
+                [
+                    {
+                        "node": "CEO Found?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "CEO Found?": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP - AnyMail Finder",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

@@ -1,0 +1,339 @@
+{
+    "name": "Workflow B: Job Posting Outreach",
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "manual-trigger",
+            "name": "When clicking \"Execute Workflow\"",
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "url",
+                            "name": "URL",
+                            "value": "https://www.join-it.com",
+                            "type": "string"
+                        },
+                        {
+                            "id": "company",
+                            "name": "Company",
+                            "value": "Join It",
+                            "type": "string"
+                        },
+                        {
+                            "id": "founder_name",
+                            "name": "Founder Name",
+                            "value": "Jane",
+                            "type": "string"
+                        },
+                        {
+                            "id": "achievement",
+                            "name": "Achievement",
+                            "value": "launched a new referral program",
+                            "type": "string"
+                        },
+                        {
+                            "id": "competitor",
+                            "name": "Competitor Name",
+                            "value": "CompetitorX",
+                            "type": "string"
+                        },
+                        {
+                            "id": "marketing_role",
+                            "name": "Marketing Roles",
+                            "value": "Marketing Manager",
+                            "type": "string"
+                        }
+                    ]
+                }
+            },
+            "id": "mock-data",
+            "name": "Mock Sheet Data",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                450,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "model": "gpt-4o",
+                "options": {
+                    "temperature": 0.7
+                }
+            },
+            "id": "openai-model",
+            "name": "OpenAI Chat Model (GPT-4o)",
+            "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+            "typeVersion": 1,
+            "position": [
+                1150,
+                500
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "YOUR_OPENAI_CREDENTIAL_ID",
+                    "name": "OpenAI account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "model": "gpt-4o-mini",
+                "options": {
+                    "temperature": 0.5
+                }
+            },
+            "id": "openai-model-mini",
+            "name": "OpenAI Chat Model (GPT-4o mini)",
+            "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+            "typeVersion": 1,
+            "position": [
+                900,
+                600
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "YOUR_OPENAI_CREDENTIAL_ID",
+                    "name": "OpenAI account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "url": "https://api.exa.ai/contents",
+                "method": "POST",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "content-type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "ids",
+                            "value": "={{ [ $('Mock Sheet Data').item.json.URL ] }}"
+                        },
+                        {
+                            "name": "text",
+                            "value": true
+                        }
+                    ]
+                }
+            },
+            "id": "exa-content",
+            "name": "Exa: Get Website Content",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                700,
+                300
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "YOUR_EXA_CREDENTIAL_ID",
+                    "name": "Exa API"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "prompt": "=Summarize the most important points from the following website text of {{ $('Mock Sheet Data').item.json.Company }}\n\nFocus on key achievements, metrics, case studies, and target audience. Structure the output as follows:\n\n- Company Overview: (Brief summary of what the company does, its core focus, and unique approach.)\n- Key Achievements & Metrics: (List of specific results the company has achieved, with numbers if available.)\n- Case Studies & Success Stories: (Highlight 2-3 major success stories, including company names and results.)\n- Target Audience: (Who are the given company targeting for their services? Mention their ICP and which industries and/or the type of companies they serve.)\n\nEnsure the summary is clear, concise, and actionable for crafting a targeted outreach message.\n\nKeep the summary under 250 words and don't refer to clients as \"A\" or \"B\" or \"C\". Make sure the summary is accurate to the given website text. Don't assume anything and stick to the given website text. Stick to the language, keywords and phrases used in the website text. Keep the wording closer to what the website emphasizes.\n\nWebsite Text:\n{{ $('Exa: Get Website Content').item.json.results[0].text }}",
+                "messages": {}
+            },
+            "id": "summarize",
+            "name": "Summarize Website",
+            "type": "@n8n/n8n-nodes-langchain.chainLlm",
+            "typeVersion": 1.4,
+            "position": [
+                950,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "prompt": "=Based on the given website summary:\n\n{{ $('Summarize Website').item.json.text }}\n\nWrite a two-sentence icebreaker:\n\n1. First sentence: Make an observation about something VERY specific they accomplished (you must use numbers, results, client names). \n\n2. Second sentence: Ask a question that subtly suggests they might need help getting more clients. Make this question sound natural. \n\nKeep the sentence under 20 words total. Make it sound like an average person conversing with his friend.\n\nExamples:\n\n1. Saw how you boosted web referrals nearly 50% in a year for your clients. Are you looking to attract even more businesses with your services? \n\n2. Noticed how Julie Roy booked her coaching program within 30 days of launch. Are you looking to take on more clients in capital raising? \n\n3. Saw how you helped London's Tax Services grow their clientele with social media. Are you looking to attract more small businesses like them?",
+                "messages": {
+                    "messageValues": [
+                        {
+                            "role": "system",
+                            "content": "RULES\n- Keep the total word count sub 20\n- Refrain from taking the name of the website owner and instead talk in second person using \"you\"\n- Use direct spartan like language and tone. And sub grade 6 language too.\n- IF you are using any company name or name in the output, make sure to remove any prefix/suffix like INC, LLC, etc. Normalize it so the output does not come across as automated.\n- Cut the fluff and keep the sentence as concise as possible.\n- Don't start the sentence with \"I\"\n- Don't use exclamation mark\n- IF client name is not available. Don't refer to them as \"Client A\", just write \"your client\"."
+                        }
+                    ]
+                }
+            },
+            "id": "generate-icebreaker",
+            "name": "Generate Icebreaker",
+            "type": "@n8n/n8n-nodes-langchain.chainLlm",
+            "typeVersion": 1.4,
+            "position": [
+                1200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "final_email",
+                            "name": "Final Draft",
+                            "value": "=Hey {{ $('Mock Sheet Data').item.json['Founder Name'] }}—\n\n{{ $('Generate Icebreaker').item.json.text }}\n\nInstead of hiring, how about I connect you with top-tier marketing agencies that have already helped companies like {{ $('Mock Sheet Data').item.json['Competitor Name'] }}?\nNo interviews, no guesswork— just experts ready to execute.\n\nIs this worth a 10min chat this week?\n\nThanks,\nSaad, myoProcess",
+                            "type": "string"
+                        }
+                    ]
+                }
+            },
+            "id": "assemble",
+            "name": "Assemble Email",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                1450,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "append",
+                "documentId": {
+                    "__rl": true,
+                    "mode": "url",
+                    "value": "YOUR_GOOGLE_SHEET_URL"
+                },
+                "sheetName": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "Sheet1"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "Company": "={{ $('Mock Sheet Data').item.json.Company }}",
+                        "Email Draft": "={{ $json['Final Draft'] }}"
+                    }
+                }
+            },
+            "id": "google-sheets",
+            "name": "Save to Sheets",
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 4.5,
+            "position": [
+                1700,
+                300
+            ],
+            "credentials": {
+                "googleSheetsOAuth2Api": {
+                    "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+                    "name": "Google Sheets account"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "When clicking \"Execute Workflow\"": {
+            "main": [
+                [
+                    {
+                        "node": "Mock Sheet Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Mock Sheet Data": {
+            "main": [
+                [
+                    {
+                        "node": "Exa: Get Website Content",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Exa: Get Website Content": {
+            "main": [
+                [
+                    {
+                        "node": "Summarize Website",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "OpenAI Chat Model (GPT-4o)": {
+            "ai_language_model": [
+                [
+                    {
+                        "node": "Generate Icebreaker",
+                        "type": "ai_language_model",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "OpenAI Chat Model (GPT-4o mini)": {
+            "ai_language_model": [
+                [
+                    {
+                        "node": "Summarize Website",
+                        "type": "ai_language_model",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Summarize Website": {
+            "main": [
+                [
+                    {
+                        "node": "Generate Icebreaker",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate Icebreaker": {
+            "main": [
+                [
+                    {
+                        "node": "Assemble Email",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Assemble Email": {
+            "main": [
+                [
+                    {
+                        "node": "Save to Sheets",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
