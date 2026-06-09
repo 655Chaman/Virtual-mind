@@ -2,7 +2,9 @@
 venv/
 hf_cache/
 logs/
-brain/
+brain/memory_db/
+brain/qdrant_db/
+brain/qdrant_db_preview/
 .DS_Store
 __pycache__/
 get-shit-done/
