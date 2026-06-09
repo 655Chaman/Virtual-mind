@@ -1,0 +1,196 @@
+{
+  "2026-05-24": {
+    "date": "2026-05-24",
+    "timings": {
+      "Fajr": "04:35",
+      "Sunrise": "05:53",
+      "Dhuhr": "12:16",
+      "Asr": "16:48",
+      "Maghrib": "18:40",
+      "Isha": "19:58"
+    },
+    "hijri": "07-12-1447",
+    "hijri_readable": "7 Dh\u016b al-\u1e24ijjah 1447",
+    "gregorian": "24-05-2026"
+  },
+  "2026-05-25": {
+    "date": "2026-05-25",
+    "timings": {
+      "Fajr": "04:33",
+      "Sunrise": "05:47",
+      "Dhuhr": "12:17",
+      "Asr": "16:47",
+      "Maghrib": "18:46",
+      "Isha": "19:58"
+    },
+    "hijri": "08-12-1447",
+    "hijri_readable": "8 Dh\u016b al-\u1e24ijjah 1447",
+    "gregorian": "25-05-2026",
+    "location_name": "Asia/Kolkata"
+  },
+  "2026-05-26": {
+    "date": "2026-05-26",
+    "timings": {
+      "Fajr": "04:33",
+      "Sunrise": "05:47",
+      "Dhuhr": "12:17",
+      "Asr": "16:47",
+      "Maghrib": "18:46",
+      "Isha": "19:58"
+    },
+    "hijri": "09-12-1447",
+    "hijri_readable": "9 Dh\u016b al-\u1e24ijjah 1447",
+    "gregorian": "26-05-2026",
+    "location_name": "Asia/Kolkata"
+  },
+  "2026-05-27": {
+    "date": "2026-05-27",
+    "timings": {
+      "Fajr": "04:33",
+      "Sunrise": "05:46",
+      "Dhuhr": "12:17",
+      "Asr": "16:48",
+      "Maghrib": "18:46",
+      "Isha": "19:59"
+    },
+    "hijri": "10-12-1447",
+    "hijri_readable": "10 Dh\u016b al-\u1e24ijjah 1447",
+    "gregorian": "27-05-2026",
+    "location_name": "Asia/Kolkata"
+  },
+  "2026-05-28": {
+    "date": "2026-05-28",
+    "timings": {
+      "Fajr": "04:33",
+      "Sunrise": "05:46",
+      "Dhuhr": "12:17",
+      "Asr": "16:48",
+      "Maghrib": "18:46",
+      "Isha": "19:59"
+    },
+    "hijri": "11-12-1447",
+    "hijri_readable": "11 Dh\u016b al-\u1e24ijjah 1447",
+    "gregorian": "28-05-2026",
+    "location_name": "Asia/Kolkata"
+  },
+  "2026-05-29": {
+    "date": "2026-05-29",
+    "timings": {
+      "Fajr": "04:33",
+      "Sunrise": "05:46",
+      "Dhuhr": "12:17",
+      "Asr": "16:48",
+      "Maghrib": "18:47",
+      "Isha": "20:00"
+    },
+    "hijri": "12-12-1447",
+    "hijri_readable": "12 Dh\u016b al-\u1e24ijjah 1447",
+    "gregorian": "29-05-2026",
+    "location_name": "Asia/Kolkata"
+  },
+  "2026-05-30": {
+    "date": "2026-05-30",
+    "timings": {
+      "Fajr": "04:32",
+      "Sunrise": "05:46",
+      "Dhuhr": "12:17",
+      "Asr": "16:49",
+      "Maghrib": "18:47",
+      "Isha": "20:00"
+    },
+    "hijri": "13-12-1447",
+    "hijri_readable": "13 Dh\u016b al-\u1e24ijjah 1447",
+    "gregorian": "30-05-2026",
+    "location_name": "Asia/Kolkata"
+  },
+  "2026-05-31": {
+    "date": "2026-05-31",
+    "timings": {
+      "Fajr": "04:32",
+      "Sunrise": "05:46",
+      "Dhuhr": "12:17",
+      "Asr": "16:49",
+      "Maghrib": "18:47",
+      "Isha": "20:00"
+    },
+    "hijri": "14-12-1447",
+    "hijri_readable": "14 Dh\u016b al-\u1e24ijjah 1447",
+    "gregorian": "31-05-2026",
+    "location_name": "Asia/Kolkata"
+  },
+  "2026-06-01": {
+    "date": "2026-06-01",
+    "timings": {
+      "Fajr": "04:32",
+      "Sunrise": "05:46",
+      "Dhuhr": "12:17",
+      "Asr": "16:49",
+      "Maghrib": "18:48",
+      "Isha": "20:01"
+    },
+    "hijri": "15-12-1447",
+    "hijri_readable": "15 Dh\u016b al-\u1e24ijjah 1447",
+    "gregorian": "01-06-2026",
+    "location_name": "Asia/Kolkata"
+  },
+  "2026-06-02": {
+    "date": "2026-06-02",
+    "timings": {
+      "Fajr": "04:32",
+      "Sunrise": "05:46",
+      "Dhuhr": "12:18",
+      "Asr": "16:50",
+      "Maghrib": "18:48",
+      "Isha": "20:01"
+    },
+    "hijri": "16-12-1447",
+    "hijri_readable": "16 Dh\u016b al-\u1e24ijjah 1447",
+    "gregorian": "02-06-2026",
+    "location_name": "Asia/Kolkata"
+  },
+  "2026-06-03": {
+    "date": "2026-06-03",
+    "timings": {
+      "Fajr": "04:32",
+      "Sunrise": "05:46",
+      "Dhuhr": "12:18",
+      "Asr": "16:50",
+      "Maghrib": "18:48",
+      "Isha": "20:02"
+    },
+    "hijri": "17-12-1447",
+    "hijri_readable": "17 Dh\u016b al-\u1e24ijjah 1447",
+    "gregorian": "03-06-2026",
+    "location_name": "Asia/Kolkata"
+  },
+  "2026-06-04": {
+    "date": "2026-06-04",
+    "timings": {
+      "Fajr": "04:32",
+      "Sunrise": "05:46",
+      "Dhuhr": "12:18",
+      "Asr": "16:50",
+      "Maghrib": "18:49",
+      "Isha": "20:02"
+    },
+    "hijri": "18-12-1447",
+    "hijri_readable": "18 Dh\u016b al-\u1e24ijjah 1447",
+    "gregorian": "04-06-2026",
+    "location_name": "Asia/Kolkata"
+  },
+  "2026-06-09": {
+    "date": "2026-06-09",
+    "timings": {
+      "Fajr": "04:32",
+      "Sunrise": "05:47",
+      "Dhuhr": "12:19",
+      "Asr": "16:52",
+      "Maghrib": "18:50",
+      "Isha": "20:04"
+    },
+    "hijri": "23-12-1447",
+    "hijri_readable": "23 Dh\u016b al-\u1e24ijjah 1447",
+    "gregorian": "09-06-2026",
+    "location_name": "Asia/Kolkata"
+  }
+}

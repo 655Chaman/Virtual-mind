@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">VirtualMind</string>
+    <string name="accessibility_service_description">Virtual Mind Sleep Protocol Enforcer. When active, it locks out distracting applications to enforce your sleep cycle.</string>
+</resources>

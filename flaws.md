@@ -66,4 +66,13 @@ You want speed, conquest, decisive force. But your actual mission — changing t
 
 ---
 
+## THE "SHIP IT OR KILL IT" CONTRACT (Active)
+
+**Project:** Virtual Mind 2.0
+**Definition of Shipped:** Fully usable for 30 consecutive personal days without requiring mechanical code edits or backend refactoring. The system must operate independently as a closed loop.
+**Hard Deadline:** 1 May 2026.
+**Consequence:** If not shipped by this date, VM2 is moved to the Graveyard. No exceptions. No "one more feature."
+
+---
+
 *This file will be updated as new patterns emerge. —VM*

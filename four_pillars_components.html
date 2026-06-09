@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4 Pillars of Personal OS</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0d1117; 
+            color: #c9d1d9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* The single shared canvas */
+        #main-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Let clicks pass through to the cards */
+            z-index: 10;
+        }
+
+        .grid-container {
+            position: relative;
+            z-index: 20;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            padding: 40px;
+        }
+
+        .pillar-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            transition: transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+            width: 180px;
+        }
+
+        .pillar-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Placeholder for the 3D content */
+        .canvas-placeholder {
+            width: 120px;
+            height: 120px;
+        }
+
+        .pillar-title {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+
+        .pillar-subtitle {
+            font-size: 10px;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Single canvas shared by all icons -->
+    <canvas id="main-canvas"></canvas>
+
+    <div class="grid-container">
+        <!-- ICON 1 -->
+        <div class="pillar-card" id="card-deen">
+            <div class="canvas-placeholder"></div>
+            <div>
+                <div class="pillar-title" style="color: #c9a84c;">Deen</div>
+                <div class="pillar-subtitle">Islamic Knowledge</div>
+            </div>
+        </div>
+
+        <!-- ICON 2 -->
+        <div class="pillar-card" id="card-elesium">
+            <div class="canvas-placeholder"></div>
+            <div>
+                <div class="pillar-title" style="color: #4c7ec9;">Elesium</div>
+                <div class="pillar-subtitle">Economic Power</div>
+            </div>
+        </div>
+
+        <!-- ICON 3 -->
+        <div class="pillar-card" id="card-influence">
+            <div class="canvas-placeholder"></div>
+            <div>
+                <div class="pillar-title" style="color: #c94c4c;">Influence</div>
+                <div class="pillar-subtitle">Communication</div>
+            </div>
+        </div>
+
+        <!-- ICON 4 -->
+        <div class="pillar-card" id="card-self">
+            <div class="canvas-placeholder"></div>
+            <div>
+                <div class="pillar-title" style="color: #4caa6e;">Self</div>
+                <div class="pillar-subtitle">Physical & Mental</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Use Global Three.js for maximum stability in file:// context -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // Setup shared renderer
+        const canvas = document.getElementById('main-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setClearColor(0x000000, 0);
+
+        const views = [];
+
+        function createView(cardId, setupScene, config) {
+            const card = document.getElementById(cardId);
+            const placeholder = card.querySelector('.canvas-placeholder');
+            
+            const scene = new THREE.Scene();
+            
+            // Shared lighting setup for this view
+            const ambientLight = new THREE.AmbientLight(0xffeab5, 1.2); 
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffd700, 2.0); 
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+
+            const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+            camera.position.z = 2.8;
+
+            const group = new THREE.Group();
+            setupScene(group);
+            scene.add(group);
+
+            let isHovered = false;
+            card.addEventListener('mouseenter', () => isHovered = true);
+            card.addEventListener('mouseleave', () => isHovered = false);
+
+            views.push({
+                placeholder,
+                scene,
+                camera,
+                group,
+                config,
+                getHoverState: () => isHovered
+            });
+        }
+
+        // --- ICON 1: DEEN ---
+        createView('card-deen', (group) => {
+            const shape = new THREE.Shape();
+            shape.moveTo(0, 1.0);
+            shape.quadraticCurveTo(1.2, 0, 0, -1.0);
+            shape.quadraticCurveTo(0.5, 0, 0, 1.0);
+            
+            // ExtrudeSettings doesn't exist in r128 as a class, it's just an object
+            const geometry = new THREE.ExtrudeGeometry(shape, { 
+                depth: 0.25, 
+                bevelEnabled: true, 
+                bevelSegments: 4, 
+                steps: 2, 
+                bevelSize: 0.03, 
+                bevelThickness: 0.03 
+            });
+            geometry.center();
+            
+            const material = new THREE.MeshStandardMaterial({ 
+                color: 0xc9a84c,
+                emissive: 0xc9a84c,
+                emissiveIntensity: 0.15,
+                roughness: 0.3,
+                metalness: 0.7
+            });
+            group.add(new THREE.Mesh(geometry, material));
+        }, { rotateY: true });
+
+        // --- ICON 2: ELESIUM ---
+        createView('card-elesium', (group) => {
+            const geometry = new THREE.OctahedronGeometry(0.8, 0);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0x4c7ec9,
+                transparent: true,
+                opacity: 0.85,
+                roughness: 0.2,
+                metalness: 0.5
+            });
+            group.add(new THREE.Mesh(geometry, material));
+
+            const wireframeGeo = new THREE.WireframeGeometry(geometry);
+            const wireframe = new THREE.LineSegments(wireframeGeo, new THREE.LineBasicMaterial({
+                color: 0x4c7ec9, 
+                transparent: true, 
+                opacity: 0.4
+            }));
+            wireframe.scale.set(1.05, 1.05, 1.05);
+            group.add(wireframe);
+        }, { rotateX: true, rotateY: true });
+
+        // --- ICON 3: INFLUENCE ---
+        createView('card-influence', (group) => {
+            const geometry = new THREE.TetrahedronGeometry(0.85, 0);
+            geometry.rotateX(Math.PI / 4);
+            geometry.rotateY(-Math.PI / 4);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0xc94c4c,
+                roughness: 0.4,
+                metalness: 0.6
+            });
+            group.add(new THREE.Mesh(geometry, material));
+        }, { rotateY: true, rotateZ: true, baseSpeed: 0.02, hoverSpeed: 0.08 });
+
+        // --- ICON 4: SELF ---
+        createView('card-self', (group) => {
+            const geometry = new THREE.IcosahedronGeometry(0.8, 0);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0x4caa6e,
+                roughness: 0.5,
+                metalness: 0.3
+            });
+            group.add(new THREE.Mesh(geometry, material));
+        }, { rotateY: true });
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Resize canvas if needed
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            if (canvas.width !== width || canvas.height !== height) {
+                renderer.setSize(width, height, false);
+            }
+
+            // Clear renderer but don't clear between views yet (we'll use scissor)
+            renderer.setScissorTest(false);
+            renderer.clear(true, true, true);
+            renderer.setScissorTest(true);
+
+            views.forEach(view => {
+                // Update rotation
+                const isHovered = view.getHoverState();
+                const currentSpeed = isHovered ? (view.config.hoverSpeed || 0.04) : (view.config.baseSpeed || 0.005);
+                
+                if (view.config.rotateX) view.group.rotation.x += currentSpeed;
+                if (view.config.rotateY) view.group.rotation.y += currentSpeed;
+                if (view.config.rotateZ) view.group.rotation.z += currentSpeed;
+
+                // Sync view to placeholder position
+                const rect = view.placeholder.getBoundingClientRect();
+                
+                // Only render if on screen
+                if (rect.bottom < 0 || rect.top > height || rect.right < 0 || rect.left > width) return;
+
+                // Set viewport and scissor
+                // Note: Three.js Y is bottom-up
+                const positiveYUpBottom = height - rect.bottom;
+                renderer.setViewport(rect.left, positiveYUpBottom, rect.width, rect.height);
+                renderer.setScissor(rect.left, positiveYUpBottom, rect.width, rect.height);
+
+                renderer.render(view.scene, view.camera);
+            });
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+             // Let the animate loop handle the canvas resize using clientWidth/Height
+        });
+    </script>
+</body>
+</html>

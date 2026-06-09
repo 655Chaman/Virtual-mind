@@ -1,0 +1,146 @@
+Starting Virtual Mind API...
+INFO:     Will watch for changes in these directories: ['/Users/krdeeksha/Virtual-mind']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [8823] using StatReload
+/Users/krdeeksha/Virtual-mind/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+INFO:     Started server process [8844]
+INFO:     Waiting for application startup.
+/Users/krdeeksha/Virtual-mind/venv/lib/python3.9/site-packages/google/api_core/_python_version_support.py:246: FutureWarning: You are using a non-supported Python version (3.9.6). Google will not post any further updates to google.api_core supporting this Python version. Please upgrade to the latest Python version, or at least Python 3.10, and then update google.api_core.
+  warnings.warn(message, FutureWarning)
+/Users/krdeeksha/Virtual-mind/venv/lib/python3.9/site-packages/google/auth/__init__.py:54: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/krdeeksha/Virtual-mind/venv/lib/python3.9/site-packages/google/oauth2/__init__.py:40: FutureWarning: You are using a Python version 3.9 past its end of life. Google will update google-auth with critical bug fixes on a best-effort basis, but not with any other fixes or features. Please upgrade your Python version, and then update google-auth.
+  warnings.warn(eol_message.format("3.9"), FutureWarning)
+/Users/krdeeksha/Virtual-mind/brain/ingest.py:101: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Application startup complete.
+Virtual Mind System Booting...
+[WARN] GEMINI_API_KEY not set — LLM chat will fail. Set it in .env
+[INIT] Loading decision_context.md and flaws.md...
+==================================================
+🔄 VIRTUAL MIND: FULL INGESTION PIPELINE
+==================================================
+
+📁 Phase 1: Core Ambitions & Decision Context
+⏭️  Already ingested (unchanged): decision_context.md
+⏭️  Already ingested (unchanged): phase0_action_plan.md
+⏭️  Already ingested (unchanged): minds_to_study.md
+📊 Ambitions: 0 chunks ingested
+
+📁 Phase 2: Worldview & Philosophy
+✅ Ingested: philosophical_core.md → 30 chunks [worldview]
+✅ Ingested: spirituality.md → 4 chunks [spiritual]
+
+📊 Total chunks ingested: 34
+
+📁 Phase 3: Raw Thoughts & Journals
+✅ Ingested: journal_01.md → 1 chunks [memory]
+
+📊 Total chunks ingested: 1
+
+📊 Memory Stats: {'total_points': 93, 'status': 'GREEN'}
+==================================================
+✅ Ingestion complete.
+[INIT] Verifying system lock status...
+Virtual Mind Global Scheduler Running in background...
+[INIT] Core systems online.
+INFO:     127.0.0.1:60004 - "OPTIONS /api/status HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60006 - "OPTIONS /api/logs/streak HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60007 - "OPTIONS /api/flaws/most-active HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60010 - "OPTIONS /api/analysis/patterns/latest HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60011 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60012 - "OPTIONS /api/status HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60004 - "OPTIONS /api/logs/streak HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60006 - "OPTIONS /api/flaws/most-active HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60007 - "OPTIONS /api/analysis/patterns/latest HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60010 - "OPTIONS /api/aos/status?ramadan=false HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60011 - "OPTIONS /api/xp/today?ramadan=false HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60011 - "OPTIONS /api/xp/history?days=30 HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60010 - "OPTIONS /api/aos/penalties HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60007 - "OPTIONS /api/aos/perks HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60007 - "OPTIONS /api/aos/status?ramadan=false HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60010 - "OPTIONS /api/xp/today?ramadan=false HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60011 - "OPTIONS /api/xp/history?days=30 HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60006 - "OPTIONS /api/aos/penalties HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60004 - "OPTIONS /api/aos/perks HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60012 - "OPTIONS /api/elesium/summary HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60012 - "OPTIONS /api/elesium/summary HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60021 - "OPTIONS /api/status HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60023 - "OPTIONS /api/logs/streak HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60024 - "OPTIONS /api/flaws/most-active HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60026 - "OPTIONS /api/analysis/patterns/latest HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60028 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60029 - "OPTIONS /api/status HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60021 - "OPTIONS /api/logs/streak HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60023 - "OPTIONS /api/flaws/most-active HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60024 - "OPTIONS /api/analysis/patterns/latest HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60024 - "OPTIONS /api/aos/status?ramadan=false HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60023 - "OPTIONS /api/xp/today?ramadan=false HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60021 - "OPTIONS /api/xp/history?days=30 HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60029 - "OPTIONS /api/aos/penalties HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60028 - "OPTIONS /api/aos/perks HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60028 - "OPTIONS /api/aos/status?ramadan=false HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60029 - "OPTIONS /api/xp/today?ramadan=false HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60021 - "OPTIONS /api/xp/history?days=30 HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60023 - "OPTIONS /api/aos/penalties HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60024 - "OPTIONS /api/aos/perks HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60026 - "OPTIONS /api/elesium/summary HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60026 - "OPTIONS /api/elesium/summary HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60091 - "OPTIONS /api/status HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60092 - "OPTIONS /api/logs/streak HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60093 - "OPTIONS /api/flaws/most-active HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60095 - "OPTIONS /api/analysis/patterns/latest HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60096 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60097 - "OPTIONS /api/status HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60091 - "OPTIONS /api/logs/streak HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60092 - "OPTIONS /api/flaws/most-active HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60093 - "OPTIONS /api/analysis/patterns/latest HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60096 - "OPTIONS /api/xp/today?ramadan=false HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60097 - "OPTIONS /api/xp/history?days=30 HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60099 - "OPTIONS /api/aos/status?ramadan=false HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60091 - "OPTIONS /api/aos/penalties HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60092 - "OPTIONS /api/aos/perks HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60092 - "OPTIONS /api/aos/status?ramadan=false HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60091 - "OPTIONS /api/xp/today?ramadan=false HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60099 - "OPTIONS /api/xp/history?days=30 HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60097 - "OPTIONS /api/aos/penalties HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60096 - "OPTIONS /api/aos/perks HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60093 - "OPTIONS /api/elesium/summary HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60093 - "OPTIONS /api/elesium/summary HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60115 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60153 - "OPTIONS /api/status HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60157 - "OPTIONS /api/logs/streak HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60158 - "OPTIONS /api/flaws/most-active HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60160 - "OPTIONS /api/analysis/patterns/latest HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60162 - "GET /api/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60163 - "OPTIONS /api/status HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60153 - "OPTIONS /api/logs/streak HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60157 - "OPTIONS /api/flaws/most-active HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60158 - "OPTIONS /api/analysis/patterns/latest HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60160 - "OPTIONS /api/aos/status?ramadan=false HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60162 - "OPTIONS /api/xp/today?ramadan=false HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60163 - "OPTIONS /api/xp/history?days=30 HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60153 - "OPTIONS /api/aos/penalties HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60157 - "OPTIONS /api/aos/perks HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60157 - "OPTIONS /api/aos/status?ramadan=false HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60153 - "OPTIONS /api/xp/today?ramadan=false HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60163 - "OPTIONS /api/xp/history?days=30 HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60162 - "OPTIONS /api/aos/penalties HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60160 - "OPTIONS /api/aos/perks HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60158 - "OPTIONS /api/elesium/summary HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:60158 - "OPTIONS /api/elesium/summary HTTP/1.1" 400 Bad Request
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [8844]
+INFO:     Stopping reloader process [8823]
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/multiprocessing/resource_tracker.py:216: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

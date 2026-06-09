@@ -1,0 +1,178 @@
+{
+  "phase": "PHASE 0",
+  "started": "2026-02-22",
+  "checkpoint": "2026-05-22",
+  "milestones": [
+    {
+      "id": "m1",
+      "pillar": "DEEN",
+      "title": "Learn to read Arabic",
+      "deadline_day": 90,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": ""
+    },
+    {
+      "id": "m2",
+      "pillar": "DEEN",
+      "title": "Complete The Sealed Nectar (Seerah)",
+      "deadline_day": 45,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": ""
+    },
+    {
+      "id": "m3",
+      "pillar": "DEEN",
+      "title": "Complete Kitab At-Tawheed",
+      "deadline_day": 60,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": ""
+    },
+    {
+      "id": "m4",
+      "pillar": "DEEN",
+      "title": "Memorize 5 new Surahs",
+      "deadline_day": 90,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": ""
+    },
+    {
+      "id": "m5",
+      "pillar": "DEEN",
+      "title": "Study Quranic argumentation patterns",
+      "deadline_day": 90,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": ""
+    },
+    {
+      "id": "m6",
+      "pillar": "ELESIUM",
+      "title": "Email Verification MVP launched",
+      "deadline_day": 30,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": ""
+    },
+    {
+      "id": "m7",
+      "pillar": "ELESIUM",
+      "title": "First paying customers",
+      "deadline_day": 45,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": ""
+    },
+    {
+      "id": "m8",
+      "pillar": "ELESIUM",
+      "title": "$1K MRR",
+      "deadline_day": 90,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": ""
+    },
+    {
+      "id": "m9",
+      "pillar": "ELESIUM",
+      "title": "Doc-close sales framework implemented",
+      "deadline_day": 30,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": ""
+    },
+    {
+      "id": "m10",
+      "pillar": "INFLUENCE",
+      "title": "10 essays published (blogs/threads)",
+      "deadline_day": 90,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": ""
+    },
+    {
+      "id": "m11",
+      "pillar": "INFLUENCE",
+      "title": "Study rhetoric (Aristotle's framework)",
+      "deadline_day": 60,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": ""
+    },
+    {
+      "id": "m12",
+      "pillar": "INFLUENCE",
+      "title": "Practice daily communication exercises",
+      "deadline_day": 30,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": ""
+    },
+    {
+      "id": "m13",
+      "pillar": "INFLUENCE",
+      "title": "Build audience on one platform",
+      "deadline_day": 90,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": ""
+    },
+    {
+      "id": "m14",
+      "pillar": "ELESIUM",
+      "title": "Elesium generating $10K+ MRR",
+      "deadline_day": 365,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": "1-Year Goal"
+    },
+    {
+      "id": "m15",
+      "pillar": "DEEN",
+      "title": "Arabic reading proficiency (Quran without transliteration)",
+      "deadline_day": 365,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": "1-Year Goal"
+    },
+    {
+      "id": "m16",
+      "pillar": "INFLUENCE",
+      "title": "50+ essays published, building reputation",
+      "deadline_day": 365,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": "1-Year Goal"
+    },
+    {
+      "id": "m17",
+      "pillar": "SELF",
+      "title": "Completed reading list from Minds to Study",
+      "deadline_day": 365,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": "1-Year Goal"
+    },
+    {
+      "id": "m18",
+      "pillar": "SELF",
+      "title": "Physical benchmark: sub-25min 5K run, 6-day/week training",
+      "deadline_day": 365,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": "1-Year Goal"
+    },
+    {
+      "id": "m19",
+      "pillar": "DEEN",
+      "title": "Circle of 5+ like-minded Muslim brothers",
+      "deadline_day": 365,
+      "status": "not_started",
+      "completed_date": null,
+      "notes": "1-Year Goal"
+    }
+  ]
+}

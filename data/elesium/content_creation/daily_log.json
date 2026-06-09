@@ -1,0 +1,33 @@
+{
+  "last_updated": null,
+  "today": {
+    "date": null,
+    "content_pieces_total": 0,
+    "carousels_posted": 0,
+    "stories_posted": 0,
+    "reels_posted": 0,
+    "tweets_posted": 0,
+    "threads_posted": 0,
+    "long_form_posted": 0,
+    "hooks_used": [],
+    "carousel_types": [],
+    "topics_covered": [],
+    "platforms": [],
+    "best_performing_hook": null,
+    "notes": ""
+  },
+  "streak": {
+    "current_days": 0,
+    "longest_days": 0,
+    "last_post_date": null
+  },
+  "totals": {
+    "carousels_all_time": 0,
+    "stories_all_time": 0,
+    "reels_all_time": 0,
+    "content_pieces_all_time": 0,
+    "hooks_library": [],
+    "carousel_types_used": {},
+    "most_used_hook": null
+  }
+}

@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-dotenv
+anthropic
+qdrant-client
+notion-client
+pydantic
+gspread
+google-auth

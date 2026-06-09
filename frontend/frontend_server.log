@@ -1,0 +1,262 @@
+
+> frontend@0.1.0 dev
+> next dev -H 0.0.0.0
+
+ ⚠ Attempted to load /Users/krdeeksha/Virtual-mind/frontend/node_modules/next/next-swc-fallback/@next/swc-darwin-arm64/next-swc.darwin-arm64.node, but it was not installed
+ ⚠ Attempted to load @next/swc-darwin-arm64, but it was not installed
+ ⚠ Attempted to load /Users/krdeeksha/Virtual-mind/frontend/node_modules/next/next-swc-fallback/@next/swc-darwin-arm64/next-swc.darwin-arm64.node, but it was not installed
+ ⚠ Attempted to load @next/swc-darwin-arm64, but it was not installed
+   ▲ Next.js 15.1.0
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1494ms
+ ○ Compiling /home ...
+ ✓ Compiled /home in 3.5s (1491 modules)
+ GET /home 200 in 644ms
+ GET /home 200 in 475ms
+ GET /home 200 in 3674ms
+ ✓ Compiled /favicon.ico in 265ms (774 modules)
+ ✓ Compiled (776 modules)
+ GET /icon.png?01721174c249e645 200 in 352ms
+ GET /icon.png?01721174c249e645 200 in 398ms
+ GET /favicon.ico 200 in 306ms
+ GET /favicon.ico 200 in 305ms
+ GET /favicon.ico 200 in 228ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1666ms (1526 modules)
+ GET / 307 in 1769ms
+ GET /home 200 in 96ms
+ GET /icon.png?01721174c249e645 200 in 18ms
+ GET /favicon.ico 200 in 18ms
+ GET /icon.png?01721174c249e645 200 in 8ms
+ GET /favicon.ico 200 in 8ms
+ ✓ Compiled /workout in 216ms (1535 modules)
+ GET /workout 200 in 285ms
+ GET /icon.png?01721174c249e645 200 in 10ms
+ GET /favicon.ico 200 in 5ms
+ GET /favicon.ico 200 in 7ms
+ GET /icon.png?01721174c249e645 200 in 3ms
+ GET /favicon.ico 200 in 2ms
+ GET /home 200 in 23ms
+ GET /icon.png?01721174c249e645 200 in 6ms
+ GET /favicon.ico 200 in 6ms
+ GET /favicon.ico 200 in 5ms
+ GET /favicon.ico 200 in 5ms
+ GET /icon.png?01721174c249e645 200 in 8ms
+ ✓ Compiled /folder/[pillar] in 446ms (1568 modules)
+ GET /folder/DEEN 200 in 908ms
+ GET /icon.png?01721174c249e645 200 in 11ms
+ GET /favicon.ico 200 in 8ms
+ GET /favicon.ico 200 in 10ms
+ GET /icon.png?01721174c249e645 200 in 10ms
+ GET /favicon.ico 200 in 4ms
+ GET /home 200 in 19ms
+ GET /icon.png?01721174c249e645 200 in 12ms
+ GET /favicon.ico 200 in 10ms
+ GET /favicon.ico 200 in 10ms
+ GET /favicon.ico 200 in 9ms
+ GET /icon.png?01721174c249e645 200 in 12ms
+ ✓ Compiled in 801ms (1537 modules)
+ GET /home 200 in 72ms
+ ✓ Compiled /favicon.ico in 83ms (794 modules)
+ ✓ Compiled (796 modules)
+ GET /favicon.ico 200 in 187ms
+ GET /favicon.ico 200 in 166ms
+ GET /favicon.ico 200 in 187ms
+ GET /icon.png?01721174c249e645 200 in 196ms
+ GET /icon.png?01721174c249e645 200 in 190ms
+ ✓ Compiled in 2.5s (1554 modules)
+ GET /home 200 in 42ms
+ GET /icon.png?01721174c249e645 200 in 7ms
+ GET /favicon.ico 200 in 10ms
+ GET /favicon.ico 200 in 4ms
+ GET /icon.png?01721174c249e645 200 in 3ms
+ GET /favicon.ico 200 in 2ms
+ ✓ Compiled in 2.2s (1554 modules)
+ GET /home 200 in 33ms
+ GET /icon.png?01721174c249e645 200 in 12ms
+ GET /icon.png?01721174c249e645 200 in 11ms
+ GET /favicon.ico 200 in 6ms
+ GET /favicon.ico 200 in 6ms
+ GET /favicon.ico 200 in 2ms
+ GET /folder/DEEN 200 in 46ms
+ GET /icon.png?01721174c249e645 200 in 4ms
+ GET /favicon.ico 200 in 3ms
+ GET /favicon.ico 200 in 3ms
+ GET /icon.png?01721174c249e645 200 in 5ms
+ GET /favicon.ico 200 in 6ms
+ GET /home 200 in 17ms
+ GET /icon.png?01721174c249e645 200 in 8ms
+ GET /favicon.ico 200 in 15ms
+ GET /favicon.ico 200 in 13ms
+ GET /icon.png?01721174c249e645 200 in 14ms
+ GET /favicon.ico 200 in 5ms
+ ✓ Compiled /workout in 325ms (807 modules)
+ GET /workout 200 in 375ms
+ GET /workout 200 in 5ms
+ GET /icon.png?01721174c249e645 200 in 13ms
+ GET /icon.png?01721174c249e645 200 in 5ms
+ GET /favicon.ico 200 in 10ms
+ GET /favicon.ico 200 in 10ms
+ GET /favicon.ico 200 in 2ms
+ ○ Compiling /workout/session ...
+ ✓ Compiled /workout/session in 526ms (1588 modules)
+ GET /workout/session 200 in 574ms
+ GET /icon.png?01721174c249e645 200 in 13ms
+ GET /icon.png?01721174c249e645 200 in 15ms
+ GET /favicon.ico 200 in 6ms
+ GET /favicon.ico 200 in 5ms
+ GET /favicon.ico 200 in 2ms
+ GET /workout 200 in 31ms
+ GET /icon.png?01721174c249e645 200 in 6ms
+ GET /favicon.ico 200 in 4ms
+ GET /favicon.ico 200 in 5ms
+ GET /icon.png?01721174c249e645 200 in 6ms
+ GET /favicon.ico 200 in 3ms
+ GET /home 200 in 24ms
+ GET /icon.png?01721174c249e645 200 in 5ms
+ GET /favicon.ico 200 in 7ms
+ GET /favicon.ico 200 in 9ms
+ GET /favicon.ico 200 in 8ms
+ GET /icon.png?01721174c249e645 200 in 9ms
+ GET /folder/DEEN 200 in 69ms
+ GET /icon.png?01721174c249e645 200 in 4ms
+ GET /icon.png?01721174c249e645 200 in 3ms
+ GET /favicon.ico 200 in 3ms
+ GET /favicon.ico 200 in 3ms
+ GET /favicon.ico 200 in 2ms
+ GET /home 200 in 17ms
+ GET /icon.png?01721174c249e645 200 in 7ms
+ GET /favicon.ico 200 in 6ms
+ GET /favicon.ico 200 in 9ms
+ GET /favicon.ico 200 in 5ms
+ GET /icon.png?01721174c249e645 200 in 6ms
+ GET /folder/DEEN 200 in 14ms
+ GET /icon.png?01721174c249e645 200 in 3ms
+ GET /favicon.ico 200 in 3ms
+ GET /favicon.ico 200 in 3ms
+ GET /icon.png?01721174c249e645 200 in 2ms
+ GET /favicon.ico 200 in 3ms
+ GET /home 200 in 47ms
+ GET /icon.png?01721174c249e645 200 in 7ms
+ GET /favicon.ico 200 in 6ms
+ GET /favicon.ico 200 in 5ms
+ GET /icon.png?01721174c249e645 200 in 4ms
+ GET /favicon.ico 200 in 2ms
+ GET /folder/DEEN 200 in 20ms
+ GET /icon.png?01721174c249e645 200 in 4ms
+ GET /favicon.ico 200 in 5ms
+ GET /icon.png?01721174c249e645 200 in 7ms
+ GET /favicon.ico 200 in 8ms
+ GET /favicon.ico 200 in 8ms
+ GET /icon.png?01721174c249e645 200 in 10ms
+ GET /icon.png?01721174c249e645 200 in 8ms
+ GET /favicon.ico 200 in 7ms
+ GET /favicon.ico 200 in 9ms
+ GET /icon.png?01721174c249e645 200 in 10ms
+ GET /favicon.ico 200 in 4ms
+ GET /favicon.ico 200 in 2ms
+ ✓ Compiled in 816ms (775 modules)
+ GET /home 200 in 12ms
+ GET /icon.png?01721174c249e645 200 in 4ms
+ GET /icon.png?01721174c249e645 200 in 3ms
+ GET /favicon.ico 200 in 4ms
+ GET /favicon.ico 200 in 5ms
+ GET /favicon.ico 200 in 4ms
+ ✓ Compiled in 590ms (775 modules)
+ GET /home 200 in 7ms
+ GET /icon.png?01721174c249e645 200 in 5ms
+ GET /icon.png?01721174c249e645 200 in 7ms
+ GET /favicon.ico 200 in 3ms
+ GET /favicon.ico 200 in 4ms
+ GET /favicon.ico 200 in 3ms
+ ✓ Compiled in 665ms (1602 modules)
+ GET /home 200 in 55ms
+ GET /icon.png?01721174c249e645 200 in 14ms
+ GET /icon.png?01721174c249e645 200 in 16ms
+ GET /favicon.ico 200 in 7ms
+ GET /favicon.ico 200 in 6ms
+ GET /favicon.ico 200 in 2ms
+ GET /folder/DEEN 200 in 37ms
+ GET /icon.png?01721174c249e645 200 in 3ms
+ GET /favicon.ico 200 in 3ms
+ GET /favicon.ico 200 in 4ms
+ GET /icon.png?01721174c249e645 200 in 4ms
+ GET /favicon.ico 200 in 3ms
+ ✓ Compiled in 856ms (1602 modules)
+ GET /folder/DEEN 200 in 38ms
+ GET /icon.png?01721174c249e645 200 in 7ms
+ GET /favicon.ico 200 in 5ms
+ GET /favicon.ico 200 in 6ms
+ GET /favicon.ico 200 in 3ms
+ GET /icon.png?01721174c249e645 200 in 2ms
+ GET /home 200 in 25ms
+ GET /icon.png?01721174c249e645 200 in 6ms
+ GET /icon.png?01721174c249e645 200 in 5ms
+ GET /favicon.ico 200 in 4ms
+ GET /favicon.ico 200 in 6ms
+ GET /favicon.ico 200 in 4ms
+ ✓ Compiled in 784ms (1602 modules)
+ GET /home 200 in 23ms
+ GET /icon.png?01721174c249e645 200 in 6ms
+ GET /favicon.ico 200 in 5ms
+ GET /favicon.ico 200 in 3ms
+ GET /favicon.ico 200 in 4ms
+ GET /icon.png?01721174c249e645 200 in 4ms
+ ✓ Compiled in 734ms (1602 modules)
+ ✓ Compiled in 998ms (1585 modules)
+ ✓ Compiled in 889ms (1585 modules)
+ ✓ Compiled / in 374ms (827 modules)
+ GET / 307 in 518ms
+ GET /home 200 in 102ms
+ ✓ Compiled /favicon.ico in 137ms (842 modules)
+ ✓ Compiled (844 modules)
+ GET /favicon.ico 200 in 246ms
+ GET /favicon.ico 200 in 384ms
+ GET /icon.png?01721174c249e645 200 in 388ms
+ GET /icon.png?01721174c249e645 200 in 255ms
+ GET /folder/DEEN 200 in 52ms
+ GET /icon.png?01721174c249e645 200 in 3ms
+ GET /favicon.ico 200 in 4ms
+ GET /favicon.ico 200 in 4ms
+ GET /icon.png?01721174c249e645 200 in 4ms
+ GET /favicon.ico 200 in 6ms
+ GET /icon.png?01721174c249e645 200 in 21ms
+ GET /icon.png?01721174c249e645 200 in 17ms
+ GET /favicon.ico 200 in 19ms
+ GET /favicon.ico 200 in 19ms
+ GET /icon.png?01721174c249e645 200 in 19ms
+ GET /favicon.ico 200 in 6ms
+ GET /favicon.ico 200 in 6ms
+ GET /folder/ELESIUM 200 in 18ms
+ GET /icon.png?01721174c249e645 200 in 4ms
+ GET /favicon.ico 200 in 3ms
+ GET /favicon.ico 200 in 2ms
+ GET /icon.png?01721174c249e645 200 in 3ms
+ GET /favicon.ico 200 in 2ms
+ GET /icon.png?01721174c249e645 200 in 13ms
+ GET /favicon.ico 200 in 13ms
+ GET /favicon.ico 200 in 18ms
+ GET /icon.png?01721174c249e645 200 in 19ms
+ GET /icon.png?01721174c249e645 200 in 19ms
+ GET /favicon.ico 200 in 11ms
+ GET /favicon.ico 200 in 10ms
+ ○ Compiling /wellness ...
+ ✓ Compiled /wellness in 548ms (1624 modules)
+ GET /wellness 200 in 588ms
+ GET /icon.png?01721174c249e645 200 in 10ms
+ GET /icon.png?01721174c249e645 200 in 3ms
+ GET /favicon.ico 200 in 6ms
+ GET /favicon.ico 200 in 7ms
+ GET /favicon.ico 200 in 3ms
+ GET /icon.png?01721174c249e645 200 in 12ms
+ GET /favicon.ico 200 in 16ms
+ GET /favicon.ico 200 in 16ms
+ GET /icon.png?01721174c249e645 200 in 17ms
+ GET /icon.png?01721174c249e645 200 in 11ms
+ GET /favicon.ico 200 in 11ms
+ GET /favicon.ico 200 in 9ms
+[?25h

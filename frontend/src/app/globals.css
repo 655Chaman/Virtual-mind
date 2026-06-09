@@ -1,0 +1,397 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Gold accent (settings, titles, charts) ──────────────────────── */
+  --color-gold:       #c9a84c;
+  --color-gold-dim:   #7a6230;
+  --color-gold-bright:#f0c96a;
+
+  /* ── Semantic aliases (map to CSS vars below) ────────────────────── */
+  --color-obsidian:   var(--background);
+  --color-surface:    var(--surface);
+  --color-surface2:   var(--surface2);
+  --color-text-dim:   var(--text-dim);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* ── Brand palette ───────────────────────────────────────────────── */
+  --color-parrot-green:       #00A86B;  /* Primary brand — Deen, success, active */
+  --color-parrot-green-light: #5DDBAA;  /* Light variant */
+  --color-parrot-green-dark:  #007A4D;  /* Pressed / container */
+
+  /* ── Per-pillar accent colours ───────────────────────────────────── */
+  --color-vm-green:    #10D86A;  /* DEEN     — Sacred Jade green */
+  --color-vm-red:      #c94c4c;  /* Error / penalty (system) */
+  --color-vm-scarlet:  #F43F5E;  /* FITNESS  — Scarlet / blood and iron */
+  --color-vm-glacier:  #22D3EE;  /* WELLNESS — Glacier cyan / rest */
+  --color-vm-sapphire: #3B82F6;  /* ELESIUM  — Sapphire blue / digital empire */
+  --color-vm-amethyst: #A855F7;  /* SELF     — Amethyst / inner consciousness */
+  --color-vm-fuchsia:  #E879F9;  /* TERMINAL — Fuchsia / neural oracle */
+  --color-vm-indigo:   #818CF8;  /* QADR     — Starlight indigo / night */
+  --color-vm-amber:    #F59E0B;  /* COMMAND  — Amber / authority & control */
+  --color-vm-blue:     #3B82F6;  /* alias for ELESIUM (backward compat) */
+  --color-vm-purple:   #A855F7;  /* alias for SELF (backward compat) */
+  --color-vm-teal:     #22D3EE;  /* alias for WELLNESS (backward compat) */
+  --color-vm-pink:     #E879F9;  /* alias for TERMINAL (backward compat) */
+
+  /* ── Fonts ───────────────────────────────────────────────────────── */
+  --font-cinzel:   var(--font-cinzel), serif;
+  --font-share:    var(--font-share-tech-mono), monospace;
+  --font-garamond: var(--font-cormorant-garamond), serif;
+}
+
+:root {
+  /* Light Mode Colors */
+  --background: #fdfdfd;
+  --foreground: #111111;
+  --surface: #f3f4f6;
+  --surface2: #e5e7eb;
+  --text-dim: #6b7280;
+}
+
+.dark {
+  /* Dark Mode Colors */
+  --background: #060606;
+  --foreground: #ededed;
+  --surface: #0e0e0e;
+  --surface2: #161616;
+  --text-dim: #6b6352;
+}
+
+/* ── BASE ──────────────────────────────────────────────────────────────── */
+body {
+  font-family: var(--font-share);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: none; /* Prevent pull-to-refresh bounce on Android */
+}
+
+button {
+  background-color: transparent;
+}
+
+/* ── NATIVE MOBILE FEEL ────────────────────────────────────────────────── */
+* {
+  -webkit-tap-highlight-color: transparent; /* Remove blue tap highlight on Android */
+}
+
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ── SCROLLBAR (visible but minimal, or hide for native feel) ──────────── */
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+  display: none; /* Hide scrollbar for a native app feel */
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(201, 168, 76, 0.2);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 168, 76, 0.4);
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 0px;
+  display: none;
+}
+
+/* ── KEYFRAMES ─────────────────────────────────────────────────────────── */
+
+/* Glow pulse — gold */
+@keyframes glow-gold {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(201, 168, 76, 0.15), 0 0 12px rgba(201, 168, 76, 0.06);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(201, 168, 76, 0.4), 0 0 30px rgba(201, 168, 76, 0.15);
+  }
+}
+
+/* Glow pulse — red (penalty/alert) */
+@keyframes glow-red {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(201, 76, 76, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(201, 76, 76, 0.45), 0 0 40px rgba(201, 76, 76, 0.15);
+  }
+}
+
+/* Glow pulse — Parrot Green (success / Deen / active state) */
+@keyframes glow-green {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(0, 168, 107, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(0, 168, 107, 0.5), 0 0 32px rgba(0, 168, 107, 0.2);
+  }
+}
+
+/* Scanline sweep */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+/* Fade up on mount */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Letter flicker */
+@keyframes flicker {
+  0%, 95%, 100% { opacity: 1; }
+  96%, 98% { opacity: 0.3; }
+  97%, 99% { opacity: 0.8; }
+}
+
+/* XP pulse (for XP bar fill) */
+@keyframes xp-fill {
+  from { width: 0%; }
+}
+
+/* Terminal cursor blink */
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Radial spin for phase ring */
+@keyframes ring-spin {
+  from { stroke-dashoffset: 314; }
+}
+
+/* ── UTILITY CLASSES ────────────────────────────────────────────────────── */
+
+.glow-gold {
+  animation: glow-gold 3s ease-in-out infinite;
+}
+
+.glow-red {
+  animation: glow-red 2s ease-in-out infinite;
+}
+
+.glow-green {
+  animation: glow-green 3s ease-in-out infinite;
+}
+
+.animate-fade-up {
+  animation: fade-up 0.5s ease-out forwards;
+}
+
+.animate-fade-up-delay-1 {
+  animation: fade-up 0.5s ease-out 0.1s forwards;
+  opacity: 0;
+}
+.animate-fade-up-delay-2 {
+  animation: fade-up 0.5s ease-out 0.2s forwards;
+  opacity: 0;
+}
+.animate-fade-up-delay-3 {
+  animation: fade-up 0.5s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+.animate-flicker {
+  animation: flicker 8s ease-in-out infinite;
+}
+
+.animate-cursor {
+  animation: cursor-blink 1.1s step-end infinite;
+}
+
+/* CRT scanline overlay */
+.scanline-overlay {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.12) 0px,
+    rgba(0, 0, 0, 0.12) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.35;
+}
+
+/* Moving scanline */
+.scanline-sweep::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(transparent, rgba(201, 168, 76, 0.015), transparent);
+  animation: scanline 8s linear infinite;
+  pointer-events: none;
+}
+
+/* Terminal cursor */
+.terminal-cursor::after {
+  content: '|';
+  color: var(--color-gold);
+  animation: cursor-blink 1.1s step-end infinite;
+  margin-left: 2px;
+}
+
+/* Hover lift */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* Status dot */
+.status-dot-active {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-vm-green);     /* Parrot Green */
+  animation: glow-green 2s ease-in-out infinite;
+}
+.status-dot-breach {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-vm-red);
+  animation: glow-red 1.5s ease-in-out infinite;
+}
+
+/* Concentric ring spin keyframes */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+.animate-ring-spin-slow {
+  animation: spin-slow 25s linear infinite;
+}
+.animate-ring-spin-reverse {
+  animation: spin-reverse 18s linear infinite;
+}
+
+/* ── QADR PROTOCOL — Night Mode Animations ─────────────────────────────── */
+
+@keyframes qadr-star-twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.3); }
+}
+
+@keyframes qadr-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+@keyframes qadr-spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes qadr-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes qadr-orbit-left {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(10px, -10px); }
+}
+
+@keyframes qadr-orbit-right {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-10px, -10px); }
+}
+
+/* Qadr schedule block hover glow */
+.qadr-block-glow:hover {
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.15);
+}
+
+@layer utilities {
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 1.5rem);
+  }
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 1.5rem);
+  }
+}
+
+/* Toast animations */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+.animate-toast-in {
+  animation: toast-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ── MINIMAL MODE (XP < 0) ──────────────────────────────────────────────── */
+.minimal-mode body {
+  background-color: #000 !important;
+}
+
+.minimal-mode * {
+  /* Disable all complex box-shadows, glows, and animations */
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+.minimal-mode .hologram-effect,
+.minimal-mode .scanline-overlay,
+.minimal-mode .scanline-sweep {
+  display: none !important;
+}
+
+.minimal-mode .bg-vm-green,
+.minimal-mode .text-vm-green,
+.minimal-mode .border-vm-green {
+  /* Replace Parrot Green with dull gray in minimal/penalty mode */
+  background-color: #333 !important;
+  color: #888 !important;
+  border-color: #333 !important;
+}
+
+.minimal-mode .bg-gold,
+.minimal-mode .text-gold,
+.minimal-mode .border-gold {
+  /* Replace gold with stark white or gray */
+  background-color: #333 !important;
+  color: #ccc !important;
+  border-color: #333 !important;
+}
+
+/* Retain Red for penalties but make it harsh */
+.minimal-mode .bg-vm-red {
+  background-color: #ff0000 !important;
+}

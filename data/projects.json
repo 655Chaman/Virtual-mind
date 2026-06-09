@@ -1,0 +1,18 @@
+{
+    "projects": [
+        {
+            "id": "elesium_outbound",
+            "name": "Elesium Outbound System",
+            "status": "active",
+            "last_touched": "2026-05-29T10:00:00Z",
+            "created_at": "2026-05-01T00:00:00Z"
+        },
+        {
+            "id": "email_verifier",
+            "name": "Email Verifier (mails.so)",
+            "status": "active",
+            "last_touched": "2026-05-20T10:00:00Z",
+            "created_at": "2026-05-05T00:00:00Z"
+        }
+    ]
+}

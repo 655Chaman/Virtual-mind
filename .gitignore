@@ -7,3 +7,6 @@ brain/
 __pycache__/
 get-shit-done/
 .agents/
+/data/logs/
+node_modules
+.next
