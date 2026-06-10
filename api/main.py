@@ -167,6 +167,14 @@ async def get_system_status():
         "xp_balance": xp_balance
     }
 
+FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "out")
+if os.path.exists(FRONTEND_DIR):
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+else:
+    @app.get("/")
+    async def fallback_root():
+        return {"detail": "Frontend not built. Please run npm run build in the frontend directory."}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("api.main:app", host="0.0.0.0", port=8000, reload=True)

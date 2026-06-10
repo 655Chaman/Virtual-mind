@@ -1,0 +1,50 @@
+{
+  "name": "Virtual Mind 2.0",
+  "short_name": "VirtualMind",
+  "description": "Command Center for Elesium — Personal OS for Chaman Shah",
+  "start_url": "/command",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#060606",
+  "theme_color": "#c9a84c",
+  "orientation": "portrait",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "lifestyle", "health"],
+  "shortcuts": [
+    {
+      "name": "Workout Session",
+      "short_name": "Workout",
+      "description": "Start today's workout and log sets",
+      "url": "/workout",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Quick Capture",
+      "short_name": "Capture",
+      "description": "Instantly capture a thought",
+      "url": "/command#capture",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Secure Reflection",
+      "short_name": "Reflect",
+      "description": "Lock your daily reflection",
+      "url": "/log",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
