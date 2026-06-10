@@ -43,7 +43,7 @@ def save_subscriptions(subs: list):
 # ─── VAPID Keys ────────────────────────────────────────────────────────────
 # These are loaded from .env — generated once by the setup script
 VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "")
-VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "")
+VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "").replace("\\n", "\n")
 VAPID_CLAIMS_EMAIL = os.getenv("VAPID_CLAIMS_EMAIL", "operator@virtual-mind.local")
 
 
