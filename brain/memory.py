@@ -20,9 +20,30 @@ from qdrant_client.models import (
     Filter, FieldCondition, MatchValue,
 )
 
-# Set HF_HOME before importing sentence_transformers
-os.environ["HF_HOME"] = os.path.join(os.getcwd(), "hf_cache")
-from sentence_transformers import SentenceTransformer
+# Use Gemini for embeddings to save RAM
+import google.generativeai as genai
+from dotenv import load_dotenv
+load_dotenv()
+
+class GeminiEncoder:
+    def __init__(self):
+        self.api_key = os.getenv("GEMINI_API_KEY")
+        if self.api_key and self.api_key != "your_gemini_api_key_here":
+            genai.configure(api_key=self.api_key)
+            
+    def encode(self, text):
+        import numpy as np
+        if not self.api_key or self.api_key == "your_gemini_api_key_here":
+            return np.zeros(768)
+        try:
+            result = genai.embed_content(
+                model="models/text-embedding-004",
+                content=text
+            )
+            return np.array(result['embedding'])
+        except Exception as e:
+            print(f"[MEMORY] Embedding error: {e}")
+            return np.zeros(768)
 
 
 # ─── VALID MEMORY TYPES ───────────────────────────────────────────────────────
@@ -51,7 +72,7 @@ class Memory:
 
         self.persistence_dir = persistence_dir
         self.collection_name = collection_name
-        self.encoder = SentenceTransformer("all-mpnet-base-v2")
+        self.encoder = GeminiEncoder()
         self._client = None
         self._initialized = False
 
