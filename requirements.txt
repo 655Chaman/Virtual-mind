@@ -1,3 +1,4 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
 fastapi
 uvicorn
 python-dotenv
@@ -7,3 +8,7 @@ notion-client
 pydantic
 gspread
 google-auth
+numpy
+google-generativeai
+sentence-transformers
+torch
