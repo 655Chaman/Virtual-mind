@@ -9,3 +9,4 @@ gspread
 google-auth
 numpy
 google-generativeai
+python-multipart
