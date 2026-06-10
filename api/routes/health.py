@@ -1,86 +1,13 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional, List
-from datetime import datetime, date
-import sqlite3
+from datetime import datetime, date, timedelta
+from api.database import get_db
 from pathlib import Path
 
 router = APIRouter()
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-DB_PATH = PROJECT_ROOT / "data" / "health.db"
-
-def get_db_conn():
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.execute("PRAGMA foreign_keys = ON")
-    conn.row_factory = sqlite3.Row
-    return conn
-
-def init_db():
-    with get_db_conn() as conn:
-        # ── Sleep ──────────────────────────────────────────────────────────────
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS sleep_logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                start_time TEXT NOT NULL,
-                end_time TEXT,
-                duration_minutes REAL
-            )
-        """)
-
-        # ── Morning Readiness ──────────────────────────────────────────────────
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS readiness_logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                date TEXT UNIQUE NOT NULL,
-                energy INTEGER NOT NULL,
-                clarity INTEGER NOT NULL,
-                mood INTEGER NOT NULL,
-                score INTEGER NOT NULL,
-                sleep_id INTEGER,
-                FOREIGN KEY (sleep_id) REFERENCES sleep_logs (id)
-            )
-        """)
-
-        # ── Fasting ────────────────────────────────────────────────────────────
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS fast_logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                start_time TEXT NOT NULL,
-                end_time TEXT,
-                duration_minutes REAL,
-                goal_minutes REAL DEFAULT 960
-            )
-        """)
-
-        # ── Hydration ──────────────────────────────────────────────────────────
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS hydration_logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                date TEXT NOT NULL,
-                amount_ml INTEGER NOT NULL,
-                logged_at TEXT NOT NULL
-            )
-        """)
-
-        # ── Deep Work ──────────────────────────────────────────────────────────
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS deepwork_logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                start_time TEXT NOT NULL,
-                end_time TEXT,
-                duration_minutes REAL,
-                label TEXT DEFAULT '',
-                journal_entry TEXT DEFAULT ''
-            )
-        """)
-        try:
-            conn.execute("ALTER TABLE deepwork_logs ADD COLUMN journal_entry TEXT DEFAULT ''")
-        except sqlite3.OperationalError:
-            pass
-
-init_db()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SLEEP ENDPOINTS
@@ -90,34 +17,38 @@ init_db()
 def start_sleep():
     """Logs the exact timestamp when the user goes to bed."""
     current_time = datetime.utcnow().isoformat()
-    with get_db_conn() as conn:
-        cursor = conn.execute("SELECT id FROM sleep_logs WHERE end_time IS NULL")
-        if cursor.fetchone():
-            return {"status": "error", "message": "Already sleeping."}
-        conn.execute("INSERT INTO sleep_logs (start_time) VALUES (?)", (current_time,))
-    return {"status": "success", "start_time": current_time}
+    db = get_db()
+    active = db.sleep_logs.find_one({"end_time": {"$exists": False}})
+    if active:
+        return {"status": "error", "message": "Already sleeping."}
+    
+    # We use a custom id or just ObjectId
+    result = db.sleep_logs.insert_one({"start_time": current_time})
+    return {"status": "success", "start_time": current_time, "sleep_id": str(result.inserted_id)}
 
 @router.post("/sleep/stop")
 def stop_sleep():
     """Logs the wake-up time and calculates duration."""
     now = datetime.utcnow()
     now_iso = now.isoformat()
-    with get_db_conn() as conn:
-        cursor = conn.execute(
-            "SELECT id, start_time FROM sleep_logs WHERE end_time IS NULL ORDER BY id DESC LIMIT 1"
-        )
-        session = cursor.fetchone()
-        if not session:
-            return {"status": "error", "message": "No active sleep session."}
-        start = datetime.fromisoformat(session["start_time"])
-        duration = (now - start).total_seconds() / 60.0
-        conn.execute(
-            "UPDATE sleep_logs SET end_time = ?, duration_minutes = ? WHERE id = ?",
-            (now_iso, duration, session["id"])
-        )
+    db = get_db()
+    
+    # Sort by start_time descending, find one without end_time
+    session = db.sleep_logs.find_one({"end_time": {"$exists": False}}, sort=[("start_time", -1)])
+    if not session:
+        return {"status": "error", "message": "No active sleep session."}
+        
+    start = datetime.fromisoformat(session["start_time"])
+    duration = (now - start).total_seconds() / 60.0
+    
+    db.sleep_logs.update_one(
+        {"_id": session["_id"]},
+        {"$set": {"end_time": now_iso, "duration_minutes": duration}}
+    )
+    
     return {
         "status": "success",
-        "sleep_id": session["id"],
+        "sleep_id": str(session["_id"]),
         "duration_minutes": duration,
         "duration_hours": round(duration / 60.0, 2)
     }
@@ -125,13 +56,10 @@ def stop_sleep():
 @router.get("/sleep/today")
 def get_sleep_status():
     """Returns current sleep state and last completed session."""
-    with get_db_conn() as conn:
-        active = conn.execute(
-            "SELECT start_time FROM sleep_logs WHERE end_time IS NULL ORDER BY id DESC LIMIT 1"
-        ).fetchone()
-        last = conn.execute(
-            "SELECT start_time, end_time, duration_minutes FROM sleep_logs WHERE end_time IS NOT NULL ORDER BY id DESC LIMIT 1"
-        ).fetchone()
+    db = get_db()
+    active = db.sleep_logs.find_one({"end_time": {"$exists": False}}, sort=[("start_time", -1)])
+    last = db.sleep_logs.find_one({"end_time": {"$exists": True}}, sort=[("start_time", -1)])
+    
     return {
         "is_sleeping": bool(active),
         "sleep_start_time": active["start_time"] if active else None,
@@ -143,18 +71,14 @@ def get_sleep_status():
 @router.get("/sleep/history")
 def get_sleep_history(days: int = 30):
     """Returns sleep sessions for the last N days."""
-    with get_db_conn() as conn:
-        rows = conn.execute(
-            """SELECT start_time, end_time, duration_minutes 
-               FROM sleep_logs WHERE end_time IS NOT NULL 
-               ORDER BY start_time DESC LIMIT ?""",
-            (days,)
-        ).fetchall()
+    db = get_db()
+    cursor = db.sleep_logs.find({"end_time": {"$exists": True}}).sort("start_time", -1).limit(days)
+    rows = list(cursor)
     return [
         {
             "start_time": r["start_time"],
             "end_time": r["end_time"],
-            "duration_hours": round(r["duration_minutes"] / 60.0, 2)
+            "duration_hours": round(r.get("duration_minutes", 0) / 60.0, 2)
         }
         for r in rows
     ]
@@ -167,7 +91,7 @@ class ReadinessInput(BaseModel):
     energy: int       # 1-5
     clarity: int      # 1-5
     mood: int         # 1-5
-    sleep_id: Optional[int] = None
+    sleep_id: Optional[str] = None
 
 @router.post("/readiness")
 def log_readiness(data: ReadinessInput):
@@ -176,25 +100,27 @@ def log_readiness(data: ReadinessInput):
         return {"status": "error", "message": "All values must be between 1 and 5."}
     today = date.today().isoformat()
     score = data.energy + data.clarity + data.mood
-    with get_db_conn() as conn:
-        conn.execute(
-            """INSERT INTO readiness_logs (date, energy, clarity, mood, score, sleep_id)
-               VALUES (?, ?, ?, ?, ?, ?)
-               ON CONFLICT(date) DO UPDATE SET
-                 energy=excluded.energy, clarity=excluded.clarity,
-                 mood=excluded.mood, score=excluded.score""",
-            (today, data.energy, data.clarity, data.mood, score, data.sleep_id)
-        )
+    db = get_db()
+    
+    db.readiness_logs.update_one(
+        {"date": today},
+        {"$set": {
+            "energy": data.energy,
+            "clarity": data.clarity,
+            "mood": data.mood,
+            "score": score,
+            "sleep_id": data.sleep_id
+        }},
+        upsert=True
+    )
     return {"status": "success", "date": today, "score": score, "max": 15}
 
 @router.get("/readiness/today")
 def get_readiness_today():
     """Returns today's readiness score if logged."""
     today = date.today().isoformat()
-    with get_db_conn() as conn:
-        row = conn.execute(
-            "SELECT * FROM readiness_logs WHERE date = ?", (today,)
-        ).fetchone()
+    db = get_db()
+    row = db.readiness_logs.find_one({"date": today})
     if not row:
         return {"logged": False}
     return {
@@ -211,10 +137,8 @@ def get_readiness_today():
 @router.get("/readiness/history")
 def get_readiness_history(days: int = 30):
     """Returns readiness scores for the last N days."""
-    with get_db_conn() as conn:
-        rows = conn.execute(
-            "SELECT * FROM readiness_logs ORDER BY date DESC LIMIT ?", (days,)
-        ).fetchall()
+    db = get_db()
+    rows = list(db.readiness_logs.find().sort("date", -1).limit(days))
     return [
         {
             "date": r["date"],
@@ -241,13 +165,11 @@ def _readiness_label(score: int) -> str:
 def start_fast():
     """Starts a fasting window."""
     now_iso = datetime.utcnow().isoformat()
-    with get_db_conn() as conn:
-        active = conn.execute(
-            "SELECT id FROM fast_logs WHERE end_time IS NULL"
-        ).fetchone()
-        if active:
-            return {"status": "error", "message": "Fast already in progress."}
-        conn.execute("INSERT INTO fast_logs (start_time) VALUES (?)", (now_iso,))
+    db = get_db()
+    active = db.fast_logs.find_one({"end_time": {"$exists": False}})
+    if active:
+        return {"status": "error", "message": "Fast already in progress."}
+    db.fast_logs.insert_one({"start_time": now_iso, "goal_minutes": 960})
     return {"status": "success", "start_time": now_iso}
 
 @router.post("/fast/stop")
@@ -255,18 +177,19 @@ def stop_fast():
     """Ends the current fasting window."""
     now = datetime.utcnow()
     now_iso = now.isoformat()
-    with get_db_conn() as conn:
-        session = conn.execute(
-            "SELECT id, start_time FROM fast_logs WHERE end_time IS NULL ORDER BY id DESC LIMIT 1"
-        ).fetchone()
-        if not session:
-            return {"status": "error", "message": "No active fast."}
-        start = datetime.fromisoformat(session["start_time"])
-        duration = (now - start).total_seconds() / 60.0
-        conn.execute(
-            "UPDATE fast_logs SET end_time = ?, duration_minutes = ? WHERE id = ?",
-            (now_iso, duration, session["id"])
-        )
+    db = get_db()
+    
+    session = db.fast_logs.find_one({"end_time": {"$exists": False}}, sort=[("start_time", -1)])
+    if not session:
+        return {"status": "error", "message": "No active fast."}
+        
+    start = datetime.fromisoformat(session["start_time"])
+    duration = (now - start).total_seconds() / 60.0
+    
+    db.fast_logs.update_one(
+        {"_id": session["_id"]},
+        {"$set": {"end_time": now_iso, "duration_minutes": duration}}
+    )
     return {
         "status": "success",
         "duration_minutes": duration,
@@ -276,43 +199,36 @@ def stop_fast():
 @router.get("/fast/today")
 def get_fast_status():
     """Returns current fasting state and last completed fast."""
-    with get_db_conn() as conn:
-        active = conn.execute(
-            "SELECT start_time FROM fast_logs WHERE end_time IS NULL ORDER BY id DESC LIMIT 1"
-        ).fetchone()
-        last = conn.execute(
-            "SELECT start_time, end_time, duration_minutes FROM fast_logs WHERE end_time IS NOT NULL ORDER BY id DESC LIMIT 1"
-        ).fetchone()
+    db = get_db()
+    active = db.fast_logs.find_one({"end_time": {"$exists": False}}, sort=[("start_time", -1)])
+    last = db.fast_logs.find_one({"end_time": {"$exists": True}}, sort=[("start_time", -1)])
+    
     now = datetime.utcnow()
     elapsed_minutes = None
     if active:
         start = datetime.fromisoformat(active["start_time"])
         elapsed_minutes = (now - start).total_seconds() / 60.0
+        
     return {
         "is_fasting": bool(active),
         "fast_start_time": active["start_time"] if active else None,
         "elapsed_minutes": round(elapsed_minutes, 1) if elapsed_minutes else None,
         "elapsed_hours": round(elapsed_minutes / 60.0, 2) if elapsed_minutes else None,
         "fast_phase": _fast_phase(elapsed_minutes) if elapsed_minutes else None,
-        "last_fast_hours": round(last["duration_minutes"] / 60.0, 2) if last else None,
+        "last_fast_hours": round(last.get("duration_minutes", 0) / 60.0, 2) if last else None,
     }
 
 @router.get("/fast/history")
 def get_fast_history(days: int = 30):
     """Returns fasting history for the last N days."""
-    with get_db_conn() as conn:
-        rows = conn.execute(
-            """SELECT start_time, end_time, duration_minutes
-               FROM fast_logs WHERE end_time IS NOT NULL
-               ORDER BY start_time DESC LIMIT ?""",
-            (days,)
-        ).fetchall()
+    db = get_db()
+    rows = list(db.fast_logs.find({"end_time": {"$exists": True}}).sort("start_time", -1).limit(days))
     return [
         {
             "start_time": r["start_time"],
             "end_time": r["end_time"],
-            "duration_hours": round(r["duration_minutes"] / 60.0, 2),
-            "goal_hit": r["duration_minutes"] >= 960  # 16 hours
+            "duration_hours": round(r.get("duration_minutes", 0) / 60.0, 2),
+            "goal_hit": r.get("duration_minutes", 0) >= 960  # 16 hours
         }
         for r in rows
     ]
@@ -337,14 +253,22 @@ def add_hydration(data: HydrationInput):
     """Logs a hydration entry."""
     today = date.today().isoformat()
     now_iso = datetime.utcnow().isoformat()
-    with get_db_conn() as conn:
-        conn.execute(
-            "INSERT INTO hydration_logs (date, amount_ml, logged_at) VALUES (?, ?, ?)",
-            (today, data.amount_ml, now_iso)
-        )
-        total = conn.execute(
-            "SELECT SUM(amount_ml) as total FROM hydration_logs WHERE date = ?", (today,)
-        ).fetchone()["total"] or 0
+    db = get_db()
+    
+    db.hydration_logs.insert_one({
+        "date": today,
+        "amount_ml": data.amount_ml,
+        "logged_at": now_iso
+    })
+    
+    # Recalculate total for today
+    pipeline = [
+        {"$match": {"date": today}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount_ml"}}}
+    ]
+    result = list(db.hydration_logs.aggregate(pipeline))
+    total = result[0]["total"] if result else 0
+    
     return {"status": "success", "today_total_ml": total, "today_total_L": round(total / 1000, 2)}
 
 @router.get("/hydration/today")
@@ -353,22 +277,19 @@ def get_hydration_today():
     today = date.today().isoformat()
     goal_ml = 4500 # Baseline consistent target
 
+    db = get_db()
     # Check workout DB for rest day status to adjust range
-    workout_db = PROJECT_ROOT / "data" / "workout.db"
-    try:
-        if workout_db.exists():
-            with sqlite3.connect(str(workout_db)) as wconn:
-                wconn.row_factory = sqlite3.Row
-                row = wconn.execute("SELECT is_rest_day FROM workouts WHERE date = ?", (today,)).fetchone()
-                if row:
-                    goal_ml = 4000 if row["is_rest_day"] == 1 else 5000
-    except Exception as e:
-        pass # fallback to 4500
+    row = db.workouts.find_one({"date": today})
+    if row:
+        goal_ml = 4000 if row.get("is_rest_day", False) else 5000
         
-    with get_db_conn() as conn:
-        total = conn.execute(
-            "SELECT SUM(amount_ml) as total FROM hydration_logs WHERE date = ?", (today,)
-        ).fetchone()["total"] or 0
+    pipeline = [
+        {"$match": {"date": today}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount_ml"}}}
+    ]
+    result = list(db.hydration_logs.aggregate(pipeline))
+    total = result[0]["total"] if result else 0
+    
     return {
         "today_ml": total,
         "today_L": round(total / 1000, 2),
@@ -381,14 +302,14 @@ def get_hydration_today():
 @router.get("/hydration/history")
 def get_hydration_history(days: int = 30):
     """Returns daily hydration totals for last N days."""
-    with get_db_conn() as conn:
-        rows = conn.execute(
-            """SELECT date, SUM(amount_ml) as total_ml
-               FROM hydration_logs
-               GROUP BY date ORDER BY date DESC LIMIT ?""",
-            (days,)
-        ).fetchall()
-    return [{"date": r["date"], "total_ml": r["total_ml"], "total_L": round(r["total_ml"] / 1000, 2)} for r in rows]
+    db = get_db()
+    pipeline = [
+        {"$group": {"_id": "$date", "total_ml": {"$sum": "$amount_ml"}}},
+        {"$sort": {"_id": -1}},
+        {"$limit": days}
+    ]
+    rows = list(db.hydration_logs.aggregate(pipeline))
+    return [{"date": r["_id"], "total_ml": r["total_ml"], "total_L": round(r["total_ml"] / 1000, 2)} for r in rows]
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DEEP WORK ENDPOINTS
@@ -404,16 +325,16 @@ class DeepWorkStartInput(BaseModel):
 def start_deepwork(data: DeepWorkStartInput):
     """Starts a deep work session with a mandatory friction journal entry."""
     now_iso = datetime.utcnow().isoformat()
-    with get_db_conn() as conn:
-        active = conn.execute(
-            "SELECT id FROM deepwork_logs WHERE end_time IS NULL"
-        ).fetchone()
-        if active:
-            return {"status": "error", "message": "Session already active."}
-        conn.execute(
-            "INSERT INTO deepwork_logs (start_time, journal_entry) VALUES (?, ?)", 
-            (now_iso, data.journal_entry)
-        )
+    db = get_db()
+    active = db.deepwork_logs.find_one({"end_time": {"$exists": False}})
+    if active:
+        return {"status": "error", "message": "Session already active."}
+        
+    db.deepwork_logs.insert_one({
+        "start_time": now_iso, 
+        "journal_entry": data.journal_entry,
+        "label": ""
+    })
     return {"status": "success", "start_time": now_iso}
 
 @router.post("/deepwork/stop")
@@ -421,18 +342,23 @@ def stop_deepwork(data: DeepWorkStopInput):
     """Ends the current deep work session."""
     now = datetime.utcnow()
     now_iso = now.isoformat()
-    with get_db_conn() as conn:
-        session = conn.execute(
-            "SELECT id, start_time FROM deepwork_logs WHERE end_time IS NULL ORDER BY id DESC LIMIT 1"
-        ).fetchone()
-        if not session:
-            return {"status": "error", "message": "No active session."}
-        start = datetime.fromisoformat(session["start_time"])
-        duration = (now - start).total_seconds() / 60.0
-        conn.execute(
-            "UPDATE deepwork_logs SET end_time = ?, duration_minutes = ?, label = ? WHERE id = ?",
-            (now_iso, duration, data.label or "", session["id"])
-        )
+    db = get_db()
+    
+    session = db.deepwork_logs.find_one({"end_time": {"$exists": False}}, sort=[("start_time", -1)])
+    if not session:
+        return {"status": "error", "message": "No active session."}
+        
+    start = datetime.fromisoformat(session["start_time"])
+    duration = (now - start).total_seconds() / 60.0
+    
+    db.deepwork_logs.update_one(
+        {"_id": session["_id"]},
+        {"$set": {
+            "end_time": now_iso, 
+            "duration_minutes": duration, 
+            "label": data.label or ""
+        }}
+    )
     return {
         "status": "success",
         "duration_minutes": duration,
@@ -444,19 +370,24 @@ def get_deepwork_today():
     """Returns today's deep work state and totals."""
     today = date.today().isoformat()
     now = datetime.utcnow()
-    with get_db_conn() as conn:
-        active = conn.execute(
-            "SELECT start_time FROM deepwork_logs WHERE end_time IS NULL ORDER BY id DESC LIMIT 1"
-        ).fetchone()
-        completed = conn.execute(
-            """SELECT SUM(duration_minutes) as total, COUNT(*) as sessions
-               FROM deepwork_logs WHERE end_time IS NOT NULL AND date(start_time) = ?""",
-            (today,)
-        ).fetchone()
+    db = get_db()
+    
+    active = db.deepwork_logs.find_one({"end_time": {"$exists": False}}, sort=[("start_time", -1)])
+    
+    # Query for completed sessions today
+    # We use regex to match the date part of start_time
+    pipeline = [
+        {"$match": {"end_time": {"$exists": True}, "start_time": {"$regex": f"^{today}"}}},
+        {"$group": {"_id": None, "total": {"$sum": "$duration_minutes"}, "sessions": {"$sum": 1}}}
+    ]
+    result = list(db.deepwork_logs.aggregate(pipeline))
+    completed = result[0] if result else {"total": 0, "sessions": 0}
+    
     elapsed = None
     if active:
         start = datetime.fromisoformat(active["start_time"])
         elapsed = (now - start).total_seconds() / 60.0
+        
     total_today = (completed["total"] or 0) + (elapsed or 0)
     return {
         "is_active": bool(active),
@@ -464,23 +395,27 @@ def get_deepwork_today():
         "elapsed_minutes": round(elapsed, 1) if elapsed else None,
         "total_minutes_today": round(total_today, 1),
         "total_hours_today": round(total_today / 60.0, 2),
-        "sessions_today": completed["sessions"] or 0,
+        "sessions_today": completed.get("sessions", 0),
         "goal_hit": total_today >= 240,  # 4 hours
     }
 
 @router.get("/deepwork/history")
 def get_deepwork_history(days: int = 30):
     """Returns daily deep work totals for last N days."""
-    with get_db_conn() as conn:
-        rows = conn.execute(
-            """SELECT date(start_time) as day, SUM(duration_minutes) as total_minutes, COUNT(*) as sessions
-               FROM deepwork_logs WHERE end_time IS NOT NULL
-               GROUP BY day ORDER BY day DESC LIMIT ?""",
-            (days,)
-        ).fetchall()
+    db = get_db()
+    # MongoDB aggregation to extract substring date and group
+    pipeline = [
+        {"$match": {"end_time": {"$exists": True}}},
+        {"$project": {"day": {"$substr": ["$start_time", 0, 10]}, "duration_minutes": 1}},
+        {"$group": {"_id": "$day", "total_minutes": {"$sum": "$duration_minutes"}, "sessions": {"$sum": 1}}},
+        {"$sort": {"_id": -1}},
+        {"$limit": days}
+    ]
+    rows = list(db.deepwork_logs.aggregate(pipeline))
+    
     return [
         {
-            "date": r["day"],
+            "date": r["_id"],
             "total_minutes": round(r["total_minutes"], 1),
             "total_hours": round(r["total_minutes"] / 60.0, 2),
             "sessions": r["sessions"],
@@ -489,30 +424,28 @@ def get_deepwork_history(days: int = 30):
         for r in rows
     ]
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # PROGRESS / MULTI-RANGE ENDPOINTS
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _parse_range(range_str: str) -> int:
-    """Parse range string like '7d', '14d', '30d', '90d', '180d', '365d' into days."""
     mapping = {"7d": 7, "14d": 14, "30d": 30, "90d": 90, "180d": 180, "365d": 365}
     return mapping.get(range_str, 30)
 
-
 @router.get("/sleep/progress")
 def get_sleep_progress(range: str = "30d"):
-    """Returns daily sleep data with averages, trends, and goal compliance."""
     days = _parse_range(range)
     goal_hours = 7.5
-    with get_db_conn() as conn:
-        rows = conn.execute(
-            """SELECT date(start_time) as day, SUM(duration_minutes) as total_minutes, COUNT(*) as sessions
-               FROM sleep_logs WHERE end_time IS NOT NULL
-               AND start_time >= date('now', ? || ' days')
-               GROUP BY day ORDER BY day ASC""",
-            (f"-{days}",)
-        ).fetchall()
+    cutoff_date = (date.today() - timedelta(days=days)).isoformat()
+    
+    db = get_db()
+    pipeline = [
+        {"$match": {"end_time": {"$exists": True}, "start_time": {"$gte": cutoff_date}}},
+        {"$project": {"day": {"$substr": ["$start_time", 0, 10]}, "duration_minutes": 1}},
+        {"$group": {"_id": "$day", "total_minutes": {"$sum": "$duration_minutes"}, "sessions": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}
+    ]
+    rows = list(db.sleep_logs.aggregate(pipeline))
     
     data_points = []
     total_hours_sum = 0
@@ -524,7 +457,7 @@ def get_sleep_progress(range: str = "30d"):
             goal_hits += 1
         total_hours_sum += hours
         data_points.append({
-            "date": r["day"],
+            "date": r["_id"],
             "hours": hours,
             "minutes": round(r["total_minutes"], 1),
             "sessions": r["sessions"],
@@ -546,20 +479,19 @@ def get_sleep_progress(range: str = "30d"):
         }
     }
 
-
 @router.get("/fast/progress")
 def get_fast_progress(range: str = "30d"):
-    """Returns fasting data with goal compliance over time."""
     days = _parse_range(range)
     goal_hours = 16
-    with get_db_conn() as conn:
-        rows = conn.execute(
-            """SELECT date(start_time) as day, duration_minutes, start_time, end_time
-               FROM fast_logs WHERE end_time IS NOT NULL
-               AND start_time >= date('now', ? || ' days')
-               ORDER BY start_time ASC""",
-            (f"-{days}",)
-        ).fetchall()
+    cutoff_date = (date.today() - timedelta(days=days)).isoformat()
+    
+    db = get_db()
+    pipeline = [
+        {"$match": {"end_time": {"$exists": True}, "start_time": {"$gte": cutoff_date}}},
+        {"$project": {"day": {"$substr": ["$start_time", 0, 10]}, "duration_minutes": 1}},
+        {"$sort": {"start_time": 1}}
+    ]
+    rows = list(db.fast_logs.aggregate(pipeline))
     
     data_points = []
     goal_hits = 0
@@ -567,7 +499,7 @@ def get_fast_progress(range: str = "30d"):
     current_streak = 0
     max_streak = 0
     for r in rows:
-        hours = round(r["duration_minutes"] / 60.0, 2)
+        hours = round(r.get("duration_minutes", 0) / 60.0, 2)
         hit = hours >= goal_hours
         total_hours += hours
         if hit:
@@ -579,9 +511,9 @@ def get_fast_progress(range: str = "30d"):
         data_points.append({
             "date": r["day"],
             "hours": hours,
-            "minutes": round(r["duration_minutes"], 1),
+            "minutes": round(r.get("duration_minutes", 0), 1),
             "goal_hit": hit,
-            "phase": _fast_phase(r["duration_minutes"]),
+            "phase": _fast_phase(r.get("duration_minutes", 0)),
         })
     
     avg_hours = round(total_hours / len(data_points), 2) if data_points else 0
@@ -599,20 +531,19 @@ def get_fast_progress(range: str = "30d"):
         }
     }
 
-
 @router.get("/hydration/progress")
 def get_hydration_progress(range: str = "30d"):
-    """Returns daily hydration data with goal compliance."""
     days = _parse_range(range)
     goal_ml = 4500
-    with get_db_conn() as conn:
-        rows = conn.execute(
-            """SELECT date, SUM(amount_ml) as total_ml
-               FROM hydration_logs
-               WHERE date >= date('now', ? || ' days')
-               GROUP BY date ORDER BY date ASC""",
-            (f"-{days}",)
-        ).fetchall()
+    cutoff_date = (date.today() - timedelta(days=days)).isoformat()
+    
+    db = get_db()
+    pipeline = [
+        {"$match": {"date": {"$gte": cutoff_date}}},
+        {"$group": {"_id": "$date", "total_ml": {"$sum": "$amount_ml"}}},
+        {"$sort": {"_id": 1}}
+    ]
+    rows = list(db.hydration_logs.aggregate(pipeline))
     
     data_points = []
     goal_hits = 0
@@ -624,7 +555,7 @@ def get_hydration_progress(range: str = "30d"):
         if hit:
             goal_hits += 1
         data_points.append({
-            "date": r["date"],
+            "date": r["_id"],
             "ml": ml,
             "liters": round(ml / 1000, 2),
             "goal_hit": hit,
@@ -645,20 +576,20 @@ def get_hydration_progress(range: str = "30d"):
         }
     }
 
-
 @router.get("/deepwork/progress")
 def get_deepwork_progress(range: str = "30d"):
-    """Returns daily deep work data with goal compliance."""
     days = _parse_range(range)
-    goal_minutes = 240  # 4 hours
-    with get_db_conn() as conn:
-        rows = conn.execute(
-            """SELECT date(start_time) as day, SUM(duration_minutes) as total_minutes, COUNT(*) as sessions
-               FROM deepwork_logs WHERE end_time IS NOT NULL
-               AND start_time >= date('now', ? || ' days')
-               GROUP BY day ORDER BY day ASC""",
-            (f"-{days}",)
-        ).fetchall()
+    goal_minutes = 240
+    cutoff_date = (date.today() - timedelta(days=days)).isoformat()
+    
+    db = get_db()
+    pipeline = [
+        {"$match": {"end_time": {"$exists": True}, "start_time": {"$gte": cutoff_date}}},
+        {"$project": {"day": {"$substr": ["$start_time", 0, 10]}, "duration_minutes": 1}},
+        {"$group": {"_id": "$day", "total_minutes": {"$sum": "$duration_minutes"}, "sessions": {"$sum": 1}}},
+        {"$sort": {"_id": 1}}
+    ]
+    rows = list(db.deepwork_logs.aggregate(pipeline))
     
     data_points = []
     goal_hits = 0
@@ -670,7 +601,7 @@ def get_deepwork_progress(range: str = "30d"):
         if hit:
             goal_hits += 1
         data_points.append({
-            "date": r["day"],
+            "date": r["_id"],
             "minutes": mins,
             "hours": round(mins / 60.0, 2),
             "sessions": r["sessions"],
@@ -691,19 +622,13 @@ def get_deepwork_progress(range: str = "30d"):
         }
     }
 
-
 @router.get("/readiness/progress")
 def get_readiness_progress(range: str = "30d"):
-    """Returns readiness score trend data."""
     days = _parse_range(range)
-    with get_db_conn() as conn:
-        rows = conn.execute(
-            """SELECT date, score, energy, clarity, mood
-               FROM readiness_logs
-               WHERE date >= date('now', ? || ' days')
-               ORDER BY date ASC""",
-            (f"-{days}",)
-        ).fetchall()
+    cutoff_date = (date.today() - timedelta(days=days)).isoformat()
+    
+    db = get_db()
+    rows = list(db.readiness_logs.find({"date": {"$gte": cutoff_date}}).sort("date", 1))
     
     data_points = []
     total_score = 0

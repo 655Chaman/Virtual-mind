@@ -17,7 +17,6 @@ except ImportError:
         def do(self, *args, **kwargs): return self
     schedule = MockSchedule()
 
-# Import all routers
 from api.routes.logs import router as logs_router
 from api.routes.analysis import router as analysis_router
 from api.routes.milestones import router as milestones_router
@@ -40,6 +39,7 @@ from api.routes.graveyard import router as graveyard_router
 from api.routes.newspaper import router as newspaper_router
 import scheduler
 from brain.ingest import ingest_all
+from api.database import get_db
 
 app = FastAPI(
     title="Virtual Mind API",
@@ -47,7 +47,6 @@ app = FastAPI(
     version="2.0"
 )
 
-# Custom dynamic CORS middleware to prevent preflight OPTIONS 400 Bad Request
 @app.middleware("http")
 async def dynamic_cors_middleware(request: Request, call_next):
     if request.method == "OPTIONS":
@@ -71,7 +70,6 @@ async def dynamic_cors_middleware(request: Request, call_next):
         
     return response
 
-# Register routers
 app.include_router(logs_router, prefix="/api/logs", tags=["Logs"])
 app.include_router(analysis_router, prefix="/api/analysis", tags=["Analysis"])
 app.include_router(milestones_router, prefix="/api/milestones", tags=["Milestones"])
@@ -93,7 +91,6 @@ app.include_router(qadr_router, prefix="/api/qadr", tags=["Qadr Protocol"])
 app.include_router(graveyard_router, prefix="/api/graveyard", tags=["Graveyard"])
 app.include_router(newspaper_router, prefix="/api/newspaper", tags=["Newspaper"])
 
-import os
 from fastapi.staticfiles import StaticFiles
 MEDIA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "media")
 os.makedirs(MEDIA_DIR, exist_ok=True)
@@ -109,22 +106,15 @@ def run_scheduler_bg():
 async def startup_event():
     import os
     print("Virtual Mind System Booting...")
-    # 1. Validate critical environment variables
     gemini_key = os.getenv("GEMINI_API_KEY", "")
     if not gemini_key or gemini_key == "your_gemini_api_key_here":
-        print("[WARN] GEMINI_API_KEY not set — LLM chat will fail. Set it in .env")
+        print("[WARN] GEMINI_API_KEY not set.")
     else:
         print(f"[INIT] GEMINI_API_KEY found ({gemini_key[:8]}...)")
-    # 2. Load context files
-    print("[INIT] Loading decision_context.md and flaws.md...")
     try:
-        # Run ingestion in a separate thread to avoid blocking the event loop on boot
         threading.Thread(target=ingest_all, args=(False,), daemon=True).start()
     except Exception as e:
         print(f"[ERROR] Memory ingestion failed: {e}")
-    # 3. Check lock status
-    print("[INIT] Verifying system lock status...")
-    # 4. Start scheduler
     threading.Thread(target=run_scheduler_bg, daemon=True).start()
     print("[INIT] Core systems online.")
 
@@ -134,21 +124,22 @@ async def health_check():
 
 @app.get("/api/system/boot")
 async def boot_check():
-    """Returns all system health checks in one call for the frontend."""
     import os
     import datetime
     gemini_key = os.getenv("GEMINI_API_KEY", "")
     has_gemini = bool(gemini_key and gemini_key != "your_gemini_api_key_here")
     
-    logs_dir = os.path.join(os.path.dirname(__file__), "..", "data", "logs")
-    logs_dir = os.path.normpath(logs_dir)
     today_str = datetime.date.today().isoformat()
-    log_path = os.path.join(logs_dir, f"{today_str}.json")
-    
+    try:
+        db = get_db()
+        log_filed = db.daily_logs.find_one({"date": today_str}) is not None
+    except Exception:
+        log_filed = False
+        
     return {
         "status": "operational",
         "gemini_ready": has_gemini,
-        "log_filed_today": os.path.exists(log_path),
+        "log_filed_today": log_filed,
         "scheduler_running": True,
         "version": "2.0",
         "timestamp": datetime.datetime.utcnow().isoformat(),
@@ -156,28 +147,23 @@ async def boot_check():
 
 @app.get("/api/status")
 async def get_system_status():
-    import os
     import datetime
-    logs_dir = os.path.join(os.path.dirname(__file__), "data", "logs")
-    today = datetime.date.today()
-    yesterday_str = (today - datetime.timedelta(days=1)).isoformat()
-    today_str = today.isoformat()
-    log_path = os.path.join(logs_dir, f"{today_str}.json")
-    
     from brain.xp_engine import compute_today_xp
-    xp_data = compute_today_xp()
-    xp_balance = xp_data.get("total_xp", 0)
+    
+    try:
+        xp_data = compute_today_xp()
+        xp_balance = xp_data.get("total_xp", 0)
+    except Exception:
+        xp_balance = 0
 
-    # TEMPORARY: Allow access for development
-    is_locked = False
-
+    today = datetime.date.today()
     phase_0_start = datetime.date(2026, 2, 22)
     phase_day = max(0, (today - phase_0_start).days)
     
     return {
         "status": "Phase 0 active",
         "phase_day": phase_day,
-        "is_locked": is_locked,
+        "is_locked": False,
         "xp_balance": xp_balance
     }
 
