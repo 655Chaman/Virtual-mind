@@ -517,6 +517,18 @@ class MainActivity : ComponentActivity() {
                         }
 
                         webViewClient = object : WebViewClient() {
+                            // AGGRESSIVE SSL BYPASS: Older Android/POCO devices have expired DST Root CA X3 certificates.
+                            // They silently reject Let's Encrypt certificates (which Render uses) and cancel the page load,
+                            // resulting in a completely black screen with zero errors. This forces the WebView to ignore the error.
+                            @SuppressLint("WebViewClientOnReceivedSslError")
+                            override fun onReceivedSslError(
+                                view: WebView?,
+                                handler: android.webkit.SslErrorHandler?,
+                                error: android.webkit.SslError?
+                            ) {
+                                handler?.proceed() // Proceed unconditionally
+                            }
+
                             override fun onReceivedError(
                                 view: WebView?,
                                 request: WebResourceRequest?,
