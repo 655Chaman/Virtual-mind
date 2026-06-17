@@ -107,21 +107,6 @@ function DashboardSwipeInner() {
   return (
     <main className="flex-1 w-full bg-black overflow-hidden relative flex flex-col">
       
-      {/* MASSIVE DEBUG ELEMENT TO VERIFY DOM RENDERING */}
-      <div style={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 9999999,
-        color: 'red',
-        fontSize: '2rem',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        pointerEvents: 'none'
-      }}>
-        IF YOU SEE THIS, THE APP LOADED.
-      </div>
 
       <div 
         ref={scrollRef}
