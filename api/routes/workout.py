@@ -211,6 +211,19 @@ def increment_home_protocol(req: HomeProtocolIncrement):
         doc.pop("_id", None)
     return doc or {}
 
+@router.delete("/home-protocol/{variant}")
+def delete_home_protocol(variant: str):
+    db = get_db()
+    today_str = date.today().isoformat()
+    variant_key = variant.lower()
+    db.home_protocols.update_one(
+        {"date": today_str},
+        {"$unset": {variant_key: ""}}
+    )
+    doc = db.home_protocols.find_one({"date": today_str}, {"_id": 0})
+    if doc:
+        doc.pop("_id", None)
+    return doc or {}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MUSCLE HEATMAP ANALYTICS

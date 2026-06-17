@@ -116,6 +116,17 @@ export default function WorkoutDashboard() {
     }, 1000);
   };
 
+  const handleDeleteProtocol = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    triggerHaptic('heavy');
+    setHomeCounters(prev => {
+      const copy = { ...prev };
+      delete copy[id];
+      return copy;
+    });
+    api.workout.homeProtocol.delete(id).catch(e => console.error("Failed to delete protocol:", e));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-obsidian flex flex-col items-center justify-center font-mono gap-6">
@@ -216,6 +227,15 @@ export default function WorkoutDashboard() {
                   onClick={() => handleTapVariant(id)}
                   className={`relative overflow-hidden ${cardBg} border ${border} hover:border-white/40 p-5 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all active:scale-95 shadow-lg group backdrop-blur-sm`}
                 >
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                    <div 
+                      onClick={(e) => handleDeleteProtocol(e, id)}
+                      className="text-white/30 hover:text-red-500 p-1 rounded-full bg-black/20 hover:bg-black/40 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </div>
+                  </div>
+
                   <div className="absolute left-0 bottom-0 top-0 w-1.5 bg-black/40" />
                   <div className={`absolute left-0 bottom-0 w-1.5 transition-all duration-300 ${bg}`} style={{ height: `${progress}%` }} />
                   

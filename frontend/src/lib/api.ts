@@ -155,6 +155,9 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ variant, count }),
       }),
+      delete: (variant: string) => request(`/api/workout/home-protocol/${encodeURIComponent(variant)}`, {
+        method: 'DELETE'
+      }),
     },
   },
   // Wellness
