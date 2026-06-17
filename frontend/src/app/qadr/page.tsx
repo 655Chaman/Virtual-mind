@@ -85,14 +85,14 @@ const PILLAR_BG: Record<string, string> = {
 
 // ── Category icons ──────────────────────────────────────────────────────────
 const CATEGORY_EMOJI: Record<string, string> = {
-  foundation: '☪️',
-  calibration: '🔋',
-  business: '⚡',
-  logistics: '📋',
-  body: '🏋️',
-  deen: '📖',
-  self: '🧠',
-  wellness: '💧',
+  foundation: '',
+  calibration: '',
+  business: '',
+  logistics: '',
+  body: '',
+  deen: '',
+  self: '',
+  wellness: '',
 };
 
 export default function QadrPage() {
@@ -157,11 +157,11 @@ export default function QadrPage() {
 
   // ── LOADING PHASE: Context Gathering ──────────────────────────────────────
   const LOADING_STEPS = [
-    '☪️ Fetching tomorrow\'s prayer times...',
-    '📊 Analyzing today\'s performance...',
-    '🔥 Loading streak data...',
-    '🏋️ Checking workout status...',
-    '🧠 Preparing questions...',
+    ' Fetching tomorrow\'s prayer times...',
+    ' Analyzing today\'s performance...',
+    ' Loading streak data...',
+    ' Checking workout status...',
+    ' Preparing questions...',
   ];
 
   useEffect(() => {
@@ -371,7 +371,7 @@ export default function QadrPage() {
       {phase === 'error' && (
         <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6">
           <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-6">
-            <span className="text-red-400 text-2xl">⚠️</span>
+            <span className="text-red-400 text-2xl"></span>
           </div>
           <h2 className="font-sans text-lg text-white/90 tracking-wide mb-3 text-center">
             Connection Failed
@@ -477,25 +477,25 @@ export default function QadrPage() {
               <div className="mb-6 flex flex-wrap gap-2 mt-4">
                 <div className="px-3 py-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/5">
                   <span className="font-mono text-[10px] text-indigo-300/70">
-                    📅 {context?.day_name || ''} {context?.target_date || ''}
+                     {context?.day_name || ''} {context?.target_date || ''}
                   </span>
                 </div>
                 <div className="px-3 py-1.5 rounded-full border border-amber-500/20 bg-amber-500/5">
                   <span className="font-mono text-[10px] text-amber-300/70">
-                    ☪️ Fajr {context?.prayer_times?.Fajr || '05:00'}
+                     Fajr {context?.prayer_times?.Fajr || '05:00'}
                   </span>
                 </div>
                 {context?.streak?.overall_streak !== undefined && context.streak.overall_streak > 0 && (
                   <div className="px-3 py-1.5 rounded-full border border-green-500/20 bg-green-500/5">
                     <span className="font-mono text-[10px] text-green-300/70">
-                      🔥 {context.streak.overall_streak} day streak
+                       {context.streak.overall_streak} day streak
                     </span>
                   </div>
                 )}
                 {context?.is_jummah && (
                   <div className="px-3 py-1.5 rounded-full border border-amber-500/30 bg-amber-500/10">
                     <span className="font-mono text-[10px] text-amber-300/90 font-bold">
-                      🕌 JUMMAH TOMORROW
+                       JUMMAH TOMORROW
                     </span>
                   </div>
                 )}
@@ -511,7 +511,7 @@ export default function QadrPage() {
             >
               {/* Category badge */}
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm">{CATEGORY_EMOJI[currentQuestion?.category || 'foundation'] || '📌'}</span>
+                <span className="text-sm">{CATEGORY_EMOJI[currentQuestion?.category || 'foundation'] || ''}</span>
                 <span className="font-mono text-[9px] text-indigo-400/50 tracking-[0.2em] uppercase">
                   {currentQuestion?.category || 'foundation'}
                 </span>
@@ -854,7 +854,7 @@ export default function QadrPage() {
                     boxShadow: `0 0 30px ${accent}10`,
                   }}
                 >
-                  Lock In {viewingSchedule === 'warrior' ? '⚔️ Warrior' : '👑 King'} Mode
+                  Lock In {viewingSchedule === 'warrior' ? ' Warrior' : ' King'} Mode
                 </button>
               </div>
             );
@@ -906,7 +906,7 @@ export default function QadrPage() {
               Tomorrow Is Set
             </h2>
             <p className="font-mono text-xs text-white/30 max-w-[280px] leading-relaxed mb-8">
-              {lockMessage || `${selectedMode === 'warrior' ? '⚔️ WARRIOR' : '👑 KING'} mode locked. Sleep well, soldier.`}
+              {lockMessage || `${selectedMode === 'warrior' ? ' WARRIOR' : ' KING'} mode locked. Sleep well, soldier.`}
             </p>
 
             <div className="space-y-3">

@@ -122,7 +122,7 @@ export default function PatternsPage() {
           {analyzing
             ? <><RefreshCw className="w-3 h-3 animate-spin" /> ANALYZING...</>
             : analyzeSuccess
-            ? <>✓ ANALYSIS COMPLETE</>
+            ? <> ANALYSIS COMPLETE</>
             : <><Play className="w-3 h-3" /> RUN DEEP ANALYSIS</>
           }
         </button>

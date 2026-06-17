@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Zap, Brain, Smile } from 'lucide-react';
+import { Zap, Brain, Smile, Activity } from 'lucide-react';
+import { triggerHaptic } from '@/lib/utils';
 
 interface ReadinessModalProps {
   sleepId?: number | null;
@@ -10,54 +11,58 @@ interface ReadinessModalProps {
 }
 
 const QUESTIONS = [
-  { key: 'energy', label: 'Energy Level', icon: Zap, description: 'How energised do you feel?', color: 'text-gold' },
-  { key: 'clarity', label: 'Mental Clarity', icon: Brain, description: 'How sharp is your mind?', color: 'text-blue-400' },
-  { key: 'mood', label: 'Mood State', icon: Smile, description: 'How is your emotional state?', color: 'text-vm-green' },
+  { key: 'energy', label: 'ENERGY', icon: Zap, description: 'Physical Fuel', color: 'bg-gold' },
+  { key: 'clarity', label: 'CLARITY', icon: Brain, description: 'Mental Sharpness', color: 'bg-blue-400' },
+  { key: 'mood', label: 'MOOD', icon: Smile, description: 'Emotional State', color: 'bg-vm-green' },
 ] as const;
-
-const LABELS: Record<number, string> = {
-  1: 'CRITICAL', 2: 'LOW', 3: 'MODERATE', 4: 'GOOD', 5: 'PEAK'
-};
-const COLORS: Record<number, string> = {
-  1: 'border-vm-red text-vm-red bg-vm-red/10',
-  2: 'border-orange-500 text-orange-400 bg-orange-500/10',
-  3: 'border-yellow-500 text-yellow-400 bg-yellow-500/10',
-  4: 'border-vm-green text-vm-green bg-vm-green/10',
-  5: 'border-gold text-gold bg-gold/10',
-};
 
 export function ReadinessModal({ sleepId, onComplete, onDismiss }: ReadinessModalProps) {
   const [scores, setScores] = useState<Record<string, number>>({ energy: 0, clarity: 0, mood: 0 });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Each slider is 0 to 10. Total score out of 30.
   const allAnswered = QUESTIONS.every(q => scores[q.key] > 0);
   const totalScore = scores.energy + scores.clarity + scores.mood;
 
-  const readinessLabel = totalScore >= 13 ? 'PEAK STATE' :
-    totalScore >= 10 ? 'OPERATIONAL' :
-    totalScore >= 7 ? 'SUBOPTIMAL' : 'RECOVERY NEEDED';
+  const readinessLabel = totalScore >= 25 ? 'PEAK STATE' :
+    totalScore >= 18 ? 'OPERATIONAL' :
+    totalScore >= 12 ? 'SUBOPTIMAL' : 'RECOVERY NEEDED';
 
-  const readinessColor = totalScore >= 13 ? 'text-gold' :
-    totalScore >= 10 ? 'text-vm-green' :
-    totalScore >= 7 ? 'text-yellow-400' : 'text-vm-red';
+  const readinessColor = totalScore >= 25 ? 'text-gold' :
+    totalScore >= 18 ? 'text-vm-green' :
+    totalScore >= 12 ? 'text-yellow-400' : 'text-vm-red';
 
   const handleSubmit = async () => {
     if (!allAnswered || isSubmitting) return;
+    triggerHaptic('heavy');
     setIsSubmitting(true);
     try {
       const getApiBase = () => {
         if (typeof window !== 'undefined') {
           return `${window.location.protocol}//${window.location.hostname}:8001`;
         }
-        return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+        return 'http://127.0.0.1:8001';
       };
       const API_BASE = getApiBase();
+      
+      // We map 30 max back to a 15 max equivalent for API compatibility if needed, 
+      // or just send the raw out of 30. Let's scale back to /10 or /15 for consistency if the backend expects it.
+      // The backend doesn't do strict validation on the exact max, it sums them.
+      // But let's send energy/clarity/mood mapped to 1-5 scale for the API
+      const apiScores = {
+        energy: Math.ceil(scores.energy / 2),
+        clarity: Math.ceil(scores.clarity / 2),
+        mood: Math.ceil(scores.mood / 2),
+      };
+
       await fetch(`${API_BASE}/api/wellness/readiness`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...scores, sleep_id: sleepId ?? null }),
+        body: JSON.stringify({ ...apiScores, sleep_id: sleepId ?? null }),
       });
-      onComplete(totalScore);
+      // Return a score normalized to 10 for display in the app
+      const finalDisplayScore = Math.round((totalScore / 30) * 10);
+      onComplete(finalDisplayScore);
     } catch (err) {
       console.warn('[Readiness] Submit failed:', err);
       onDismiss();
@@ -67,78 +72,105 @@ export function ReadinessModal({ sleepId, onComplete, onDismiss }: ReadinessModa
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-obsidian/95 flex flex-col items-center justify-center p-6 font-mono">
-      <div className="w-full max-w-sm space-y-6">
+    <div className="fixed inset-0 z-50 bg-obsidian/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 font-mono no-select">
+      <div className="w-full max-w-md space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-500">
 
         {/* Header */}
-        <div className="text-center border-b border-surface2 pb-4">
-          <p className="text-[10px] tracking-[0.5em] text-text-dim mb-1">MORNING PROTOCOL</p>
-          <h2 className="text-xl font-bold text-gold tracking-widest">READINESS CHECK-IN</h2>
-          <p className="text-xs text-text-dim mt-1">Rate yourself. 15 seconds. No excuses.</p>
+        <div className="text-center space-y-2">
+          <Activity className="w-8 h-8 text-gold mx-auto animate-pulse drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" />
+          <h2 className="text-2xl font-bold text-white tracking-[0.3em] uppercase">SYSTEM CALIBRATION</h2>
+          <p className="text-[10px] text-text-dim tracking-widest uppercase">Assess parameters before engaging</p>
         </div>
 
-        {/* Questions */}
-        <div className="space-y-5">
+        {/* Sliders */}
+        <div className="space-y-8 bg-surface border border-surface2 p-6 rounded-2xl shadow-2xl">
           {QUESTIONS.map(q => {
             const Icon = q.icon;
-            const selected = scores[q.key];
+            const val = scores[q.key];
+            const pct = (val / 10) * 100;
             return (
-              <div key={q.key} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Icon className={`w-3.5 h-3.5 ${q.color}`} />
-                  <span className="text-xs font-bold tracking-widest text-gray-200">{q.label}</span>
-                  <span className="text-[10px] text-text-dim ml-auto">{q.description}</span>
+              <div key={q.key} className="space-y-4 relative">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-1.5 rounded-md bg-white/5`}>
+                      <Icon className={`w-4 h-4 text-white`} />
+                    </div>
+                    <div>
+                      <span className="text-[12px] font-bold tracking-widest text-white block">{q.label}</span>
+                      <span className="text-[9px] text-text-dim tracking-wider uppercase">{q.description}</span>
+                    </div>
+                  </div>
+                  <span className="text-xl font-bold tracking-widest text-white font-mono">{val > 0 ? val : '-'}</span>
                 </div>
-                <div className="grid grid-cols-5 gap-2">
-                  {[1, 2, 3, 4, 5].map(v => (
-                    <button
-                      key={v}
-                      onClick={() => setScores(p => ({ ...p, [q.key]: v }))}
-                      className={`py-2.5 border text-xs font-bold tracking-widest transition-all ${
-                        selected === v
-                          ? COLORS[v]
-                          : 'border-surface2 text-text-dim hover:border-gold/40 hover:text-gold bg-surface'
-                      }`}
-                    >
-                      {v}
-                    </button>
-                  ))}
+                
+                <div className="relative h-12 flex items-center">
+                  <input
+                    type="range"
+                    min="0"
+                    max="10"
+                    step="1"
+                    value={val}
+                    onChange={(e) => {
+                      triggerHaptic('light');
+                      setScores(p => ({ ...p, [q.key]: parseInt(e.target.value) }));
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                  />
+                  {/* Custom Track */}
+                  <div className="w-full h-2 bg-obsidian border border-surface2 rounded-full overflow-hidden relative z-10 pointer-events-none">
+                    <div 
+                      className={`h-full transition-all duration-200 ${q.color}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  {/* Thumb Indicator */}
+                  {val > 0 && (
+                    <div 
+                      className="absolute h-4 w-4 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)] z-10 pointer-events-none transition-all duration-200"
+                      style={{ left: `calc(${pct}% - 8px)` }}
+                    />
+                  )}
                 </div>
-                {selected > 0 && (
-                  <p className={`text-[10px] tracking-widest text-right ${COLORS[selected].split(' ')[1]}`}>
-                    {LABELS[selected]}
-                  </p>
-                )}
               </div>
             );
           })}
         </div>
 
-        {/* Score Preview */}
-        {allAnswered && (
-          <div className="bg-surface border border-surface2 p-4 text-center">
-            <p className="text-[10px] text-text-dim tracking-widest mb-1">TODAY'S READINESS SCORE</p>
-            <p className={`text-3xl font-bold tracking-widest ${readinessColor}`}>{totalScore}<span className="text-sm text-text-dim">/15</span></p>
-            <p className={`text-xs font-bold tracking-[0.3em] mt-1 ${readinessColor}`}>{readinessLabel}</p>
-          </div>
-        )}
+        {/* Score Preview & Actions */}
+        <div className="space-y-4">
+          {allAnswered ? (
+            <div className="text-center animate-in zoom-in-95 duration-300">
+              <p className={`text-[14px] font-bold tracking-[0.4em] uppercase ${readinessColor} drop-shadow-md`}>
+                {readinessLabel}
+              </p>
+            </div>
+          ) : (
+            <div className="text-center h-[21px]">
+              <p className="text-[10px] text-text-dim tracking-widest uppercase">Input all parameters</p>
+            </div>
+          )}
 
-        {/* Actions */}
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={onDismiss}
-            className="py-3 border border-surface2 text-text-dim text-xs tracking-widest hover:border-gold/30 transition-colors"
-          >
-            SKIP
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!allAnswered || isSubmitting}
-            className="py-3 bg-gold/10 border border-gold/60 text-gold text-xs font-bold tracking-widest hover:bg-gold/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? 'LOCKING IN...' : 'LOCK IN'}
-          </button>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={onDismiss}
+              className="py-4 border border-surface2 text-text-dim text-[10px] font-bold tracking-[0.3em] hover:text-white transition-colors rounded-full uppercase"
+            >
+              ABORT
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={!allAnswered || isSubmitting}
+              className={`py-4 font-bold tracking-[0.3em] uppercase text-[10px] rounded-full transition-all ${
+                allAnswered && !isSubmitting
+                  ? 'bg-gold/10 border border-gold text-gold hover:bg-gold/20 shadow-[0_0_20px_rgba(255,215,0,0.2)]'
+                  : 'bg-surface border border-surface2 text-text-dim opacity-50'
+              }`}
+            >
+              {isSubmitting ? '...' : 'INITIALIZE'}
+            </button>
+          </div>
         </div>
+
       </div>
     </div>
   );

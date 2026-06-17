@@ -27,6 +27,9 @@ def close_mongo_connection():
         print("[DATABASE] Closed MongoDB connection")
 
 def get_db():
+    global db
     if db is None:
-        raise RuntimeError("Database not initialized. Make sure connect_to_mongo() was called.")
+        connect_to_mongo()
+    if db is None:
+        raise RuntimeError("Database not initialized. Check MONGODB_URI.")
     return db

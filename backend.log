@@ -1,0 +1,155 @@
+INFO:     Will watch for changes in these directories: ['/Users/krdeeksha/Virtual-mind']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [93217] using StatReload
+/Users/krdeeksha/Virtual-mind/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+INFO:     Started server process [93219]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+Virtual Mind System Booting...
+[WARN] GEMINI_API_KEY not set — LLM chat will fail. Set it in .env
+[INIT] Loading decision_context.md and flaws.md...
+==================================================
+🔄 VIRTUAL MIND: FULL INGESTION PIPELINE
+==================================================
+
+📁 Phase 1: Core Ambitions & Decision Context
+[INIT] Verifying system lock status...
+Virtual Mind Global Scheduler Running in background...
+[INIT] Core systems online.
+⏭️  Already ingested (unchanged): decision_context.md
+⏭️  Already ingested (unchanged): phase0_action_plan.md
+⏭️  Already ingested (unchanged): minds_to_study.md
+📊 Ambitions: 0 chunks ingested
+
+📁 Phase 2: Worldview & Philosophy
+⏭️  Already ingested (unchanged): philosophical_core.md
+⏭️  Already ingested (unchanged): spirituality.md
+
+📊 Total chunks ingested: 0
+
+📁 Phase 3: Raw Thoughts & Journals
+⏭️  Already ingested (unchanged): journal_01.md
+
+📊 Total chunks ingested: 0
+
+📊 Memory Stats: {'total_points': 93, 'status': 'GREEN'}
+==================================================
+✅ Ingestion complete.
+INFO:     127.0.0.1:60488 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60491 - "POST /api/deen/tasbih HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'api/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [93219]
+/Users/krdeeksha/Virtual-mind/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+INFO:     Started server process [93336]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+Virtual Mind System Booting...
+[WARN] GEMINI_API_KEY not set — LLM chat will fail. Set it in .env
+[INIT] Loading decision_context.md and flaws.md...
+==================================================
+🔄 VIRTUAL MIND: FULL INGESTION PIPELINE
+==================================================
+
+📁 Phase 1: Core Ambitions & Decision Context
+[INIT] Verifying system lock status...
+Virtual Mind Global Scheduler Running in background...
+[INIT] Core systems online.
+⏭️  Already ingested (unchanged): decision_context.md
+⏭️  Already ingested (unchanged): phase0_action_plan.md
+⏭️  Already ingested (unchanged): minds_to_study.md
+📊 Ambitions: 0 chunks ingested
+
+📁 Phase 2: Worldview & Philosophy
+⏭️  Already ingested (unchanged): philosophical_core.md
+⏭️  Already ingested (unchanged): spirituality.md
+
+📊 Total chunks ingested: 0
+
+📁 Phase 3: Raw Thoughts & Journals
+⏭️  Already ingested (unchanged): journal_01.md
+
+📊 Total chunks ingested: 0
+
+📊 Memory Stats: {'total_points': 93, 'status': 'GREEN'}
+==================================================
+✅ Ingestion complete.
+INFO:     127.0.0.1:60558 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60560 - "POST /api/deen/tasbih HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'api/routes/qadr.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [93336]
+/Users/krdeeksha/Virtual-mind/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+INFO:     Started server process [93899]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'api/routes/qadr.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [93899]
+/Users/krdeeksha/Virtual-mind/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+INFO:     Started server process [94260]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'api/routes/qadr.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [94260]
+/Users/krdeeksha/Virtual-mind/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+INFO:     Started server process [94279]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'api/routes/qadr.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [94279]
+/Users/krdeeksha/Virtual-mind/venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+INFO:     Started server process [94519]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+Virtual Mind System Booting...
+[WARN] GEMINI_API_KEY not set — LLM chat will fail. Set it in .env
+[INIT] Loading decision_context.md and flaws.md...
+==================================================
+🔄 VIRTUAL MIND: FULL INGESTION PIPELINE
+==================================================
+
+📁 Phase 1: Core Ambitions & Decision Context
+[INIT] Verifying system lock status...
+Virtual Mind Global Scheduler Running in background...
+[INIT] Core systems online.
+⏭️  Already ingested (unchanged): decision_context.md
+⏭️  Already ingested (unchanged): phase0_action_plan.md
+⏭️  Already ingested (unchanged): minds_to_study.md
+📊 Ambitions: 0 chunks ingested
+
+📁 Phase 2: Worldview & Philosophy
+⏭️  Already ingested (unchanged): philosophical_core.md
+⏭️  Already ingested (unchanged): spirituality.md
+
+📊 Total chunks ingested: 0
+
+📁 Phase 3: Raw Thoughts & Journals
+⏭️  Already ingested (unchanged): journal_01.md
+
+📊 Total chunks ingested: 0
+
+📊 Memory Stats: {'total_points': 93, 'status': 'GREEN'}
+==================================================
+✅ Ingestion complete.
+INFO:     127.0.0.1:60762 - "GET /api/deen/tasbih HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60786 - "POST /api/deen/tasbih HTTP/1.1" 200 OK
+INFO:     10.123.239.237:60787 - "GET /api/deen/tasbih HTTP/1.1" 200 OK

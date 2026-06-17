@@ -78,16 +78,18 @@ def get_xp_for_date(target_date: str, ramadan: bool = Query(False)):
     """
     Computes XP for a specific past date.
     """
-    from api.db import get_sync_logs_collection
+    log_path = LOGS_DIR / f"{target_date}.json"
+
+    if not log_path.exists():
+        return {
+            "date": target_date,
+            "total_xp": 0,
+            "error": f"No log found for {target_date}",
+        }
+
     try:
-        col = get_sync_logs_collection()
-        log = col.find_one({"date": target_date})
-        if not log:
-            return {
-                "date": target_date,
-                "total_xp": 0,
-                "error": f"No log found for {target_date}",
-            }
+        with open(log_path, "r", encoding="utf-8") as f:
+            log = json.load(f)
         return compute_xp_from_log(log, is_ramadan=ramadan)
     except Exception as e:
         return {"date": target_date, "total_xp": 0, "error": str(e)}

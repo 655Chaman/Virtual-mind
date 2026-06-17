@@ -2,15 +2,16 @@ from fastapi import APIRouter, Query, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date, timedelta
-from api.database import get_db
 import json
 from pathlib import Path
 
 router = APIRouter()
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+LOGS_DIR = PROJECT_ROOT / "data" / "logs"
 
 class NonNegotiables(BaseModel):
+    # ── Classic Non-Negotiables ──
     salah_5: bool = False
     quran_30min: bool = False
     deep_work_4hr: bool = False
@@ -19,16 +20,17 @@ class NonNegotiables(BaseModel):
     adhkar: bool = False
     no_phone_before_8: bool = False
     no_sugar: bool = False
-    ice_bath: bool = False
-    cold_shower: bool = False
-    microbursts: bool = False
-    memorization_session: bool = False
-    app_lock_on: bool = False
-    sleep_on_floor: bool = False
-    combat_training: bool = False
-    fajr_without_alarm: bool = False
-    smt_completed: bool = False
-    ramadan_mode_active: bool = False
+    # ── A.O.S. 2.0 Protocol Habits ──
+    ice_bath: bool = False              # F.M.S. — Pain Conditioning
+    cold_shower: bool = False           # Neuroplasticity Engine
+    microbursts: bool = False           # F.M.S. — Combat Microbursts
+    memorization_session: bool = False  # M.S.L. — Quran + Fight Combos
+    app_lock_on: bool = False           # D.A.M. — Dopamine Annihilation
+    sleep_on_floor: bool = False        # D.A.M. — Concrete Sleep Perk
+    combat_training: bool = False       # O.C.I. — Omega Combat Intelligence
+    fajr_without_alarm: bool = False    # Neuroplasticity Engine Peak
+    smt_completed: bool = False         # S.M.T. — Sunday Master Task
+    ramadan_mode_active: bool = False   # D.D.F. — 2x XP Multiplier
 
 class FolderEntry(BaseModel):
     id: str = Field(default_factory=lambda: datetime.now().strftime("%Y%m%d%H%M%S"))
@@ -47,33 +49,48 @@ class DailyLog(BaseModel):
     score: Optional[int] = None
     work_done: Optional[str] = None
     lessons_learned: Optional[str] = None
-    xp_earned: Optional[int] = None
-    active_penalties: List[str] = []
-    perks_unlocked: List[str] = []
-    smt_task: Optional[str] = None
-    combat_strategy_notes: Optional[str] = None
-    no_sales_today: bool = False
-    no_clients_today: bool = False
-    protocol_status: Optional[Dict[str, Any]] = None
-    folder_entries: List[FolderEntry] = []
-    prayers_logged: Optional[Dict[str, bool]] = None
+    # ── A.O.S. 2.0 Extensions ──
+    xp_earned: Optional[int] = None              # Computed after submission
+    active_penalties: List[str] = []             # e.g. ["push_up_mandate", "phone_lockout"]
+    perks_unlocked: List[str] = []               # e.g. ["Ice Veins", "Concrete Sleep"]
+    smt_task: Optional[str] = None               # One critical Sunday task description
+    combat_strategy_notes: Optional[str] = None  # O.C.I. / S.W.P. journal
+    no_sales_today: bool = False                 # B.D.P. penalty trigger
+    no_clients_today: bool = False               # B.D.P. food restriction trigger
+    protocol_status: Optional[Dict[str, Any]] = None  # A.O.S. snapshot at log time
+    folder_entries: List[FolderEntry] = []       # Camera / Text notes captured per folder
+    prayers_logged: Optional[Dict[str, bool]] = None # Prevent stripping of logged prayers
+
 
 @router.post("/log")
 def create_log(log: DailyLog):
     from brain.xp_engine import compute_xp_from_log, get_active_penalties
     from brain.aos_protocols import get_all_protocol_statuses
 
-    db = get_db()
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    file_path = LOGS_DIR / f"{log.date}.json"
+
+    # Build the log dict first
     log_dict = log.model_dump()
 
-    existing_data = db.daily_logs.find_one({"date": log.date}) or {}
+    # Load existing data to merge and preserve fields not sent/updated
+    existing_data = {}
+    if file_path.exists():
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                existing_data = json.load(f)
+        except Exception:
+            pass
 
+    # Preserve prayers_logged if not supplied in incoming log_dict
     if log_dict.get("prayers_logged") is None and "prayers_logged" in existing_data:
         log_dict["prayers_logged"] = existing_data["prayers_logged"]
 
+    # Preserve folder_entries if incoming is empty/missing but existing has entries
     if not log_dict.get("folder_entries") and existing_data.get("folder_entries"):
         log_dict["folder_entries"] = existing_data["folder_entries"]
 
+    # Auto-compute XP and inject it back
     is_ramadan = log.non_negotiables.ramadan_mode_active
 
     xp_result = compute_xp_from_log(log_dict, is_ramadan=is_ramadan)
@@ -81,10 +98,14 @@ def create_log(log: DailyLog):
     log_dict["active_penalties"] = xp_result["penalties_active"]
     log_dict["perks_unlocked"] = [p["name"] for p in xp_result["perks_unlocked"]]
 
-    protocol_snapshot = get_all_protocol_statuses(target_date=log.date, is_ramadan=is_ramadan)
+    # Snapshot protocol status at time of logging
+    protocol_snapshot = get_all_protocol_statuses(
+        target_date=log.date, is_ramadan=is_ramadan
+    )
     log_dict["protocol_status"] = protocol_snapshot.get("summary", {})
 
-    db.daily_logs.update_one({"date": log.date}, {"$set": log_dict}, upsert=True)
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(log_dict, f, indent=2)
 
     return {
         "success": True,
@@ -99,17 +120,24 @@ from api.services.sheet_parser import SheetParser
 
 @router.post("/ingest-sheet")
 def ingest_sheet(data: Dict[str, Any]):
+    """
+    Ingests raw sheet text, parses it, and saves as a DailyLog.
+    """
     text = data.get("text", "")
     if not text:
         raise HTTPException(status_code=400, detail="No text provided")
         
     parsed = SheetParser.parse_sheet(text)
-    today_str = date.today().isoformat()
     
+    # Create or update log
+    today_str = date.today().isoformat()
+    file_path = LOGS_DIR / f"{today_str}.json"
+    
+    # If exists, we might want to merge, but for now overwrite/init
     log_entry = {
         "date": today_str,
         "timestamp": datetime.now().isoformat(),
-        "text": text[:200] + "..." if len(text) > 200 else text,
+        "text": text[:200] + "..." if len(text) > 200 else text, # Short summary
         "pillars": parsed["pillars"],
         "non_negotiables": NonNegotiables().model_dump(),
         "folder_entries": [],
@@ -118,54 +146,84 @@ def ingest_sheet(data: Dict[str, Any]):
         "lessons_learned": parsed["lessons_learned"]
     }
     
-    db = get_db()
-    db.daily_logs.update_one({"date": today_str}, {"$set": log_entry}, upsert=True)
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(log_entry, f, indent=2)
         
     return {"success": True, "data": log_entry}
 
 @router.post("/entry")
 def add_folder_entry(entry: FolderEntry):
+    """
+    Appends a new FolderEntry to today's log file. If today's log doesn't exist, it creates a basic one.
+    """
     today_str = date.today().isoformat()
-    db = get_db()
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    file_path = LOGS_DIR / f"{today_str}.json"
     
-    existing = db.daily_logs.find_one({"date": today_str})
-    if not existing:
+    log_data = {}
+    if file_path.exists():
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                log_data = json.load(f)
+        except Exception:
+            pass
+            
+    if not log_data:
         log_data = {
             "date": today_str,
             "timestamp": datetime.now().isoformat(),
             "text": "Auto-created log for folder entry.",
             "pillars": [],
             "non_negotiables": NonNegotiables().model_dump(),
-            "folder_entries": [entry.model_dump()]
+
+            "folder_entries": []
         }
-        db.daily_logs.insert_one(log_data)
-    else:
-        db.daily_logs.update_one(
-            {"date": today_str},
-            {"$push": {"folder_entries": entry.model_dump()}}
-        )
+        
+    if "folder_entries" not in log_data:
+        log_data["folder_entries"] = []
+        
+    # Append the new entry
+    log_data["folder_entries"].append(entry.model_dump())
+    
+    # Save back
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(log_data, f, indent=2)
         
     return {"success": True, "entry": entry.model_dump()}
 
 @router.get("/logs")
 def get_logs(pillar: Optional[str] = None, last: Optional[int] = None):
-    db = get_db()
-    query = {}
+    logs = []
+    if LOGS_DIR.exists():
+        for file_path in LOGS_DIR.glob("*.json"):
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    logs.append(data)
+            except Exception:
+                continue
+                
+    # Sort by date descending
+    logs.sort(key=lambda x: x.get("date", ""), reverse=True)
+    
     if pillar:
-        query["pillars"] = pillar
+        logs = [log for log in logs if pillar in log.get("pillars", [])]
         
-    cursor = db.daily_logs.find(query, {"_id": 0}).sort("date", -1)
     if last is not None and last > 0:
-        cursor = cursor.limit(last)
+        logs = logs[:last]
         
-    return list(cursor)
+    return logs
 
 @router.get("/log/{target_date}")
 def get_log(target_date: str):
-    db = get_db()
-    doc = db.daily_logs.find_one({"date": target_date}, {"_id": 0})
-    if doc:
-        return doc
+    file_path = LOGS_DIR / f"{target_date}.json"
+    if file_path.exists():
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {"logged": False, "date": target_date}
     return {"logged": False, "date": target_date}
 
 def calc_streak(dates_set):
@@ -208,9 +266,15 @@ def calc_longest_streak(dates_set):
 
 @router.get("/streak")
 def get_streak():
-    db = get_db()
-    logs = list(db.daily_logs.find({}, {"date": 1, "non_negotiables": 1, "_id": 0}))
-    
+    logs = []
+    if LOGS_DIR.exists():
+        for file_path in LOGS_DIR.glob("*.json"):
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    logs.append(json.load(f))
+            except Exception:
+                continue
+                
     logged_dates = {log.get("date") for log in logs if log.get("date")}
     
     pillar_dates = {
@@ -225,12 +289,16 @@ def get_streak():
         if not d: continue
         
         nns = log.get("non_negotiables", {})
+        
         if nns.get("salah_5") or nns.get("quran_30min") or nns.get("adhkar"):
              pillar_dates["DEEN"].add(d)
+            
         if nns.get("deep_work_4hr"):
              pillar_dates["ELESIUM"].add(d)
+            
         if nns.get("reading_1hr"):
              pillar_dates["INFLUENCE"].add(d)
+            
         if nns.get("physical_training") or nns.get("no_phone_before_8") or nns.get("no_sugar"):
              pillar_dates["SELF"].add(d)
                 
@@ -255,18 +323,17 @@ def get_nn_summary():
     last_7 = today - timedelta(days=7)
     last_30 = today - timedelta(days=30)
     
-    db = get_db()
-    # Simple query for all dates and filter in Python
-    logs = list(db.daily_logs.find({}, {"date": 1, "non_negotiables": 1, "_id": 0}))
-    
-    valid_logs = []
-    for data in logs:
-        try:
-            log_date = date.fromisoformat(data.get("date", "1970-01-01"))
-            if log_date > last_30:
-                valid_logs.append((log_date, data.get("non_negotiables", {})))
-        except Exception:
-            continue
+    logs = []
+    if LOGS_DIR.exists():
+        for file_path in LOGS_DIR.glob("*.json"):
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    log_date = date.fromisoformat(data.get("date", "1970-01-01"))
+                    if log_date > last_30:
+                        logs.append((log_date, data.get("non_negotiables", {})))
+            except Exception:
+                continue
                 
     keys = [
         "salah_5", "quran_30min", "deep_work_4hr", "physical_training",
@@ -275,7 +342,7 @@ def get_nn_summary():
     
     summary = {k: {"last_7": 0, "last_30": 0, "percentage_7": 0} for k in keys}
     
-    for log_date, nns in valid_logs:
+    for log_date, nns in logs:
         if not isinstance(nns, dict):
             continue
         is_last_7 = log_date > last_7
@@ -289,6 +356,7 @@ def get_nn_summary():
         summary[k]["percentage_7"] = round((summary[k]["last_7"] / 7) * 100)
         
     return summary
+
 
 @router.get("/self/materials")
 def get_study_materials():

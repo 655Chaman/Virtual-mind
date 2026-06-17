@@ -20,18 +20,22 @@ def get_operator_log():
 
 @router.post("/api/operator/generate")
 def generate_entry():
-    from api.db import get_sync_logs_collection
+    logs_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "logs")
     recent_logs = []
     
-    try:
-        col = get_sync_logs_collection()
+    if os.path.exists(logs_dir):
         fourteen_days_ago = datetime.date.today() - datetime.timedelta(days=14)
-        start_date_str = fourteen_days_ago.isoformat()
-        
-        cursor = col.find({"date": {"$gte": start_date_str}})
-        recent_logs = list(cursor)
-    except Exception as e:
-        print(f"Error fetching logs from MongoDB: {e}")
+        for filename in os.listdir(logs_dir):
+            if not filename.endswith(".json"): continue
+            
+            try:
+                date_str = filename.replace(".json", "")
+                log_date = datetime.date.fromisoformat(date_str)
+                if log_date >= fourteen_days_ago:
+                    with open(os.path.join(logs_dir, filename), "r") as f:
+                        recent_logs.append(json.load(f))
+            except Exception:
+                pass
                 
     entry = generate_operator_entry(recent_logs)
     append_to_operator_log(entry)

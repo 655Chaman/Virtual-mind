@@ -50,16 +50,9 @@ def dispatch_web_push(title: str, body: str, url: str = "/command", require_inte
 
 def check_daily_log_completion():
     today_str = date.today().isoformat()
-    
-    try:
-        response = requests.get(f"{API_BASE}/api/logs/log/{today_str}", timeout=10)
-        log_data = response.json()
-        is_logged = log_data.get("logged", True) if "logged" in log_data else True
-    except Exception as e:
-        print(f"[SCHEDULER] Failed to fetch log status from API: {e}")
-        is_logged = False
+    log_path = LOGS_DIR / f"{today_str}.json"
 
-    if not is_logged:
+    if not log_path.exists():
         print(f"[SCHEDULER] Daily log missing for {today_str}. Dispatching native push alert.")
         dispatch_web_push(
             title="Warning: Virtual Mind Reflection Unsecured",
@@ -128,14 +121,15 @@ def check_salah_times():
             "Isha": "23:59"
         }
 
-        # Check today's log for prayers already completed via API
+        # Check today's log for prayers already completed
+        today_log_path = LOGS_DIR / f"{date_str}.json"
         prayers_logged = {}
-        try:
-            log_response = requests.get(f"{API_BASE}/api/logs/log/{date_str}", timeout=10)
-            log_data = log_response.json()
-            prayers_logged = log_data.get("prayers_logged", {}) or {}
-        except Exception:
-            pass
+        if today_log_path.exists():
+            try:
+                log_data = json.loads(today_log_path.read_text())
+                prayers_logged = log_data.get("prayers_logged", {})
+            except Exception:
+                pass
 
         for prayer in prayers_to_check:
             prayer_time = timings.get(prayer)
@@ -311,26 +305,7 @@ def send_sleep_window_alert():
     )
 
 
-def daily_midnight_reset():
-    """Resets daily states at exactly 12:00 AM and ensures caching is cleared."""
-    global notified_prayers, last_notified_date
-    print(f"[SCHEDULER] Midnight reset triggered at {datetime.now(BANGALORE_TZ).strftime('%Y-%m-%d %H:%M:%S')}.")
-    notified_prayers.clear()
-    last_notified_date = datetime.now(BANGALORE_TZ).strftime("%Y-%m-%d")
-    
-    # Remove local prayer times cache if using it, to force fresh DB/API fetch for the new day
-    cache_path = PROJECT_ROOT / "data" / "prayer_times.json"
-    if cache_path.exists():
-        try:
-            cache_path.unlink()
-            print("[SCHEDULER] Deleted local prayer times cache.")
-        except Exception as e:
-            print(f"[SCHEDULER] Failed to delete local cache: {e}")
-    print("[SCHEDULER] Daily reset complete. Ready for the new day.")
-
-
-# Midnight reset
-schedule.every().day.at("00:00").do(daily_midnight_reset)
+# ─── Core Schedule ──────────────────────────────────────────────────────────────
 
 # 14-day operator log generation
 schedule.every(14).days.do(auto_generate_operator_entry)

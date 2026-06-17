@@ -7,7 +7,7 @@ const getApiBase = () => {
   if (typeof window !== 'undefined') {
     return `${window.location.protocol}//${window.location.hostname}:8001`;
   }
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+  return 'http://127.0.0.1:8001';
 };
 const API_BASE = getApiBase();
 
@@ -112,7 +112,7 @@ export function PushNotificationToggle({ compact = false }: PushNotificationTogg
       }
 
       setState('subscribed');
-      setStatusMsg('✅ Subscribed! Virtual Mind will now alert you directly.');
+      setStatusMsg(' Subscribed! Virtual Mind will now alert you directly.');
     } catch (err: any) {
       console.warn('[VM Push] Subscribe error:', err);
       setState('error');
@@ -146,7 +146,7 @@ export function PushNotificationToggle({ compact = false }: PushNotificationTogg
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: '⚡ Virtual Mind Test',
+          title: ' Virtual Mind Test',
           body: 'Push notifications are working. Bismillah — no friction between thought and action.',
           url: '/command',
           tag: 'vm-test',
@@ -196,7 +196,7 @@ export function PushNotificationToggle({ compact = false }: PushNotificationTogg
   return (
     <div
       id="push-notification-panel"
-      className={`relative bg-surface border p-5 transition-all duration-300 ${
+      className={`relative bg-surface border p-5 transition-all duration-300 rounded-2xl ${
         state === 'subscribed'
           ? 'border-vm-green/30'
           : state === 'denied' || state === 'error'
@@ -259,7 +259,7 @@ export function PushNotificationToggle({ compact = false }: PushNotificationTogg
                 id="push-subscribe-btn"
                 onClick={handleSubscribe}
                 disabled={state === 'requesting' || !swReady}
-                className="px-4 py-2 bg-gold/10 border border-gold/40 text-gold text-xs font-bold tracking-widest hover:bg-gold/20 transition-colors disabled:opacity-40 flex items-center gap-2"
+                className="px-4 py-2 bg-gold/10 border border-gold/40 text-gold text-xs font-bold tracking-widest hover:bg-gold/20 transition-colors disabled:opacity-40 flex items-center gap-2 rounded-xl"
               >
                 {state === 'requesting' ? (
                   <>
@@ -280,7 +280,7 @@ export function PushNotificationToggle({ compact = false }: PushNotificationTogg
                 <button
                   id="push-test-btn"
                   onClick={handleSendTest}
-                  className="px-3 py-1.5 bg-vm-green/10 border border-vm-green/30 text-vm-green text-[10px] font-bold tracking-widest hover:bg-vm-green/20 transition-colors flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-vm-green/10 border border-vm-green/30 text-vm-green text-[10px] font-bold tracking-widest hover:bg-vm-green/20 transition-colors flex items-center gap-1.5 rounded-xl"
                 >
                   {testSent ? (
                     <><CheckCircle className="w-3 h-3" /> SENT!</>
@@ -291,7 +291,7 @@ export function PushNotificationToggle({ compact = false }: PushNotificationTogg
                 <button
                   id="push-unsubscribe-btn"
                   onClick={handleUnsubscribe}
-                  className="px-3 py-1.5 border border-surface2 text-text-dim text-[10px] tracking-widest hover:border-vm-red/30 hover:text-vm-red transition-colors"
+                  className="px-3 py-1.5 border border-surface2 text-text-dim text-[10px] tracking-widest hover:border-vm-red/30 hover:text-vm-red transition-colors rounded-xl"
                 >
                   DISABLE
                 </button>

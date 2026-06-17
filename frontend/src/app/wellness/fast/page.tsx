@@ -118,7 +118,7 @@ export default function FastControlCenter() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex-1">
-          <h1 className="text-orange-400 font-mono font-bold tracking-[0.3em] text-base">🔥 FAST SYSTEM</h1>
+          <h1 className="text-orange-400 font-mono font-bold tracking-[0.3em] text-base"> FAST SYSTEM</h1>
           <p className="text-[9px] text-text-dim tracking-widest mt-0.5">METABOLISM · AUTOPHAGY · PROTOCOL</p>
         </div>
         <Zap className="w-4 h-4 text-orange-400/50" />
@@ -280,7 +280,7 @@ export default function FastControlCenter() {
                       </div>
                     </div>
                     <div className={`w-5 h-5 flex items-center justify-center text-[10px] ${goalHit ? 'text-vm-green' : 'text-text-dim/30'}`}>
-                      {goalHit ? '✓' : '·'}
+                      {goalHit ? '' : '·'}
                     </div>
                   </div>
                 );

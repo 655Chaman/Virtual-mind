@@ -1,0 +1,80 @@
+:root {
+  --gold: #c9a84c;
+  --gold-dim: rgba(201, 168, 76, 0.4);
+  --blue: #4c7ec9;
+  --red: #ff4444;
+  --bg: #030303;
+  --surface: #0a0a0c;
+  --surface-glass: rgba(10, 10, 12, 0.75);
+  --text: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.5);
+  --font-main: 'Inter', system-ui, sans-serif;
+  --font-heading: 'Outfit', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --transition-normal: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  cursor: crosshair !important;
+}
+
+body, html, #root {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono-text {
+  font-family: var(--font-mono);
+  letter-spacing: 0.25em;
+  font-size: 0.7rem;
+  color: var(--gold-dim);
+}
+
+button {
+  all: unset;
+  cursor: pointer;
+  padding: 0.8rem 1.5rem;
+  border: 1px solid var(--gold-dim);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  transition: var(--transition-normal);
+  text-align: center;
+}
+
+button:hover {
+  background: var(--gold-dim);
+  color: #000;
+  box-shadow: 0 0 20px var(--gold-dim);
+}
+
+.app-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: radial-gradient(circle at 50% 50%, #0a0a0c 0%, #030303 100%);
+}
+
+.light-leak {
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 50%;
+  height: 50%;
+  background: radial-gradient(circle, rgba(201,168,76,0.05) 0%, transparent 70%);
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}

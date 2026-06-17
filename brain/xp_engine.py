@@ -154,6 +154,12 @@ def compute_xp_from_log(log: Dict[str, Any], is_ramadan: bool = False) -> Dict[s
             xp_breakdown.append({"item": f"{field}_bonus", "xp": XP_BONUSES[field], "type": "bonus"})
             total_xp += XP_BONUSES[field]
 
+    # AI Immense XP 
+    ai_xp = log.get("ai_bonus_xp", 0)
+    if ai_xp > 0:
+        xp_breakdown.append({"item": "ai_task_completion_bonus", "xp": ai_xp, "type": "bonus"})
+        total_xp += ai_xp
+
     # ── 4. Penalties ──────────────────────────────────────────────────────────
     # Missed Salah
     if not nonneg.get("salah_5", False):

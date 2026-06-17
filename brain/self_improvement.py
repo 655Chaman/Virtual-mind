@@ -173,7 +173,7 @@ def get_evolution_history() -> str:
 
 class LLMReflector:
     """
-    Real self-improvement engine powered by the NVIDIA API.
+    Real self-improvement engine powered by Gemini.
     Analyzes sessions, detects patterns, proposes guardrail updates.
     """
 
@@ -225,16 +225,8 @@ class LLMReflector:
         )
 
         try:
-            response = llm.client.chat.completions.create(
-                model=llm.model_name,
-                messages=[
-                    {"role": "system", "content": "You are a JSON analysis engine. Respond strictly with raw JSON."},
-                    {"role": "user", "content": analysis_prompt}
-                ],
-                max_tokens=1024,
-                response_format={"type": "json_object"}
-            )
-            response_text = response.choices[0].message.content.strip()
+            response = llm.model.generate_content(analysis_prompt)
+            response_text = response.text.strip()
 
             # Clean up response — remove any markdown code blocks
             if response_text.startswith("```"):

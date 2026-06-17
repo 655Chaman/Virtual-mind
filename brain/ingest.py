@@ -98,34 +98,22 @@ def _llm_classify_content(text: str) -> str:
     """
     try:
         import os
-        from openai import OpenAI
+        import google.generativeai as genai
         from dotenv import load_dotenv
         load_dotenv()
-        api_key = os.getenv("NVIDIA_API_KEY")
-        if not api_key or "your_gemini_api_key_here" in api_key:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key or api_key == "your_gemini_api_key_here":
             return "memory"
-        
-        client = OpenAI(
-            base_url="https://integrate.api.nvidia.com/v1",
-            api_key=api_key
-        )
-        
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel("gemini-2.0-flash")
         prompt = (
             "Classify the following text into exactly ONE category: "
             "ambition, worldview, spiritual, tactical, philosophical_insight, lesson_learned, memory.\n\n"
             f"Text: \"{text[:500]}\"\n\n"
             "Respond with ONLY the category name."
         )
-        
-        response = client.chat.completions.create(
-            model="meta/llama-3.1-70b-instruct",
-            messages=[
-                {"role": "system", "content": "You are a classifier. Respond with exactly one category name."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=20,
-        )
-        category = response.choices[0].message.content.strip().lower()
+        response = model.generate_content(prompt)
+        category = response.text.strip().lower()
         valid = {"ambition", "worldview", "spiritual", "tactical", "philosophical_insight", "lesson_learned", "memory"}
         if category in valid:
             return category

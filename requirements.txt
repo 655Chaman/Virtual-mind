@@ -8,9 +8,8 @@ pydantic
 gspread
 google-auth
 numpy
-openai
+google-generativeai
 python-multipart
 schedule
 requests
 pymongo
-motor

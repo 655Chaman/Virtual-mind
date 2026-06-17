@@ -102,19 +102,19 @@ export function triggerAlarmVibration(): void {
 export const PrayerNotifications = {
   onTime: (prayer: string, time: string) =>
     triggerNativeNotification(
-      `🕌 ${prayer} — Time to Pray`,
+      ` ${prayer} — Time to Pray`,
       `${OPERATOR_NAME}, it's ${time}. ${prayer} time has arrived. Drop the dunya — your Salah awaits.`
     ),
 
   midtimeWarning: (prayer: string) =>
     triggerNativeNotification(
-      `⚠️ ${prayer} — Half Time Remaining`,
+      ` ${prayer} — Half Time Remaining`,
       `${OPERATOR_NAME}, half of ${prayer}'s time has passed and you haven't logged it yet. Don't delay your Salah.`
     ),
 
   reminder: (prayer: string) =>
     triggerNativeNotification(
-      `🔔 ${prayer} Reminder`,
+      ` ${prayer} Reminder`,
       `${OPERATOR_NAME}, ${prayer} time is approaching. Begin your wudu.`
     ),
 };
@@ -123,7 +123,7 @@ export const WorkoutNotifications = {
   restComplete: (setNumber?: number) => {
     const setInfo = setNumber ? ` Set ${setNumber} complete.` : '';
     triggerAlarmNotification(
-      `⏱️ Rest Complete`,
+      ` Rest Complete`,
       `${OPERATOR_NAME},${setInfo} Rest period is over — step back to the bar. Let's go.`
     );
     triggerAlarmVibration();
@@ -131,13 +131,13 @@ export const WorkoutNotifications = {
 
   sessionReminder: (splitName: string) =>
     triggerNativeNotification(
-      `🏋️ Workout Time`,
+      ` Workout Time`,
       `${OPERATOR_NAME}, it's time for your ${splitName} session. The bar is waiting.`
     ),
 
   sessionComplete: (volume: number, duration: number) =>
     triggerNativeNotification(
-      `✅ Session Logged`,
+      ` Session Logged`,
       `${OPERATOR_NAME}, ${duration} minutes of training done. ${volume}kg total volume. The Caliphate grows.`
     ),
 };
@@ -145,25 +145,25 @@ export const WorkoutNotifications = {
 export const WellnessNotifications = {
   hydrationReminder: (currentL: number, goalL: number) =>
     triggerNativeNotification(
-      `💧 Hydration Check`,
+      ` Hydration Check`,
       `${OPERATOR_NAME}, you've had ${currentL.toFixed(1)}L of ${goalL}L today. Drink water now.`
     ),
 
   fastingMilestone: (hours: number) =>
     triggerNativeNotification(
-      `⚡ Fasting Milestone`,
+      ` Fasting Milestone`,
       `${OPERATOR_NAME}, you've been fasting for ${hours} hours. Discipline is the seed of excellence.`
     ),
 
   sleepWindow: () =>
     triggerNativeNotification(
-      `🌙 Sleep Window`,
+      ` Sleep Window`,
       `${OPERATOR_NAME}, it's time to wind down. Log your reflection and secure your sleep protocol.`
     ),
 
   deepworkReminder: () =>
     triggerNativeNotification(
-      `🧠 Deep Work`,
+      ` Deep Work`,
       `${OPERATOR_NAME}, your deep work session is active. Stay focused — no distractions.`
     ),
 };
@@ -171,13 +171,13 @@ export const WellnessNotifications = {
 export const DailyNotifications = {
   morningIntention: () =>
     triggerNativeNotification(
-      `🌅 Fajr Protocol`,
+      ` Fajr Protocol`,
       `Bismillah, ${OPERATOR_NAME}. New day. What are your non-negotiables?`
     ),
 
   eveningReflection: () =>
     triggerNativeNotification(
-      `⚠️ Reflection Unsecured`,
+      ` Reflection Unsecured`,
       `${OPERATOR_NAME}, your daily log is not secured yet. The Caliphate is built one day at a time.`
     ),
 };

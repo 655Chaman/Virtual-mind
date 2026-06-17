@@ -46,19 +46,8 @@ async def send_chat(msg: ChatMessage):
                     "user": msg.message,
                     "assistant": full_response,
                 })
-            except Exception as insert_err:
-                try:
-                    import os
-                    os.makedirs("logs", exist_ok=True)
-                    with open("logs/chat_fallback.jsonl", "a", encoding="utf-8") as f:
-                        f.write(json.dumps({
-                            "timestamp": time.time(),
-                            "user": msg.message,
-                            "assistant": full_response,
-                            "error": str(insert_err)
-                        }) + "\n")
-                except Exception:
-                    pass
+            except Exception:
+                pass
 
     return StreamingResponse(
         event_generator(),

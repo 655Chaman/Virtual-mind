@@ -32,20 +32,20 @@ const ITEM_LABELS: Record<string, string> = {
   combat_training: 'Combat Training',
   fajr_without_alarm: 'Fajr Without Alarm',
   smt_completed: 'Sunday Master Task',
-  salah_on_time_bonus: '⚡ Salah Bonus',
-  ice_bath_bonus: '⚡ Ice Bath Bonus',
-  cold_shower_bonus: '⚡ Cold Shower Bonus',
-  combat_training_bonus: '⚡ Combat Bonus',
-  microbursts_bonus: '⚡ Microburst Bonus',
-  app_lock_on_bonus: '⚡ App Lock Bonus',
-  memorization_session_bonus: '⚡ Memorization Bonus',
-  sleep_on_floor_bonus: '⚡ Floor Sleep Bonus',
-  fajr_without_alarm_bonus: '⚡ Fajr Warrior Bonus',
-  smt_completed_bonus: '⚡ SMT Completion',
-  missed_salah_penalty: '💀 Missed Salah',
-  training_skipped_penalty: '💀 Training Skipped',
-  smt_failed_penalty: '💀 SMT Failed',
-  ramadan_ultra_mode_2x: '🌙 Ramadan 2x',
+  salah_on_time_bonus: ' Salah Bonus',
+  ice_bath_bonus: ' Ice Bath Bonus',
+  cold_shower_bonus: ' Cold Shower Bonus',
+  combat_training_bonus: ' Combat Bonus',
+  microbursts_bonus: ' Microburst Bonus',
+  app_lock_on_bonus: ' App Lock Bonus',
+  memorization_session_bonus: ' Memorization Bonus',
+  sleep_on_floor_bonus: ' Floor Sleep Bonus',
+  fajr_without_alarm_bonus: ' Fajr Warrior Bonus',
+  smt_completed_bonus: ' SMT Completion',
+  missed_salah_penalty: ' Missed Salah',
+  training_skipped_penalty: ' Training Skipped',
+  smt_failed_penalty: ' SMT Failed',
+  ramadan_ultra_mode_2x: ' Ramadan 2x',
 };
 
 export function XPBar({
@@ -73,7 +73,7 @@ export function XPBar({
           <span className="text-text-dim text-xs ml-2 tracking-widest">XP</span>
           {isRamadan && (
             <span className="ml-3 text-xs text-gold-bright bg-gold/10 border border-gold/20 px-2 py-0.5 tracking-widest">
-              🌙 RAMADAN 2×
+               RAMADAN 2×
             </span>
           )}
         </div>

@@ -1,0 +1,62 @@
+
+╔═══════════════════════════════════════════════════════════╗
+║        ⚡ VIRTUAL MIND 2.0 — MOBILE DEPLOYMENT ⚡        ║
+╠═══════════════════════════════════════════════════════════╣
+║                                                           ║
+║  Your Mac's LAN IP:  10.255.234.33                     ║
+║                                                           ║
+║  Backend API:    http://10.255.234.33:8001              ║
+║  Frontend App:   http://10.255.234.33:3000              ║
+║                                                           ║
+║  ── INSTALL ON YOUR ANDROID PHONE ──                      ║
+║                                                           ║
+║  1. Connect phone to the SAME WiFi as this Mac            ║
+║  2. Open Chrome on your phone                             ║
+║  3. Go to:  http://10.255.234.33:3000                  ║
+║  4. Tap the Chrome menu (⋮) → 'Install app'              ║
+║     or 'Add to Home screen'                               ║
+║  5. The app now lives on your home screen like            ║
+║     a native app — fullscreen, no URL bar.                ║
+║                                                           ║
+╚═══════════════════════════════════════════════════════════╝
+
+[BOOT] Frontend .env.local updated → API at http://10.255.234.33:8001
+[BOOT] Starting FastAPI backend on 0.0.0.0:8001...
+[BOOT] Starting Next.js frontend on 0.0.0.0:3000...
+
+[BOOT] Both servers running. Press Ctrl+C to stop.
+
+INFO:     Will watch for changes in these directories: ['/Users/syedchamansha/.gemini/antigravity/worktrees/Virtual-mind/explore-elesium-architecture-features']
+   ▲ Next.js 15.5.19
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+/Users/syedchamansha/.gemini/antigravity/worktrees/Virtual-mind/explore-elesium-architecture-features/brain/memory.py:24: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [23578] using StatReload
+ ✓ Ready in 2.5s
+/Users/syedchamansha/.gemini/antigravity/worktrees/Virtual-mind/explore-elesium-architecture-features/brain/memory.py:24: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+INFO:     Started server process [23602]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+./start_mobile.sh: line 62: 23578 Killed: 9               uvicorn api.main:app --host 0.0.0.0 --port 8001 --reload
+
+[SHUTDOWN] Killing servers...
