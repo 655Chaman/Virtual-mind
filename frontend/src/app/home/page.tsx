@@ -35,11 +35,11 @@ class ErrorCatcher extends Component<{children: ReactNode}, {hasError: boolean, 
 }
 
 const PILLARS = [
-  { id: 'deen',     label: 'DEEN',     subtitle: 'Salah · Quran · Adhkar',       route: '/folder/DEEN',    color: '#10D86A', tag: 'FOUNDATION' },
+  { id: 'deen',     label: 'DEEN',     subtitle: 'Salah · Quran · Adhkar',       route: '/folder/deen',    color: '#10D86A', tag: 'FOUNDATION' },
   { id: 'fitness',  label: 'FITNESS',  subtitle: 'Workout · Training · Progress', route: '/workout',        color: '#F43F5E', tag: 'BODY' },
   { id: 'wellness', label: 'RECOVERY', subtitle: 'Sleep · Fasting · Hydration',   route: '/wellness',       color: '#22D3EE', tag: 'WELLNESS' },
-  { id: 'elesium',  label: 'ELESIUM',  subtitle: 'Sales · Meetings · Revenue',    route: '/folder/ELESIUM', color: '#3B82F6', tag: 'EMPIRE' },
-  { id: 'self',     label: 'SELF',     subtitle: 'Reflection · Patterns · Flaws', route: '/folder/SELF',    color: '#A855F7', tag: 'INNER' },
+  { id: 'elesium',  label: 'ELESIUM',  subtitle: 'Sales · Meetings · Revenue',    route: '/folder/elesium', color: '#3B82F6', tag: 'EMPIRE' },
+  { id: 'self',     label: 'SELF',     subtitle: 'Reflection · Patterns · Flaws', route: '/folder/self',    color: '#A855F7', tag: 'INNER' },
   { id: 'terminal', label: 'TERMINAL', subtitle: 'AI · Chat · Neural Interface',  route: '/chat',           color: '#E879F9', tag: 'ORACLE' },
   { id: 'oracle',   label: 'SYNC',     subtitle: 'Nightly Algorithm Update',      route: '/oracle',         color: '#22C55E', tag: 'THE ORACLE' },
 ];
