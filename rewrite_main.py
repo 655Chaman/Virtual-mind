@@ -1,226 +1,12 @@
-package com.example.virtualmind
+import re
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.os.Bundle
-import android.view.WindowManager
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
-import android.view.View
-import android.webkit.JavascriptInterface
-import android.webkit.WebResourceError
-import android.webkit.WebResourceRequest
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import android.Manifest
-import android.content.pm.PackageManager
-import android.webkit.GeolocationPermissions
-import android.webkit.ValueCallback
-import android.webkit.PermissionRequest
-import android.webkit.WebChromeClient
-import android.net.Uri
-import android.content.Intent
-import android.provider.MediaStore
-import androidx.core.content.FileProvider
-import java.io.File
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
-import androidx.activity.ComponentActivity
-import androidx.core.app.NotificationCompat
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import androidx.activity.SystemBarStyle
-import androidx.activity.compose.BackHandler
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import com.example.virtualmind.theme.*
+with open("android-app/app/src/main/java/com/example/virtualmind/MainActivity.kt", "r") as f:
+    content = f.read()
 
-// Operator identity — used in notification personalization
-private const val OPERATOR_NAME = "Chaman"
+# We need to replace everything from `class MainActivity : ComponentActivity() {` down to the end of the file.
+# The new implementation will just be a standard Activity.
 
-// Notification channel IDs
-private const val CHANNEL_GENERAL = "virtual_mind_alerts"
-private const val CHANNEL_PRAYER  = "virtual_mind_prayer"
-private const val CHANNEL_ALARM   = "virtual_mind_alarm"
-
-class AndroidJSInterface(private val context: Context) {
-
-    /** Creates all notification channels — idempotent, safe to call multiple times. */
-    private fun ensureChannels() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-            // General alerts channel (HIGH priority — shows in shade, plays sound)
-            if (manager.getNotificationChannel(CHANNEL_GENERAL) == null) {
-                val general = NotificationChannel(
-                    CHANNEL_GENERAL,
-                    "Virtual Mind Alerts",
-                    NotificationManager.IMPORTANCE_HIGH
-                ).apply {
-                    description = "Scheduled reminders and system alerts"
-                    enableVibration(true)
-                    vibrationPattern = longArrayOf(0, 200, 100, 200)
-                }
-                manager.createNotificationChannel(general)
-            }
-
-            // Prayer channel (HIGH — dedicated for Salah reminders)
-            if (manager.getNotificationChannel(CHANNEL_PRAYER) == null) {
-                val prayer = NotificationChannel(
-                    CHANNEL_PRAYER,
-                    "Salah Prayer Times",
-                    NotificationManager.IMPORTANCE_HIGH
-                ).apply {
-                    description = "Adhan / prayer time alerts"
-                    enableVibration(true)
-                    vibrationPattern = longArrayOf(0, 300, 100, 300, 100, 300)
-                }
-                manager.createNotificationChannel(prayer)
-            }
-
-            // Alarm channel (MAX — for rest timer, breaks through DND)
-            if (manager.getNotificationChannel(CHANNEL_ALARM) == null) {
-                val alarm = NotificationChannel(
-                    CHANNEL_ALARM,
-                    "Rest Timer Alarm",
-                    NotificationManager.IMPORTANCE_MAX
-                ).apply {
-                    description = "Workout rest timer completion alerts"
-                    enableVibration(true)
-                    vibrationPattern = longArrayOf(0, 300, 150, 300, 150, 500)
-                }
-                manager.createNotificationChannel(alarm)
-            }
-        }
-    }
-
-    @JavascriptInterface
-    fun vibrate(duration: Long) {
-        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            vibratorManager.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE))
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(duration)
-        }
-    }
-
-    @JavascriptInterface
-    fun showNotification(title: String, message: String) {
-        ensureChannels()
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        
-        // Determine channel: use prayer channel if title mentions prayer/salah
-        val channelId = if (title.contains("Salah", ignoreCase = true) ||
-                             title.contains("Prayer", ignoreCase = true) ||
-                             title.contains("Fajr", ignoreCase = true) ||
-                             title.contains("Dhuhr", ignoreCase = true) ||
-                             title.contains("Asr", ignoreCase = true) ||
-                             title.contains("Maghrib", ignoreCase = true) ||
-                             title.contains("Isha", ignoreCase = true)) {
-            CHANNEL_PRAYER
-        } else {
-            CHANNEL_GENERAL
-        }
-
-        val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle(title)
-            .setContentText(message)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .setVibrate(longArrayOf(0, 200, 100, 200))
-            .build()
-        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
-    }
-
-    /**
-     * Alarm-level notification for time-critical events (rest timer, urgent reminders).
-     * Uses IMPORTANCE_MAX channel — designed to break through focus modes.
-     */
-    @JavascriptInterface
-    fun triggerAlarmNotification(title: String, message: String) {
-        ensureChannels()
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        // Tap notification to bring app to foreground
-        val tapIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
-        val pendingIntent = if (tapIntent != null) {
-            android.app.PendingIntent.getActivity(
-                context,
-                0,
-                tapIntent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-            )
-        } else null
-
-        val notification = NotificationCompat.Builder(context, CHANNEL_ALARM)
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-            .setContentTitle(title)
-            .setContentText(message)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setAutoCancel(true)
-            .setVibrate(longArrayOf(0, 300, 150, 300, 150, 500))
-            .apply { if (pendingIntent != null) setContentIntent(pendingIntent) }
-            .build()
-
-        // Also trigger vibration directly for immediate feedback
-        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 300, 150, 300, 150, 500), -1))
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(longArrayOf(0, 300, 150, 300, 150, 500), -1)
-        }
-
-        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
-    }
-
-    @JavascriptInterface
-    fun startSleepSession(hours: Int) {
-        val prefs = context.getSharedPreferences("virtual_mind_prefs", Context.MODE_PRIVATE)
-        val unlockTime = System.currentTimeMillis() + (hours * 60 * 60 * 1000L)
-        prefs.edit().putLong("sleep_unlock_time", unlockTime).apply()
-        showNotification("Sleep Protocol Active", "$OPERATOR_NAME, phone locked for $hours hours. Do not disturb.")
-    }
-}
-
-class MainActivity : ComponentActivity() {
+new_main_activity = """class MainActivity : ComponentActivity() {
 
     private var geoCallback: GeolocationPermissions.Callback? = null
     private var geoOrigin: String? = null
@@ -469,3 +255,13 @@ class MainActivity : ComponentActivity() {
         super.onBackPressed()
     }
 }
+"""
+
+# Replace everything starting from "class MainActivity : ComponentActivity() {"
+pattern = r"class MainActivity : ComponentActivity\(\) \{.*"
+new_content = re.sub(pattern, new_main_activity, content, flags=re.DOTALL)
+
+with open("android-app/app/src/main/java/com/example/virtualmind/MainActivity.kt", "w") as f:
+    f.write(new_content)
+
+print("Rewrote MainActivity.kt successfully!")
