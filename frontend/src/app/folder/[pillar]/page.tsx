@@ -135,18 +135,22 @@ function PrayerComplianceWithTimings({
             const nextTime = t.time_remaining - 1;
             
             if (nextTime > 0 && nextTime % 60 === 0) {
-              if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-                new Notification('URGENT TIMER WARNING', {
-                  body: t.urgency_question || `Are you currently working on ${t.name}?`,
-                });
+              const msg = t.urgency_question || `Are you currently working on ${t.name}?`;
+              if (typeof window !== 'undefined' && (window as any).Android) {
+                (window as any).Android.triggerAlarmNotification('URGENT TIMER WARNING', msg);
+              } else if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+                new Notification('URGENT TIMER WARNING', { body: msg });
               }
             }
 
             return { ...t, time_remaining: nextTime };
           } else if (t.status === 'running' && t.time_remaining === 0) {
             changed = true;
-            if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-              new Notification('TIMER FAILED', { body: `You ran out of time for: ${t.name}` });
+            const failMsg = `You ran out of time for: ${t.name}`;
+            if (typeof window !== 'undefined' && (window as any).Android) {
+              (window as any).Android.triggerAlarmNotification('TIMER FAILED', failMsg);
+            } else if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+              new Notification('TIMER FAILED', { body: failMsg });
             }
             return { ...t, status: 'failed' as const };
           }
