@@ -21,7 +21,7 @@ class ErrorCatcher extends Component<{children: ReactNode}, {hasError: boolean, 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="h-[100dvh] w-full bg-red-600 text-white p-8 flex flex-col items-center justify-center z-[9999] absolute inset-0">
+        <div className="h-screen w-full bg-red-600 text-white p-8 flex flex-col items-center justify-center z-[9999] absolute inset-0">
           <h1 className="text-3xl font-bold mb-4">CRASH DETECTED</h1>
           <p className="text-xl mb-4">{this.state.error?.message}</p>
           <pre className="text-xs bg-black/50 p-4 rounded overflow-auto w-full">
@@ -105,7 +105,7 @@ function DashboardSwipeInner() {
   };
 
   return (
-    <main className="h-[100dvh] w-full bg-black overflow-hidden relative">
+    <main className="h-screen min-h-[100vh] w-full bg-black overflow-hidden relative">
       <div 
         ref={scrollRef}
         onScroll={handleScroll}
