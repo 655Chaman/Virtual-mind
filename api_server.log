@@ -138,3 +138,12 @@ INFO:     10.255.234.228:46094 - "GET /api/logs/log/2026-06-17 HTTP/1.1" 200 OK
 INFO:     10.255.234.228:46076 - "GET /api/logs/logs?last=30 HTTP/1.1" 200 OK
 INFO:     10.255.234.228:46084 - "GET /api/logs/streak HTTP/1.1" 200 OK
 INFO:     10.255.234.228:46086 - "GET /api/elesium/metrics HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59797 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59804 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59809 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK

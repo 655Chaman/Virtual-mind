@@ -65,27 +65,20 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              window.onerror = function(msg, url, line, col, error) {
-                var overlay = document.createElement('div');
-                overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:red;color:white;z-index:9999999;padding:20px;box-sizing:border-box;overflow:auto;font-family:monospace;';
-                overlay.innerHTML = '<h1>FATAL JS ERROR</h1>' +
-                                    '<p><b>Msg:</b> ' + msg + '</p>' +
-                                    '<p><b>Line:</b> ' + line + ':' + col + '</p>' +
-                                    '<p><b>URL:</b> ' + url + '</p>' +
-                                    '<p><b>UserAgent:</b> ' + navigator.userAgent + '</p>' +
-                                    '<hr><pre>' + (error && error.stack ? error.stack : 'No stack') + '</pre>';
-                document.documentElement.appendChild(overlay);
-                return false;
-              };
-              window.addEventListener('unhandledrejection', function(event) {
-                var overlay = document.createElement('div');
-                overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#b30000;color:white;z-index:9999999;padding:20px;box-sizing:border-box;overflow:auto;font-family:monospace;';
-                overlay.innerHTML = '<h1>UNHANDLED PROMISE REJECTION</h1>' +
-                                    '<p><b>Reason:</b> ' + (event.reason ? event.reason.toString() : 'Unknown') + '</p>' +
-                                    '<p><b>UserAgent:</b> ' + navigator.userAgent + '</p>' +
-                                    '<hr><pre>' + (event.reason && event.reason.stack ? event.reason.stack : 'No stack') + '</pre>';
-                document.documentElement.appendChild(overlay);
-              });
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                  for(let registration of registrations) {
+                    registration.unregister();
+                  }
+                });
+              }
+              if ('caches' in window) {
+                caches.keys().then(function(names) {
+                  for (let name of names) {
+                    caches.delete(name);
+                  }
+                });
+              }
             `,
           }}
         />
