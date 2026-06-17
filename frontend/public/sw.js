@@ -48,16 +48,81 @@ self.addEventListener('activate', (event) => {
 });
 
 // ───────────────────────────────────────────────
+// INDEXEDDB QUEUE HELPERS
+// ───────────────────────────────────────────────
+const DB_NAME = 'virtual-mind-offline';
+const STORE_NAME = 'post-queue';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = (event) => {
+      event.target.result.createObjectStore(STORE_NAME, { autoIncrement: true });
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveToQueue(url, method, headers, body) {
+  const db = await openDB();
+  const tx = db.transaction(STORE_NAME, 'readwrite');
+  tx.objectStore(STORE_NAME).add({
+    url, method, headers, body, timestamp: Date.now()
+  });
+  return new Promise(resolve => tx.oncomplete = resolve);
+}
+
+// ───────────────────────────────────────────────
 // FETCH — Smart strategy per resource type
 // ───────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Skip non-GET requests (POST workout logs etc.)
-  if (event.request.method !== 'GET') return;
-
   // Skip cross-origin requests
   if (url.origin !== self.location.origin) return;
+
+  // ⚡ OFFLINE QUEUE: Intercept POST requests to API
+  if (event.request.method === 'POST' && url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      (async () => {
+        // Clone request because we might need to read the body if it fails
+        const reqClone = event.request.clone();
+        try {
+          // Attempt the network request first
+          return await fetch(event.request);
+        } catch (error) {
+          // If network fails, queue it in IndexedDB
+          console.warn('[SW] Offline! Queuing POST request to', url.pathname);
+          const headers = {};
+          reqClone.headers.forEach((v, k) => { headers[k] = v; });
+          
+          let bodyText = null;
+          try { bodyText = await reqClone.text(); } catch(e) {}
+          
+          await saveToQueue(url.href, reqClone.method, headers, bodyText);
+          
+          // Trigger background sync if supported
+          if ('sync' in self.registration) {
+            self.registration.sync.register('sync-offline-posts').catch(() => {});
+          }
+
+          // Return a fake successful response to the frontend so the UI doesn't crash
+          return new Response(JSON.stringify({ 
+            status: 'queued', 
+            message: 'You are offline. Data securely queued.' 
+          }), {
+            status: 202,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+      })()
+    );
+    return;
+  }
+
+  // Skip other non-GET requests
+  if (event.request.method !== 'GET') return;
 
   // API calls: Network-first, fall back to cache
   if (url.pathname.startsWith('/api/')) {
@@ -242,6 +307,53 @@ self.addEventListener('notificationclick', (event) => {
 // ───────────────────────────────────────────────
 self.addEventListener('notificationclose', (event) => {
   console.log('[SW] Notification dismissed:', event.notification.tag);
+});
+
+// ───────────────────────────────────────────────
+// BACKGROUND SYNC — Replay offline POST queue
+// ───────────────────────────────────────────────
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-offline-posts') {
+    event.waitUntil(
+      (async () => {
+        const db = await openDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const allReq = store.getAllKeys();
+        
+        return new Promise((resolve) => {
+          allReq.onsuccess = async () => {
+            const keys = allReq.result;
+            for (const key of keys) {
+              const itemReq = db.transaction(STORE_NAME).objectStore(STORE_NAME).get(key);
+              const item = await new Promise(r => { itemReq.onsuccess = () => r(itemReq.result) });
+              
+              if (item) {
+                try {
+                  console.log('[SW] Background Sync: Replaying POST to', item.url);
+                  const res = await fetch(item.url, {
+                    method: item.method,
+                    headers: item.headers,
+                    body: item.body
+                  });
+                  if (res.ok) {
+                    // Success! Remove from queue
+                    const delTx = db.transaction(STORE_NAME, 'readwrite');
+                    delTx.objectStore(STORE_NAME).delete(key);
+                  }
+                } catch (err) {
+                  console.log('[SW] Background Sync failed, will retry later:', err);
+                  // Stop processing if network is still down
+                  break;
+                }
+              }
+            }
+            resolve();
+          };
+        });
+      })()
+    );
+  }
 });
 
 // ───────────────────────────────────────────────
