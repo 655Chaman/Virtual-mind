@@ -3,7 +3,7 @@
 // This runs in the background, even when the app tab is closed.
 
 // ⚡ BUMP THIS VERSION whenever you redeploy to force cache eviction
-const CACHE_NAME = 'virtual-mind-v8';
+const CACHE_NAME = 'virtual-mind-v9';
 const VM_APP_URL = self.location.origin;
 
 // Critical shell assets to pre-cache on install
@@ -188,24 +188,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static icons/fonts: Cache-first (safe, they never change)
+  // Default: Network-first, fall back to cache
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
+    fetch(event.request)
+      .then((response) => {
         const responseClone = response.clone();
         caches.open(CACHE_NAME).then((cache) => {
           cache.put(event.request, responseClone);
         });
         return response;
-      }).catch(() => {
-        // Fallback for navigation requests: serve cached /command
-        if (event.request.mode === 'navigate') {
-          return caches.match('/command');
-        }
-        return new Response('Offline', { status: 503 });
-      });
-    })
+      })
+      .catch(() => {
+        return caches.match(event.request).then((cached) => {
+          if (cached) return cached;
+          if (event.request.mode === 'navigate') {
+            return caches.match('/command');
+          }
+          return new Response('Offline', { status: 503 });
+        });
+      })
   );
 });
 
