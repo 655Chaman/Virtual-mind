@@ -168,8 +168,8 @@ export default function ChatTerminal() {
   }, [input, isStreaming]);
 
   return (
-    <div className="min-h-screen bg-obsidian text-gray-300 font-mono flex flex-col h-screen relative">
-      <div className="scanline-overlay" />
+    <div className="fixed inset-0 flex flex-col bg-obsidian text-gray-300 font-mono overflow-hidden">
+      <div className="scanline-overlay pointer-events-none z-0" />
 
       {/* Header */}
       <header className="shrink-0 border-b border-surface2 px-6 pb-3 pt-safe flex justify-between items-center bg-obsidian/95 backdrop-blur z-10">
