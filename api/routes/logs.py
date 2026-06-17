@@ -50,9 +50,6 @@ class DailyLog(BaseModel):
     work_done: Optional[str] = None
     lessons_learned: Optional[str] = None
     # ── A.O.S. 2.0 Extensions ──
-    xp_earned: Optional[int] = None              # Computed after submission
-    active_penalties: List[str] = []             # e.g. ["push_up_mandate", "phone_lockout"]
-    perks_unlocked: List[str] = []               # e.g. ["Ice Veins", "Concrete Sleep"]
     smt_task: Optional[str] = None               # One critical Sunday task description
     combat_strategy_notes: Optional[str] = None  # O.C.I. / S.W.P. journal
     no_sales_today: bool = False                 # B.D.P. penalty trigger
@@ -64,7 +61,6 @@ class DailyLog(BaseModel):
 
 @router.post("/log")
 def create_log(log: DailyLog):
-    from brain.xp_engine import compute_xp_from_log, get_active_penalties
     from brain.aos_protocols import get_all_protocol_statuses
 
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
@@ -90,13 +86,7 @@ def create_log(log: DailyLog):
     if not log_dict.get("folder_entries") and existing_data.get("folder_entries"):
         log_dict["folder_entries"] = existing_data["folder_entries"]
 
-    # Auto-compute XP and inject it back
     is_ramadan = log.non_negotiables.ramadan_mode_active
-
-    xp_result = compute_xp_from_log(log_dict, is_ramadan=is_ramadan)
-    log_dict["xp_earned"] = xp_result["total_xp"]
-    log_dict["active_penalties"] = xp_result["penalties_active"]
-    log_dict["perks_unlocked"] = [p["name"] for p in xp_result["perks_unlocked"]]
 
     # Snapshot protocol status at time of logging
     protocol_snapshot = get_all_protocol_statuses(
@@ -110,9 +100,6 @@ def create_log(log: DailyLog):
     return {
         "success": True,
         "date": log.date,
-        "xp_earned": log_dict["xp_earned"],
-        "active_penalties": log_dict["active_penalties"],
-        "perks_unlocked": log_dict["perks_unlocked"],
         "aos_health": log_dict["protocol_status"].get("aos_health_score", 0),
     }
 

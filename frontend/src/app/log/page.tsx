@@ -26,16 +26,16 @@ const CLASSIC_NNS = [
 
 // ── A.O.S. 2.0 PROTOCOL HABITS ─────────────────────────────────────────────
 const AOS_HABITS = [
-  { key: 'ice_bath', label: 'Ice Bath', protocol: 'F.M.S.', xp: '+15 XP' },
-  { key: 'cold_shower', label: 'Cold Shower', protocol: 'NEUROPLASTICITY', xp: '+5 XP' },
-  { key: 'microbursts', label: 'Combat Microbursts', protocol: 'F.M.S.', xp: '+10 XP' },
-  { key: 'combat_training', label: 'Combat Training', protocol: 'O.C.I.', xp: '+20 XP' },
-  { key: 'memorization_session', label: 'Memorization Session', protocol: 'M.S.L.', xp: '+15 XP' },
-  { key: 'app_lock_on', label: 'App Lock ON All Day', protocol: 'D.A.M.', xp: '+10 XP' },
-  { key: 'sleep_on_floor', label: 'Slept on Floor', protocol: 'D.A.M.', xp: '+10 XP' },
-  { key: 'fajr_without_alarm', label: 'Fajr Without Alarm', protocol: 'NEUROPLASTICITY', xp: '+25 XP' },
-  { key: 'smt_completed', label: 'Sunday Master Task Done (Sunday only)', protocol: 'S.M.T.', xp: '+50 XP' },
-  { key: 'ramadan_mode_active', label: 'Ramadan Mode (2x XP Multiplier)', protocol: 'D.D.F.', xp: '2x ALL' },
+  { key: 'ice_bath', label: 'Ice Bath', protocol: 'F.M.S.' },
+  { key: 'cold_shower', label: 'Cold Shower', protocol: 'NEUROPLASTICITY' },
+  { key: 'microbursts', label: 'Combat Microbursts', protocol: 'F.M.S.' },
+  { key: 'combat_training', label: 'Combat Training', protocol: 'O.C.I.' },
+  { key: 'memorization_session', label: 'Memorization Session', protocol: 'M.S.L.' },
+  { key: 'app_lock_on', label: 'App Lock ON All Day', protocol: 'D.A.M.' },
+  { key: 'sleep_on_floor', label: 'Slept on Floor', protocol: 'D.A.M.' },
+  { key: 'fajr_without_alarm', label: 'Fajr Without Alarm', protocol: 'NEUROPLASTICITY' },
+  { key: 'smt_completed', label: 'Sunday Master Task Done (Sunday only)', protocol: 'S.M.T.' },
+  { key: 'ramadan_mode_active', label: 'Ramadan Mode', protocol: 'D.D.F.' },
 ];
 
 // ── FLAWS ───────────────────────────────────────────────────────────────────
@@ -145,36 +145,13 @@ export default function LogPage() {
     }
   };
 
-  if (submitState === 'success' && xpResult) {
+  if (submitState === 'success') {
     return (
       <div className="min-h-screen bg-obsidian flex flex-col items-center justify-center font-mono p-8">
         <div className="max-w-lg w-full text-center">
           <div className="text-vm-green text-6xl mb-4 animate-pulse"></div>
           <h2 className="text-3xl font-heading text-vm-green tracking-widest mb-2">LOG SECURED</h2>
           <p className="text-text-dim text-xs tracking-widest mb-8">ACCOUNTABILITY REGISTERED. THE SYSTEM HAS WITNESSED.</p>
-
-          <div className="bg-surface border border-vm-green/30 p-6 mb-6">
-            <div className="text-5xl font-heading text-gold mb-2">{xpResult.xp_earned ?? 0} XP</div>
-            <p className="text-text-dim text-xs tracking-widest">EARNED TODAY</p>
-
-            {xpResult.perks_unlocked?.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-surface2">
-                <p className="text-gold text-xs tracking-widest mb-2">PERKS UNLOCKED</p>
-                {xpResult.perks_unlocked.map((p: string) => (
-                  <span key={p} className="inline-block px-3 py-1 border border-gold/40 text-gold text-xs mr-2 mb-2">{p}</span>
-                ))}
-              </div>
-            )}
-
-            {xpResult.active_penalties?.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-surface2">
-                <p className="text-vm-red text-xs tracking-widest mb-2">ACTIVE PENALTIES</p>
-                {xpResult.active_penalties.map((p: string) => (
-                  <span key={p} className="inline-block px-3 py-1 border border-vm-red/40 text-vm-red text-xs mr-2 mb-2">{p.replace(/_/g, ' ').toUpperCase()}</span>
-                ))}
-              </div>
-            )}
-          </div>
 
           <button id="go-command-btn" onClick={() => router.push('/command')} className="px-8 py-3 border border-gold/50 text-gold hover:bg-gold/10 transition-colors tracking-widest text-sm">
             ENTER COMMAND CENTER
@@ -251,7 +228,6 @@ export default function LogPage() {
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2 pointer-events-none">
                       <span className="text-[9px] text-text-dim/60">{n.protocol}</span>
-                      <span className="text-[9px] text-gold/60">{n.xp}</span>
                     </div>
                   </div>
                 ))}

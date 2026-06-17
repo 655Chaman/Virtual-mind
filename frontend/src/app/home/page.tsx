@@ -41,7 +41,6 @@ const PILLARS = [
   { id: 'elesium',  label: 'ELESIUM',  subtitle: 'Sales · Meetings · Revenue',    route: '/folder/ELESIUM', color: '#3B82F6', tag: 'EMPIRE' },
   { id: 'self',     label: 'SELF',     subtitle: 'Reflection · Patterns · Flaws', route: '/folder/SELF',    color: '#A855F7', tag: 'INNER' },
   { id: 'terminal', label: 'TERMINAL', subtitle: 'AI · Chat · Neural Interface',  route: '/chat',           color: '#E879F9', tag: 'ORACLE' },
-  { id: 'gamify',   label: 'CRUCIBLE', subtitle: 'Stakes · XP · Screen Time',   route: '/gamification',   color: '#FF3366', tag: 'ENFORCEMENT' },
   { id: 'oracle',   label: 'SYNC',     subtitle: 'Nightly Algorithm Update',      route: '/oracle',         color: '#22C55E', tag: 'THE ORACLE' },
 ];
 
@@ -64,10 +63,10 @@ function DashboardSwipeInner() {
         return (priorityA === -1 ? 99 : priorityA) - (priorityB === -1 ? 99 : priorityB);
       });
     } else if (hour >= 9 && hour < 18) {
-      // MIDDAY / WORK: Elesium, Crucible, Deen
+      // MIDDAY / WORK: Elesium, Terminal, Deen
       sorted.sort((a, b) => {
-        const priorityA = ['elesium', 'gamify', 'deen'].indexOf(a.id);
-        const priorityB = ['elesium', 'gamify', 'deen'].indexOf(b.id);
+        const priorityA = ['elesium', 'terminal', 'deen'].indexOf(a.id);
+        const priorityB = ['elesium', 'terminal', 'deen'].indexOf(b.id);
         return (priorityA === -1 ? 99 : priorityA) - (priorityB === -1 ? 99 : priorityB);
       });
     } else if (hour >= 18 && hour < 22) {

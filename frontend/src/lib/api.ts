@@ -116,14 +116,7 @@ export const api = {
     }),
   },
 
-  // XP Engine
-  xp: {
-    today: (ramadan = false) => request(`/api/xp/today?ramadan=${ramadan}`),
-    history: (days = 30) => request(`/api/xp/history?days=${days}`),
-    leaderboard: () => request('/api/xp/leaderboard'),
-    penalties: () => request('/api/xp/penalties/active'),
-    perks: () => request('/api/xp/perks'),
-  },
+
   // History
   history: {
     pillars: (days = 30) => request(`/api/history/pillars?days=${days}`),

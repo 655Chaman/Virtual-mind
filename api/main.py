@@ -25,7 +25,6 @@ from api.routes.chat import router as chat_router
 from api.routes.sync import router as sync_router
 from api.routes.elesium import router as elesium_router
 from api.routes.operator import router as operator_router
-from api.routes.xp import router as xp_router
 from api.routes.aos import router as aos_router
 from api.routes.history import router as history_router
 from api.routes.push import router as push_router
@@ -81,7 +80,6 @@ app.include_router(chat_router, prefix="/api/chat", tags=["Chat"])
 app.include_router(sync_router, prefix="/api/sync", tags=["Sync"])
 app.include_router(elesium_router, prefix="/api/elesium", tags=["Elesium"])
 app.include_router(operator_router, prefix="/api/operator", tags=["Operator"])
-app.include_router(xp_router, prefix="/api/xp", tags=["XP Engine"])
 app.include_router(aos_router, prefix="/api/aos", tags=["A.O.S. Protocols"])
 app.include_router(history_router, prefix="/api/history", tags=["History"])
 app.include_router(push_router, prefix="/api/push", tags=["Push Notifications"])
