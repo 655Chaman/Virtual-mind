@@ -13,3 +13,6 @@ python-multipart
 schedule
 requests
 pymongo
+openai
+motor
+Pillow
