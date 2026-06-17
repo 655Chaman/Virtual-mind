@@ -105,7 +105,7 @@ function DashboardSwipeInner() {
   };
 
   return (
-    <main className="h-screen min-h-[100vh] w-full bg-black overflow-hidden relative flex flex-col">
+    <main className="flex-1 w-full bg-black overflow-hidden relative flex flex-col">
       
       {/* TEST ELEMENT TO VERIFY RENDERING */}
       <div className="absolute top-12 left-0 w-full text-center z-[99999] pointer-events-none">
@@ -115,7 +115,7 @@ function DashboardSwipeInner() {
       <div 
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 w-full flex overflow-x-auto snap-x snap-mandatory"
+        className="flex-1 min-h-0 w-full flex overflow-x-auto snap-x snap-mandatory"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
       >
         {sortedPillars.map((p, i) => {
@@ -124,7 +124,7 @@ function DashboardSwipeInner() {
           return (
             <div 
               key={p.id} 
-              className="h-full min-w-[100vw] shrink-0 snap-center flex flex-col justify-center px-6 transition-opacity duration-300"
+              className="h-full w-full min-w-full shrink-0 snap-center flex flex-col justify-center px-6 transition-opacity duration-300"
               style={{ opacity: isActive ? 1 : 0.3 }}
             >
               <div className="flex-1 flex flex-col justify-center transition-transform duration-500"
