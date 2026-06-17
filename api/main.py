@@ -37,6 +37,9 @@ from api.routes.sleep_protocol import router as sleep_protocol_router
 from api.routes.qadr import router as qadr_router
 from api.routes.graveyard import router as graveyard_router
 from api.routes.newspaper import router as newspaper_router
+from api.routes.verification import verification_router
+from api.routes.evolution import evolution_router
+from api.routes.oracle import oracle_router
 import scheduler
 from brain.ingest import ingest_all
 from api.database import get_db
@@ -90,6 +93,9 @@ app.include_router(sleep_protocol_router, prefix="/api/sleep-protocol", tags=["S
 app.include_router(qadr_router, prefix="/api/qadr", tags=["Qadr Protocol"])
 app.include_router(graveyard_router, prefix="/api/graveyard", tags=["Graveyard"])
 app.include_router(newspaper_router, prefix="/api/newspaper", tags=["Newspaper"])
+app.include_router(verification_router, tags=["Verification"])
+app.include_router(evolution_router, tags=["Evolution"])
+app.include_router(oracle_router, tags=["Oracle"])
 
 from fastapi.staticfiles import StaticFiles
 MEDIA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "media")

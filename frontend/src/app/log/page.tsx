@@ -14,14 +14,14 @@ const PILLAR_COLORS: Record<string, string> = {
 
 // ── CLASSIC NON-NEGOTIABLES ─────────────────────────────────────────────────
 const CLASSIC_NNS = [
-  { key: 'salah_5', label: '5 Salah On Time', icon: '🕌' },
-  { key: 'quran_30min', label: '30 Min Quran', icon: '📖' },
-  { key: 'deep_work_4hr', label: '4 Hours Deep Work', icon: '🎯' },
-  { key: 'physical_training', label: 'Physical Training (1hr)', icon: '⚔️' },
-  { key: 'reading_1hr', label: '1 Hour Reading Before Bed', icon: '📚' },
-  { key: 'adhkar', label: 'Adhkar Morning & Evening', icon: '☀️' },
-  { key: 'no_phone_before_8', label: 'No Phone Before 8 AM', icon: '📵' },
-  { key: 'no_sugar', label: 'No Sugar (Weekday)', icon: '🚫' },
+  { key: 'salah_5', label: '5 Salah On Time', icon: '' },
+  { key: 'quran_30min', label: '30 Min Quran', icon: '' },
+  { key: 'deep_work_4hr', label: '4 Hours Deep Work', icon: '' },
+  { key: 'physical_training', label: 'Physical Training (1hr)', icon: '' },
+  { key: 'reading_1hr', label: '1 Hour Reading Before Bed', icon: '' },
+  { key: 'adhkar', label: 'Adhkar Morning & Evening', icon: '' },
+  { key: 'no_phone_before_8', label: 'No Phone Before 8 AM', icon: '' },
+  { key: 'no_sugar', label: 'No Sugar (Weekday)', icon: '' },
 ];
 
 // ── A.O.S. 2.0 PROTOCOL HABITS ─────────────────────────────────────────────
@@ -149,7 +149,7 @@ export default function LogPage() {
     return (
       <div className="min-h-screen bg-obsidian flex flex-col items-center justify-center font-mono p-8">
         <div className="max-w-lg w-full text-center">
-          <div className="text-vm-green text-6xl mb-4 animate-pulse">✓</div>
+          <div className="text-vm-green text-6xl mb-4 animate-pulse"></div>
           <h2 className="text-3xl font-heading text-vm-green tracking-widest mb-2">LOG SECURED</h2>
           <p className="text-text-dim text-xs tracking-widest mb-8">ACCOUNTABILITY REGISTERED. THE SYSTEM HAS WITNESSED.</p>
 
@@ -263,7 +263,7 @@ export default function LogPage() {
               <h3 className="text-vm-red font-bold tracking-widest mb-1 text-sm">FLAW MANIFESTATIONS</h3>
               <p className={`text-[10px] mb-4 leading-relaxed ${flawDodging ? 'text-vm-red' : 'text-text-dim'}`}>
                 {flawDodging 
-                  ? '⚠️ YOU MISSED DEEP WORK. YOU MUST SELECT AT LEAST ONE FLAW TRIGGERED TODAY.' 
+                  ? ' YOU MISSED DEEP WORK. YOU MUST SELECT AT LEAST ONE FLAW TRIGGERED TODAY.' 
                   : 'Did any of your 12 core vulnerabilities surface today?'}
               </p>
               <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
@@ -302,7 +302,7 @@ export default function LogPage() {
               />
               <div className="px-6 pb-2 text-right">
                 <span className={`text-[10px] tracking-widest ${!hasValidNarrative ? 'text-vm-red/60' : 'text-vm-green/60'}`}>
-                  {logText.length} chars {!hasValidNarrative ? `(min 250 required by A.O.S.)` : '✓ SECURED'}
+                  {logText.length} chars {!hasValidNarrative ? `(min 250 required by A.O.S.)` : ' SECURED'}
                 </span>
               </div>
             </div>
@@ -313,7 +313,7 @@ export default function LogPage() {
                 <span className="text-xs tracking-[0.3em] text-gold-dim font-bold">WHAT WORK WAS DONE TODAY</span>
                 {isElesiumActive && (
                   <span className={`text-[9px] tracking-widest ${hasValidWorkDone ? 'text-vm-green' : 'text-vm-red'}`}>
-                    {hasValidWorkDone ? '✓' : 'ELESIUM PILLAR REQUIRES PROOF (>50 CHRS)'}
+                    {hasValidWorkDone ? '' : 'ELESIUM PILLAR REQUIRES PROOF (>50 CHRS)'}
                   </span>
                 )}
               </div>
@@ -373,16 +373,16 @@ export default function LogPage() {
               {!canSubmit && (
                 <div className="text-right space-y-1">
                   {!hasValidNarrative && (
-                     <p className="text-[10px] text-vm-red/80 tracking-widest">⚠️ NARRATIVE TOO SHORT ({logText.length}/250)</p>
+                     <p className="text-[10px] text-vm-red/80 tracking-widest"> NARRATIVE TOO SHORT ({logText.length}/250)</p>
                   )}
                   {isElesiumActive && !hasValidWorkDone && (
-                     <p className="text-[10px] text-vm-red/80 tracking-widest">⚠️ ELESIUM PROOF REQUIRED ({workDone.length}/50)</p>
+                     <p className="text-[10px] text-vm-red/80 tracking-widest"> ELESIUM PROOF REQUIRED ({workDone.length}/50)</p>
                   )}
                   {isElesiumActive && (madeSale === null || closedClient === null) && (
-                     <p className="text-[10px] text-vm-red/80 tracking-widest">⚠️ SALES/CLIENT QUESTIONS UNANSWERED</p>
+                     <p className="text-[10px] text-vm-red/80 tracking-widest"> SALES/CLIENT QUESTIONS UNANSWERED</p>
                   )}
                   {flawDodging && (
-                     <p className="text-[10px] text-vm-red/80 tracking-widest">⚠️ MISSED DEEP WORK: SELECT A FLAW MANIFESTATION</p>
+                     <p className="text-[10px] text-vm-red/80 tracking-widest"> MISSED DEEP WORK: SELECT A FLAW MANIFESTATION</p>
                   )}
                 </div>
               )}

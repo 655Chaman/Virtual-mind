@@ -113,7 +113,7 @@ function ProtocolTile({ protocol }: { protocol: Protocol }) {
       {/* Missing habits hint */}
       {protocol.missing_habits.length > 0 && protocol.status !== 'skipped' && (
         <div className="mt-1.5 text-[9px] text-vm-red/70 font-mono truncate">
-          ✗ {protocol.missing_habits[0].replace(/_/g, ' ')}
+           {protocol.missing_habits[0].replace(/_/g, ' ')}
           {protocol.missing_habits.length > 1 && ` +${protocol.missing_habits.length - 1}`}
         </div>
       )}
@@ -121,7 +121,7 @@ function ProtocolTile({ protocol }: { protocol: Protocol }) {
       {/* Bonus habits */}
       {protocol.bonus_completed.length > 0 && (
         <div className="mt-1.5 text-[9px] text-gold-bright/70 font-mono truncate">
-          ⚡ {protocol.bonus_completed[0].replace(/_/g, ' ')}
+           {protocol.bonus_completed[0].replace(/_/g, ' ')}
         </div>
       )}
     </div>
@@ -152,7 +152,7 @@ export function AOSProtocolPanel({ protocols, summary, penalties = [], perks = [
             <span className="text-vm-red">{summary.breached}</span> BREACHED
           </div>
           {summary.is_ramadan && (
-            <div className="text-gold-bright mt-0.5">🌙 RAMADAN ULTRA MODE</div>
+            <div className="text-gold-bright mt-0.5"> RAMADAN ULTRA MODE</div>
           )}
         </div>
       </div>
@@ -193,7 +193,7 @@ export function AOSProtocolPanel({ protocols, summary, penalties = [], perks = [
               key={i}
               className="border border-gold/40 bg-gold/5 p-2 text-xs font-mono text-gold-bright"
             >
-              <div className="font-bold">⚔ {perk.name}</div>
+              <div className="font-bold"> {perk.name}</div>
               <div className="text-text-dim mt-0.5 text-[10px]">{perk.description}</div>
               <div className="text-gold text-[10px] mt-1">
                 {perk.streak}d streak / {perk.required}d required

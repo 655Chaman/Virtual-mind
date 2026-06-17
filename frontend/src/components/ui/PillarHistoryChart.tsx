@@ -13,10 +13,10 @@ interface DayHistory {
 }
 
 const PILLARS = [
-  { key: 'DEEN', label: 'Deen', color: '#c9a84c', glow: 'rgba(201,168,76,0.3)', icon: '🕌' },
-  { key: 'ELESIUM', label: 'Elesium', color: '#4c7ec9', glow: 'rgba(76,126,201,0.3)', icon: '⚡' },
-  { key: 'INFLUENCE', label: 'Influence', color: '#a855f7', glow: 'rgba(168,85,247,0.3)', icon: '🎯' },
-  { key: 'SELF', label: 'Self', color: '#4caa6e', glow: 'rgba(76,170,110,0.3)', icon: '🧠' },
+  { key: 'DEEN', label: 'Deen', color: '#c9a84c', glow: 'rgba(201,168,76,0.3)', icon: '' },
+  { key: 'ELESIUM', label: 'Elesium', color: '#4c7ec9', glow: 'rgba(76,126,201,0.3)', icon: '' },
+  { key: 'INFLUENCE', label: 'Influence', color: '#a855f7', glow: 'rgba(168,85,247,0.3)', icon: '' },
+  { key: 'SELF', label: 'Self', color: '#4caa6e', glow: 'rgba(76,170,110,0.3)', icon: '' },
 ];
 
 export function PillarHistoryChart() {

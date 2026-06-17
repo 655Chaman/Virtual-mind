@@ -13,26 +13,28 @@ import os
 import json
 from datetime import datetime, date
 from typing import Optional, List
+from brain.db_client import get_collection
 
-# ─── PATHS ────────────────────────────────────────────────────────────────────
+# ─── PATHS & COLLECTIONS ────────────────────────────────────────────────────────
+_ROOT = os.path.dirname(os.path.dirname(__file__))
 
-_ROOT = os.path.dirname(os.path.dirname(__file__))  # Virtual-mind/
-
-# Business
-BUSINESS_DIR        = os.path.join(_ROOT, "data", "elesium", "business")
-METRICS_PATH        = os.path.join(BUSINESS_DIR, "metrics.json")
-OUTREACH_LOG_PATH   = os.path.join(BUSINESS_DIR, "outreach_log.jsonl")
-
-# Content Creation
-CONTENT_DIR         = os.path.join(_ROOT, "data", "elesium", "content_creation")
-CONTENT_LOG_PATH    = os.path.join(CONTENT_DIR, "daily_log.json")
-CONTENT_HISTORY_PATH = os.path.join(CONTENT_DIR, "history.jsonl")
-
-# Shared Context (legacy bridge to Elesium-hq sibling project)
+# Legacy paths (if needed for reading sibling project)
 SHARED_CONTEXT_PATH = os.path.join(_ROOT, "shared", "context.json")
 ELESIUM_HQ_PATH     = os.path.join(os.path.dirname(_ROOT), "Elesium-hq")
 ELESIUM_SDR_LOG_PATH   = os.path.join(ELESIUM_HQ_PATH, "sdr-agency-pipeline", "pipeline.log")
 ELESIUM_SDR_LEADS_PATH = os.path.join(ELESIUM_HQ_PATH, "sdr-agency-pipeline", "seen_companies.json")
+
+def _get_business_col():
+    return get_collection("elesium_business")
+
+def _get_outreach_col():
+    return get_collection("elesium_outreach")
+
+def _get_content_col():
+    return get_collection("elesium_content")
+
+def _get_content_history_col():
+    return get_collection("elesium_content_history")
 
 
 # ─── SHARED CONTEXT (legacy) ──────────────────────────────────────────────────
@@ -110,28 +112,24 @@ def _default_business_metrics() -> dict:
 
 
 def get_elesium_metrics() -> dict:
-    if os.path.exists(METRICS_PATH):
-        try:
-            with open(METRICS_PATH, "r") as f:
-                return json.load(f)
-        except Exception:
-            pass
+    col = _get_business_col()
+    doc = col.find_one({"_id": "metrics"})
+    if doc:
+        doc.pop("_id", None)
+        return doc
     return _default_business_metrics()
 
 
 def update_elesium_metrics(updates: dict) -> dict:
-    _ensure_business_dir()
     metrics = get_elesium_metrics()
     for key, value in updates.items():
         metrics[key] = value
     metrics["last_updated"] = datetime.now().isoformat()
-    with open(METRICS_PATH, "w") as f:
-        json.dump(metrics, f, indent=2)
+    _get_business_col().update_one({"_id": "metrics"}, {"$set": metrics}, upsert=True)
     return metrics
 
 
 def log_outreach(emails_sent: int, replies: int, positive: int) -> dict:
-    _ensure_business_dir()
     metrics = get_elesium_metrics()
 
     metrics["emails_sent_total"] += emails_sent
@@ -143,8 +141,7 @@ def log_outreach(emails_sent: int, replies: int, positive: int) -> dict:
         metrics["first_email_date"] = datetime.now().isoformat()
 
     metrics["last_updated"] = datetime.now().isoformat()
-    with open(METRICS_PATH, "w") as f:
-        json.dump(metrics, f, indent=2)
+    _get_business_col().update_one({"_id": "metrics"}, {"$set": metrics}, upsert=True)
 
     log_entry = {
         "timestamp": datetime.now().isoformat(),
@@ -152,8 +149,7 @@ def log_outreach(emails_sent: int, replies: int, positive: int) -> dict:
         "replies": replies,
         "positive": positive
     }
-    with open(OUTREACH_LOG_PATH, "a") as f:
-        f.write(json.dumps(log_entry) + "\n")
+    _get_outreach_col().insert_one(log_entry)
 
     return metrics
 
@@ -309,20 +305,16 @@ def _default_content_log() -> dict:
 
 
 def get_content_log() -> dict:
-    if os.path.exists(CONTENT_LOG_PATH):
-        try:
-            with open(CONTENT_LOG_PATH, "r") as f:
-                return json.load(f)
-        except Exception:
-            pass
+    doc = _get_content_col().find_one({"_id": "log"})
+    if doc:
+        doc.pop("_id", None)
+        return doc
     return _default_content_log()
 
 
 def _save_content_log(data: dict):
-    _ensure_content_dir()
     data["last_updated"] = datetime.now().isoformat()
-    with open(CONTENT_LOG_PATH, "w") as f:
-        json.dump(data, f, indent=2)
+    _get_content_col().update_one({"_id": "log"}, {"$set": data}, upsert=True)
 
 
 def _reset_today_if_new_day(log: dict) -> dict:
@@ -357,10 +349,8 @@ def _reset_today_if_new_day(log: dict) -> dict:
 
 
 def _archive_day(today_snapshot: dict):
-    """Append a completed day to history.jsonl."""
-    _ensure_content_dir()
-    with open(CONTENT_HISTORY_PATH, "a") as f:
-        f.write(json.dumps(today_snapshot) + "\n")
+    """Append a completed day to elesium_content_history collection."""
+    _get_content_history_col().insert_one(today_snapshot)
 
 
 def _update_streak(log: dict, had_content: bool):
@@ -511,13 +501,6 @@ def get_content_summary() -> dict:
 
 
 def get_content_history(last_n_days: int = 7) -> list:
-    """Returns the last N days of archived content logs."""
-    if not os.path.exists(CONTENT_HISTORY_PATH):
-        return []
-    try:
-        with open(CONTENT_HISTORY_PATH, "r") as f:
-            lines = f.readlines()
-        days = [json.loads(l) for l in lines if l.strip()]
-        return days[-last_n_days:]
-    except Exception:
-        return []
+    """Returns the last N days of archived content logs from MongoDB."""
+    cursor = _get_content_history_col().find({}, {"_id": 0}).sort("date", -1).limit(last_n_days)
+    return list(cursor)[::-1]

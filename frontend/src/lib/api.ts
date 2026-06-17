@@ -1,8 +1,11 @@
 const getApiBase = () => {
-  if (typeof window !== 'undefined') {
-    return `${window.location.protocol}//${window.location.hostname}:8001`;
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
   }
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+  if (typeof window !== 'undefined') {
+    return `http://${window.location.hostname}:8001`;
+  }
+  return 'http://127.0.0.1:8001';
 };
 export const API_BASE = getApiBase();
 
@@ -125,17 +128,40 @@ export const api = {
   history: {
     pillars: (days = 30) => request(`/api/history/pillars?days=${days}`),
   },
-  // Workout Tracker
   workout: {
     today: () => request('/api/workout/today'),
-    log: (data: any) => request('/api/workout/log', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    session: {
+      start: (targetDate?: string) => request(`/api/workout/session/start${targetDate ? `?target_date=${targetDate}` : ''}`, { method: 'POST' }),
+    },
+    log: async (data: any) => {
+      try {
+        return await request('/api/workout/log', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        });
+      } catch (err) {
+        if (typeof window !== 'undefined') {
+          const queue = JSON.parse(localStorage.getItem('vm_offline_workout_queue') || '[]');
+          queue.push(data);
+          localStorage.setItem('vm_offline_workout_queue', JSON.stringify(queue));
+          console.warn('[OFFLINE] Workout log queued locally.');
+          return { success: true, offline: true, date: data.date };
+        }
+        throw err;
+      }
+    },
     history: (last = 30) => request(`/api/workout/history?last=${last}`),
     exerciseHistory: (exerciseName: string, targetDate?: string) => {
       const query = targetDate ? `?target_date=${targetDate}` : '';
       return request(`/api/workout/exercise/${encodeURIComponent(exerciseName)}${query}`);
+    },
+    heatmap: (days = 7) => request(`/api/workout/heatmap?days=${days}`),
+    homeProtocol: {
+      today: () => request('/api/workout/home-protocol/today'),
+      increment: (variant: string, count: number = 1) => request('/api/workout/home-protocol/increment', {
+        method: 'POST',
+        body: JSON.stringify({ variant, count }),
+      }),
     },
   },
   // Wellness
@@ -143,14 +169,20 @@ export const api = {
     sleep: {
       today: () => request('/api/wellness/sleep/today'),
       start: () => request('/api/wellness/sleep/start', { method: 'POST' }),
-      stop: () => request('/api/wellness/sleep/stop', { method: 'POST' }),
+      stop: (clientTimestamp?: string) => request('/api/wellness/sleep/stop', { 
+        method: 'POST',
+        body: JSON.stringify({ client_timestamp: clientTimestamp || null })
+      }),
       history: (days = 30) => request(`/api/wellness/sleep/history?days=${days}`),
       progress: (range = '30d') => request(`/api/wellness/sleep/progress?range=${range}`),
     },
     fast: {
       today: () => request('/api/wellness/fast/today'),
       start: () => request('/api/wellness/fast/start', { method: 'POST' }),
-      stop: () => request('/api/wellness/fast/stop', { method: 'POST' }),
+      stop: (clientTimestamp?: string) => request('/api/wellness/fast/stop', { 
+        method: 'POST',
+        body: JSON.stringify({ client_timestamp: clientTimestamp || null })
+      }),
       history: (days = 30) => request(`/api/wellness/fast/history?days=${days}`),
       progress: (range = '30d') => request(`/api/wellness/fast/progress?range=${range}`),
     },
@@ -204,15 +236,41 @@ export const api = {
       const query = lat !== undefined && lng !== undefined ? `?latitude=${lat}&longitude=${lng}` : '';
       return request(`/api/deen/prayer-times${query}`);
     },
-    logPrayers: (data: any) => request('/api/deen/prayers/log', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    logPrayers: async (data: any) => {
+      try {
+        return await request('/api/deen/prayers/log', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        });
+      } catch (err) {
+        if (typeof window !== 'undefined') {
+          const queue = JSON.parse(localStorage.getItem('vm_offline_prayer_queue') || '[]');
+          queue.push(data);
+          localStorage.setItem('vm_offline_prayer_queue', JSON.stringify(queue));
+          console.warn('[OFFLINE] Prayer log queued locally.');
+          return { success: true, offline: true };
+        }
+        throw err;
+      }
+    },
     prayerHistory: (days = 14) => request(`/api/deen/prayers/history?days=${days}`),
-    logTasbih: (data: any) => request('/api/deen/tasbih', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    logTasbih: async (data: any) => {
+      try {
+        return await request('/api/deen/tasbih', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        });
+      } catch (err) {
+        if (typeof window !== 'undefined') {
+          const queue = JSON.parse(localStorage.getItem('vm_offline_tasbih_queue') || '[]');
+          queue.push(data);
+          localStorage.setItem('vm_offline_tasbih_queue', JSON.stringify(queue));
+          console.warn('[OFFLINE] Tasbih log queued locally.');
+          return { success: true, offline: true };
+        }
+        throw err;
+      }
+    },
     tasbihHistory: () => request('/api/deen/tasbih'),
   },
   // Qadr Protocol (AI Night Planner)
@@ -249,3 +307,65 @@ export const api = {
     generate: () => request('/api/newspaper/generate', { method: 'POST' }),
   },
 };
+export const syncOfflineWorkouts = async () => {
+  if (typeof window === 'undefined') return;
+  const queue = JSON.parse(localStorage.getItem('vm_offline_workout_queue') || '[]');
+  if (queue.length === 0) return;
+  
+  console.log(`[SYNC] Found ${queue.length} offline workouts. Syncing...`);
+  const failed = [];
+  for (const data of queue) {
+    try {
+      await request('/api/workout/log', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      console.log(`[SYNC] Successfully synced workout for ${data.date}`);
+    } catch (err) {
+      console.error(`[SYNC] Failed to sync workout for ${data.date}`, err);
+      failed.push(data);
+    }
+  }
+  localStorage.setItem('vm_offline_workout_queue', JSON.stringify(failed));
+};
+
+export const syncOfflineDeen = async () => {
+  if (typeof window === 'undefined') return;
+  
+  const prayerQueue = JSON.parse(localStorage.getItem('vm_offline_prayer_queue') || '[]');
+  if (prayerQueue.length > 0) {
+    console.log(`[SYNC] Found ${prayerQueue.length} offline prayers. Syncing...`);
+    const failedPrayers = [];
+    for (const data of prayerQueue) {
+      try {
+        await request('/api/deen/prayers/log', { method: 'POST', body: JSON.stringify(data) });
+      } catch (err) {
+        failedPrayers.push(data);
+      }
+    }
+    localStorage.setItem('vm_offline_prayer_queue', JSON.stringify(failedPrayers));
+  }
+
+  const tasbihQueue = JSON.parse(localStorage.getItem('vm_offline_tasbih_queue') || '[]');
+  if (tasbihQueue.length > 0) {
+    console.log(`[SYNC] Found ${tasbihQueue.length} offline tasbih logs. Syncing...`);
+    const failedTasbih = [];
+    for (const data of tasbihQueue) {
+      try {
+        await request('/api/deen/tasbih', { method: 'POST', body: JSON.stringify(data) });
+      } catch (err) {
+        failedTasbih.push(data);
+      }
+    }
+    localStorage.setItem('vm_offline_tasbih_queue', JSON.stringify(failedTasbih));
+  }
+};
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', syncOfflineWorkouts);
+  window.addEventListener('online', syncOfflineDeen);
+  setTimeout(() => {
+    syncOfflineWorkouts();
+    syncOfflineDeen();
+  }, 2000); // Initial sync on load
+}

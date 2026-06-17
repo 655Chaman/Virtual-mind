@@ -43,7 +43,7 @@ async def get_prayer_times(latitude: float = None, longitude: float = None):
     else:
         url = "https://api.aladhan.com/v1/timingsByCity"
         params = {
-            "city": "Bangalore", "country": "India",
+            "city": "Shivamogga", "country": "India",
             "method": 1, "school": 1,
             "tune": "0,-2,-6,0,-1,5,0,0,0"
         }

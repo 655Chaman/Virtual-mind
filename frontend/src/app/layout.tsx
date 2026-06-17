@@ -69,6 +69,11 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <div className="flex-1 flex flex-col">
             <LockProvider>
+              {/* MINIMALIST GLOBAL XP HUD */}
+              <div className="fixed top-4 right-6 z-[9999] pointer-events-none flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity duration-500">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#FF3366] shadow-[0_0_8px_rgba(255,51,102,0.8)] animate-pulse"></div>
+                <span className="font-['Share_Tech_Mono'] text-[10px] tracking-[0.3em] text-white/80">1450<span className="text-[#FF3366]/80 ml-1">XP</span></span>
+              </div>
               {children}
             </LockProvider>
           </div>

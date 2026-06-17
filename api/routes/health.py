@@ -13,24 +13,29 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 # SLEEP ENDPOINTS
 # ─────────────────────────────────────────────────────────────────────────────
 
+class StopInput(BaseModel):
+    client_timestamp: Optional[str] = None
+
 @router.post("/sleep/start")
 def start_sleep():
     """Logs the exact timestamp when the user goes to bed."""
     current_time = datetime.utcnow().isoformat()
     db = get_db()
-    active = db.sleep_logs.find_one({"end_time": {"$exists": False}})
-    if active:
-        return {"status": "error", "message": "Already sleeping."}
     
-    # We use a custom id or just ObjectId
+    # Ghost Session Annihilation
+    db.sleep_logs.update_many(
+        {"end_time": {"$exists": False}}, 
+        {"$set": {"end_time": current_time, "duration_minutes": 0, "ghost_closed": True}}
+    )
+    
     result = db.sleep_logs.insert_one({"start_time": current_time})
     return {"status": "success", "start_time": current_time, "sleep_id": str(result.inserted_id)}
 
 @router.post("/sleep/stop")
-def stop_sleep():
+def stop_sleep(data: StopInput = StopInput()):
     """Logs the wake-up time and calculates duration."""
     now = datetime.utcnow()
-    now_iso = now.isoformat()
+    now_iso = data.client_timestamp or now.isoformat()
     db = get_db()
     
     # Sort by start_time descending, find one without end_time
@@ -39,7 +44,8 @@ def stop_sleep():
         return {"status": "error", "message": "No active sleep session."}
         
     start = datetime.fromisoformat(session["start_time"])
-    duration = (now - start).total_seconds() / 60.0
+    end_dt = datetime.fromisoformat(now_iso.replace('Z', '+00:00')) if data.client_timestamp else now
+    duration = max(0, (end_dt.replace(tzinfo=None) - start.replace(tzinfo=None)).total_seconds() / 60.0)
     
     db.sleep_logs.update_one(
         {"_id": session["_id"]},
@@ -166,17 +172,21 @@ def start_fast():
     """Starts a fasting window."""
     now_iso = datetime.utcnow().isoformat()
     db = get_db()
-    active = db.fast_logs.find_one({"end_time": {"$exists": False}})
-    if active:
-        return {"status": "error", "message": "Fast already in progress."}
+    
+    # Ghost Session Annihilation
+    db.fast_logs.update_many(
+        {"end_time": {"$exists": False}}, 
+        {"$set": {"end_time": now_iso, "duration_minutes": 0, "ghost_closed": True}}
+    )
+    
     db.fast_logs.insert_one({"start_time": now_iso, "goal_minutes": 960})
     return {"status": "success", "start_time": now_iso}
 
 @router.post("/fast/stop")
-def stop_fast():
+def stop_fast(data: StopInput = StopInput()):
     """Ends the current fasting window."""
     now = datetime.utcnow()
-    now_iso = now.isoformat()
+    now_iso = data.client_timestamp or now.isoformat()
     db = get_db()
     
     session = db.fast_logs.find_one({"end_time": {"$exists": False}}, sort=[("start_time", -1)])
@@ -184,7 +194,8 @@ def stop_fast():
         return {"status": "error", "message": "No active fast."}
         
     start = datetime.fromisoformat(session["start_time"])
-    duration = (now - start).total_seconds() / 60.0
+    end_dt = datetime.fromisoformat(now_iso.replace('Z', '+00:00')) if data.client_timestamp else now
+    duration = max(0, (end_dt.replace(tzinfo=None) - start.replace(tzinfo=None)).total_seconds() / 60.0)
     
     db.fast_logs.update_one(
         {"_id": session["_id"]},
@@ -251,6 +262,10 @@ class HydrationInput(BaseModel):
 @router.post("/hydration/add")
 def add_hydration(data: HydrationInput):
     """Logs a hydration entry."""
+    from fastapi import HTTPException
+    if data.amount_ml > 3000:
+        raise HTTPException(status_code=400, detail="Maximum 3000ml per entry to prevent database poisoning.")
+        
     today = date.today().isoformat()
     now_iso = datetime.utcnow().isoformat()
     db = get_db()

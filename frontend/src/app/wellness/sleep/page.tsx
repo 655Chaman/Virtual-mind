@@ -136,7 +136,7 @@ export default function SleepControlCenter() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex-1">
-          <h1 className="text-indigo-300 font-mono font-bold tracking-[0.3em] text-base">🌙 SLEEP SYSTEM</h1>
+          <h1 className="text-indigo-300 font-mono font-bold tracking-[0.3em] text-base"> SLEEP SYSTEM</h1>
           <p className="text-[9px] text-text-dim tracking-widest mt-0.5">RECOVERY · CIRCADIAN · PROTOCOL</p>
         </div>
         <Moon className="w-4 h-4 text-indigo-400/50" />
@@ -266,7 +266,7 @@ export default function SleepControlCenter() {
                   DIGITAL SUNSET PROTOCOL
                 </h3>
                 <p className="text-[8px] text-text-dim tracking-widest mt-0.5">
-                  {sunsetActive ? '⚠️ ACTIVE — PHONE SHOULD BE OFF' : `ACTIVATES AT ${sunsetHour}:00`}
+                  {sunsetActive ? ' ACTIVE — PHONE SHOULD BE OFF' : `ACTIVATES AT ${sunsetHour}:00`}
                 </p>
               </div>
             </div>
@@ -275,7 +275,7 @@ export default function SleepControlCenter() {
                 ? 'border-gold bg-gold/10 text-gold' 
                 : 'border-white/[0.06] text-text-dim'
             }`}>
-              {sunsetActive ? '🔒 LOCKED' : sunsetCountdown ? `⏳ ${sunsetCountdown}` : '—'}
+              {sunsetActive ? ' LOCKED' : sunsetCountdown ? ` ${sunsetCountdown}` : '—'}
             </div>
           </div>
 
@@ -299,7 +299,7 @@ export default function SleepControlCenter() {
           {sunsetActive && (
             <div className="mt-4 p-3 bg-gold/5 border border-gold/30 text-center animate-pulse">
               <p className="text-[9px] text-gold tracking-[0.2em] font-bold font-mono">
-                ⚠️ DIGITAL SUNSET ACTIVE — PUT YOUR PHONE DOWN. SLEEP IS YOUR WEAPON.
+                 DIGITAL SUNSET ACTIVE — PUT YOUR PHONE DOWN. SLEEP IS YOUR WEAPON.
               </p>
             </div>
           )}
@@ -345,7 +345,7 @@ export default function SleepControlCenter() {
                       </div>
                     </div>
                     <div className={`w-5 h-5 flex items-center justify-center text-[10px] ${goalHit ? 'text-vm-green' : 'text-text-dim/30'}`}>
-                      {goalHit ? '✓' : '·'}
+                      {goalHit ? '' : '·'}
                     </div>
                   </div>
                 );

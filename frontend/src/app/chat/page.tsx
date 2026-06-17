@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Terminal, Send, ArrowLeft, AlertTriangle } from 'lucide-react';
 
 const MODE_STYLES: Record<string, { color: string; label: string; icon: string }> = {
-  STANDARD:       { color: 'text-vm-fuchsia',       label: 'STANDARD',       icon: '💬' },
-  ACCOUNTABILITY: { color: 'text-vm-red',     label: 'ACCOUNTABILITY', icon: '⚠️' },
-  PHILOSOPHICAL:  { color: 'text-purple-400', label: 'PHILOSOPHICAL',  icon: '🧠' },
-  TACTICAL:       { color: 'text-vm-blue',    label: 'TACTICAL',       icon: '🧊' },
-  SPIRITUAL:      { color: 'text-gold-bright',label: 'SPIRITUAL',      icon: '🌿' },
+  STANDARD:       { color: 'text-vm-fuchsia',       label: 'STANDARD',       icon: '' },
+  ACCOUNTABILITY: { color: 'text-vm-red',     label: 'ACCOUNTABILITY', icon: '' },
+  PHILOSOPHICAL:  { color: 'text-purple-400', label: 'PHILOSOPHICAL',  icon: '' },
+  TACTICAL:       { color: 'text-vm-blue',    label: 'TACTICAL',       icon: '' },
+  SPIRITUAL:      { color: 'text-gold-bright',label: 'SPIRITUAL',      icon: '' },
 };
 
 function detectMode(text: string): string {
@@ -18,7 +18,7 @@ function detectMode(text: string): string {
 }
 
 function cleanText(text: string): string {
-  return text.replace(/^[💬⚠️🧠🎯🌿]\s*\[\w+ MODE\]\s*/u, '');
+  return text.replace(/^[]\s*\[\w+ MODE\]\s*/u, '');
 }
 
 // Very lightweight markdown renderer (no external dep)
@@ -98,10 +98,9 @@ export default function ChatTerminal() {
 
     try {
       const getApiBase = () => {
-        if (typeof window !== 'undefined') {
-          return `${window.location.protocol}//${window.location.hostname}:8001`;
-        }
-        return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+        return typeof window !== 'undefined' 
+          ? `${window.location.protocol}//${window.location.hostname}:8001`
+          : 'http://127.0.0.1:8001';
       };
       const API_BASE = getApiBase();
       const response = await fetch(`${API_BASE}/api/chat/chat`, {

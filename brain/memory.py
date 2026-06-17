@@ -66,11 +66,7 @@ DEDUP_SIMILARITY_THRESHOLD = 0.92
 
 
 class Memory:
-    def __init__(self, persistence_dir=None, collection_name="virtual_mind"):
-        if persistence_dir is None:
-            persistence_dir = os.path.join(os.getcwd(), "brain", "qdrant_db_preview")
-
-        self.persistence_dir = persistence_dir
+    def __init__(self, collection_name="virtual_mind"):
         self.collection_name = collection_name
         self.encoder = GeminiEncoder()
         self._client = None
@@ -80,7 +76,11 @@ class Memory:
     def client(self):
         """Lazy client initialization to avoid concurrent access during import."""
         if self._client is None:
-            self._client = QdrantClient(path=self.persistence_dir)
+            qdrant_url = os.getenv("QDRANT_CLOUD_URL") or os.getenv("QDRANT_URL")
+            qdrant_key = os.getenv("QDRANT_API_KEY")
+            if not qdrant_url:
+                raise ValueError("QDRANT_CLOUD_URL is not set in environment variables.")
+            self._client = QdrantClient(url=qdrant_url, api_key=qdrant_key)
             if not self._initialized:
                 self._ensure_collection()
                 self._initialized = True

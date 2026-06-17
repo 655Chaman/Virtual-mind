@@ -4,7 +4,17 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, date, timedelta
 from api.database import get_db
 from pathlib import Path
+import os
+import json
+import time
+from openai import OpenAI
+from api.database import get_db
 
+VALID_MUSCLES = [
+    "chest", "upper-back", "lower-back", "front-deltoids", "quadriceps", 
+    "calves", "gluteal", "abs", "biceps", "triceps", "forearm", "hamstring", 
+    "trapezius", "neck"
+]
 router = APIRouter()
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -94,18 +104,24 @@ def log_workout(workout: WorkoutLog):
                     
                     is_ramadan = nns.get("ramadan_mode_active", False)
                     xp_result = compute_xp_from_log(daily_log, is_ramadan=is_ramadan)
-                    daily_log["xp_earned"] = xp_result["total_xp"]
-                    daily_log["active_penalties"] = xp_result["penalties_active"]
-                    daily_log["perks_unlocked"] = [p["name"] for p in xp_result["perks_unlocked"]]
                     
                     protocol_snapshot = get_all_protocol_statuses(
                         target_date=workout.date, is_ramadan=is_ramadan
                     )
-                    daily_log["protocol_status"] = protocol_snapshot.get("summary", {})
+                    
+                    # Atomic update to avoid race conditions
+                    db.daily_logs.update_one(
+                        {"date": workout.date}, 
+                        {"$set": {
+                            "non_negotiables.physical_training": True,
+                            "xp_earned": xp_result["total_xp"],
+                            "active_penalties": xp_result["penalties_active"],
+                            "perks_unlocked": [p["name"] for p in xp_result["perks_unlocked"]],
+                            "protocol_status": protocol_snapshot.get("summary", {})
+                        }}
+                    )
                 except Exception as e:
                     print(f"[WORKOUT DB] XP Engine recalculate failed: {e}")
-                
-                db.daily_logs.update_one({"date": workout.date}, {"$set": daily_log})
         except Exception as e:
             print(f"[WORKOUT DB] Failed to auto-update daily log: {e}")
             
@@ -164,3 +180,220 @@ def get_exercise_history(exercise_name: str, target_date: Optional[str] = None):
         session["estimated_1rm"] = round(max_1rm, 2)
         
     return history
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HOME PROTOCOLS (MICRO-WORKOUTS)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class HomeProtocolIncrement(BaseModel):
+    variant: str
+    count: int = 1
+
+@router.get("/home-protocol/today")
+def get_home_protocol_today():
+    db = get_db()
+    today_str = date.today().isoformat()
+    doc = db.home_protocols.find_one({"date": today_str}, {"_id": 0})
+    if not doc:
+        return {"pushups": 0, "pullups": 0, "squats": 0, "core": 0}
+    return doc
+
+@router.post("/home-protocol/increment")
+def increment_home_protocol(req: HomeProtocolIncrement):
+    db = get_db()
+    today_str = date.today().isoformat()
+    
+    # We maintain pushups, pullups, squats, core
+    variant_key = req.variant.lower()
+    db.home_protocols.update_one(
+        {"date": today_str},
+        {"$inc": {variant_key: req.count}},
+        upsert=True
+    )
+    doc = db.home_protocols.find_one({"date": today_str}, {"_id": 0})
+    if doc:
+        doc.pop("_id", None)
+    return doc or {}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MUSCLE HEATMAP ANALYTICS
+# ─────────────────────────────────────────────────────────────────────────────
+
+def classify_exercise_muscles(exercise_name: str) -> dict:
+    db = get_db()
+    cached = db.ai_muscle_cache.find_one({"exercise_name": exercise_name})
+    if cached:
+        return cached.get("muscles", {})
+
+    client = OpenAI(
+        base_url="https://integrate.api.nvidia.com/v1",
+        api_key=os.environ.get("NVIDIA_API_KEY")
+    )
+    
+    prompt = f"""
+    Analyze the exercise: '{exercise_name}'.
+    Return a JSON dictionary mapping the primary and secondary muscle groups activated to a float representing the percentage of load.
+    Example: {{"chest": 0.7, "triceps": 0.2, "front-deltoids": 0.1}}
+    IMPORTANT: You must ONLY use the following exact keys: {', '.join(VALID_MUSCLES)}.
+    Return ONLY valid JSON and no other text or explanation.
+    """
+    
+    for attempt in range(3):
+        try:
+            response = client.chat.completions.create(
+                model="meta/llama-3.1-70b-instruct",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.0,
+                max_tokens=1024,
+            )
+            
+            content = response.choices[0].message.content.strip()
+            
+            # Clean up markdown JSON block if present
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
+                
+            result = json.loads(content)
+            
+            # Save to MongoDB only if it actually got valid keys
+            if result and len(result.keys()) > 0:
+                db.ai_muscle_cache.update_one(
+                    {"exercise_name": exercise_name}, 
+                    {"$set": {"muscles": result}}, 
+                    upsert=True
+                )
+                return result
+            else:
+                raise ValueError("Empty dictionary returned from AI")
+        except Exception as e:
+            print(f"[AI RETRY {attempt+1}/3] Error classifying muscles for {exercise_name}: {e}")
+            time.sleep(2 ** attempt)
+            
+    print(f"Failed all retries classifying muscles for {exercise_name}")
+    return {}
+
+@router.get("/heatmap")
+def get_muscle_heatmap(days: int = 7):
+    """
+    Calculates muscle growth metrics.
+    Returns:
+    - activation: Muscles worked TODAY (immediate pump/hypertrophy stimulus)
+    - armor: Accumulated volume over the last N days (structural progression)
+    """
+    db = get_db()
+    
+    today_str = date.today().isoformat()
+    target_date = (date.today() - timedelta(days=days)).isoformat()
+    
+    # Fetch workouts from the last N days
+    cursor = db.workouts.find({"date": {"$gte": target_date}}, {"_id": 0})
+    workouts = list(cursor)
+    
+    # Fetch home protocols from the last N days
+    hp_cursor = db.home_protocols.find({"date": {"$gte": target_date}}, {"_id": 0})
+    home_protocols = list(hp_cursor)
+    
+    activation_vol = {m: 0 for m in VALID_MUSCLES}
+    armor_vol = {m: 0 for m in VALID_MUSCLES}
+    
+    for w in workouts:
+        w_date = w.get("date")
+        is_today = w_date == today_str
+        
+        for ex in w.get("exercises", []):
+            ex_name = ex.get("exercise_name", "").lower().strip()
+            
+            # Fetch dynamic muscles mapping from AI cache
+            muscles_dict = classify_exercise_muscles(ex_name)
+            
+            ex_vol = 0
+            for s in ex.get("sets", []):
+                if s.get("completed", True):
+                    weight = float(s.get("weight", 0) or 0)
+                    reps = int(s.get("reps", 0) or 0)
+                    
+                    # Sanity Caps to prevent 7-Day Armor Exploits
+                    weight = min(weight, 400.0)
+                    reps = min(reps, 100)
+                    
+                    if weight == 0 and reps > 0: weight = 70 
+                    ex_vol += (weight * reps)
+            
+            # Distribute volume based on load percentage
+            for m, load_pct in muscles_dict.items():
+                if m not in activation_vol:
+                    activation_vol[m] = 0
+                    armor_vol[m] = 0
+                
+                muscle_vol = ex_vol * load_pct
+                
+                armor_vol[m] += muscle_vol
+                if is_today:
+                    activation_vol[m] += muscle_vol
+
+    # Process Home Protocols Dynamically
+    for hp in home_protocols:
+        hp_date = hp.get("date")
+        is_today = hp_date == today_str
+        
+        # Loop over ALL keys dynamically except 'date' and '_id'
+        for variant, count in hp.items():
+            if variant in ["date", "_id"] or not isinstance(count, int) or count <= 0:
+                continue
+            
+            # Default weight for bodyweight tracking
+            bw_weight = 70.0
+            
+            # Some hardcoded weights for basics, otherwise treat as 1:1 bodyweight load
+            if "pushup" in variant.lower(): ex_vol = bw_weight * 0.65 * count
+            elif "pullup" in variant.lower(): ex_vol = bw_weight * 1.0 * count
+            elif "squat" in variant.lower(): ex_vol = bw_weight * 1.0 * count
+            elif "core" in variant.lower() or "abs" in variant.lower(): ex_vol = bw_weight * 0.5 * count
+            else: ex_vol = bw_weight * 0.8 * count  # Default multiplier for unknown exercises
+            
+            # The Magic: Route the dynamic string through the AI Biomechanics Engine
+            muscles_dict = classify_exercise_muscles(variant)
+            for m, load_pct in muscles_dict.items():
+                if m not in activation_vol:
+                    activation_vol[m] = 0
+                    armor_vol[m] = 0
+                
+                muscle_vol = ex_vol * load_pct
+                
+                armor_vol[m] += muscle_vol
+                if is_today:
+                    activation_vol[m] += muscle_vol
+
+    # Normalization Caps
+    DAILY_CAP = 3000.0  
+    WEEKLY_CAP = 12000.0 
+    
+    activation = {}
+    armor = {}
+    
+    for m in activation_vol:
+        activation[m] = min(100, int((activation_vol[m] / DAILY_CAP) * 100))
+        armor[m] = min(100, int((armor_vol[m] / WEEKLY_CAP) * 100))
+
+    return {
+        "activation": activation,
+        "armor": armor
+    }
+
+@router.post("/session/start")
+def start_workout_session(target_date: Optional[str] = None):
+    db = get_db()
+    today_str = target_date or date.today().isoformat()
+    now_ts = int(datetime.utcnow().timestamp() * 1000)
+    db.workouts_active_sessions.update_one(
+        {"date": today_str},
+        {"$setOnInsert": {"start_time": now_ts}},
+        upsert=True
+    )
+    doc = db.workouts_active_sessions.find_one({"date": today_str})
+    return {"start_time": doc["start_time"]}
+

@@ -28,7 +28,7 @@ import { PushNotificationToggle } from '@/components/ui/PushNotificationToggle';
 const PILLAR_META: Record<string, { label: string; icon: string; color: string; border: string; desc: string; nns: string[] }> = {
   deen: {
     label: 'DEEN',
-    icon: '🌿',
+    icon: '',
     color: 'text-vm-green',        // Jade #10D86A — sacred, divine
     border: 'border-vm-green/40',
     desc: 'Islamic knowledge and spiritual foundation',
@@ -36,15 +36,15 @@ const PILLAR_META: Record<string, { label: string; icon: string; color: string; 
   },
   elesium: {
     label: 'ELESIUM',
-    icon: '💎',
-    color: 'text-vm-sapphire',     // Sapphire #3B82F6 — digital empire
-    border: 'border-vm-sapphire/40',
+    icon: '',
+    color: 'text-amber-500',     // Amber #F59E0B — digital empire
+    border: 'border-amber-500/40',
     desc: 'Economic power and business execution',
     nns: ['deep_work_4hr'],
   },
   influence: {
     label: 'INFLUENCE',
-    icon: '🧊',
+    icon: '',
     color: 'text-vm-glacier',      // Glacier #22D3EE — communication, reach
     border: 'border-vm-glacier/40',
     desc: 'Communication and reach building',
@@ -52,7 +52,7 @@ const PILLAR_META: Record<string, { label: string; icon: string; color: string; 
   },
   self: {
     label: 'SELF',
-    icon: '🧠',
+    icon: '',
     color: 'text-vm-amethyst',     // Amethyst #A855F7 — inner consciousness
     border: 'border-vm-amethyst/40',
     desc: 'Physical excellence and mental discipline',
@@ -122,26 +122,45 @@ function PrayerComplianceWithTimings({
   const [nextPrayer, setNextPrayer] = useState<string>('');
   const [activePrayer, setActivePrayer] = useState<string>('');
   const prevActivePrayerRef = useRef<string>('');
+  const [focusTasks, setFocusTasks] = useState<any[]>([]);
+
+  // Timer effect for AI Tasks
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFocusTasks(tasks => {
+        let changed = false;
+        const newTasks = tasks.map(t => {
+          if (t.status === 'running' && t.time_remaining !== null && t.time_remaining > 0) {
+            changed = true;
+            return { ...t, time_remaining: t.time_remaining - 1 };
+          } else if (t.status === 'running' && t.time_remaining === 0) {
+            changed = true;
+            return { ...t, status: 'failed' as const };
+          }
+          return t;
+        });
+        return changed ? newTasks : tasks;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!data || !data.timings) return;
 
-    const timer = setInterval(() => {
+    const updateTimer = () => {
       const timings = data.timings;
       const now = new Date();
       const nowTime = now.getTime();
 
-      // Parse prayer times into Date objects for today
       const parsedPrayers = Object.entries(timings).map(([name, timeStr]) => {
         const [hours, minutes] = (timeStr as string).split(':').map(Number);
         const date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0);
         return { name, date };
       });
 
-      // Sort chronologically
       parsedPrayers.sort((a, b) => a.date.getTime() - b.date.getTime());
 
-      // Determine active prayer
       let currentActive = '';
       const fajr = parsedPrayers.find(p => p.name === 'Fajr');
       const sunrise = parsedPrayers.find(p => p.name === 'Sunrise');
@@ -189,7 +208,6 @@ function PrayerComplianceWithTimings({
         prevActivePrayerRef.current = '';
       }
 
-      // Filter out Sunrise for actual salah tracking
       const salahPrayers = parsedPrayers.filter(p => p.name !== 'Sunrise');
       let next = salahPrayers.find(p => p.date.getTime() > nowTime);
       
@@ -203,7 +221,13 @@ function PrayerComplianceWithTimings({
 
       setNextPrayer(next.name);
 
-      const diffMs = next.date.getTime() - nowTime;
+      // 3. Absolute Time Recalibration to fix JavaScript Event Loop Drift
+      const diffMs = next.date.getTime() - Date.now();
+      if (diffMs <= 0) {
+        setTimeLeft('00h 00m 00s');
+        return;
+      }
+      
       const hours = Math.floor(diffMs / 3600000);
       const minutes = Math.floor((diffMs % 3600000) / 60000);
       const seconds = Math.floor((diffMs % 60000) / 1000);
@@ -212,22 +236,29 @@ function PrayerComplianceWithTimings({
       const mStr = `${minutes}m `;
       const sStr = `${seconds}s`;
       setTimeLeft(`${hStr}${mStr}${sStr}`);
-    }, 1000);
+    };
 
-    return () => clearInterval(timer);
+    updateTimer(); // Initial call
+    const timer = setInterval(updateTimer, 1000);
+
+    // Recalibrate immediately when returning from background
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        updateTimer();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [data]);
 
   if (!data) {
     return (
-      <div 
-        className="bg-surface border border-vm-green/25 p-8 relative overflow-hidden transition-all duration-500 flex flex-col items-center justify-center min-h-[320px] text-center"
-        style={{
-          boxShadow: '0 0 25px rgba(16,216,106,0.08), inset 0 0 15px rgba(16,216,106,0.03)',
-          background: 'linear-gradient(135deg, rgba(16,216,106,0.06), rgba(0,0,0,0.85))',
-          borderRadius: '4px',
-        }}
-      >
-        <div className="animate-spin text-3xl mb-4">⌛</div>
+      <div className="relative overflow-hidden transition-all duration-500 flex flex-col items-center justify-center min-h-[320px] text-center w-full">
+        <div className="animate-spin text-3xl mb-4"></div>
         <p className="text-[10px] text-vm-green tracking-widest uppercase font-mono animate-pulse">
           FETCHING EXACT PRAYER TIMINGS...
         </p>
@@ -248,51 +279,42 @@ function PrayerComplianceWithTimings({
   const securedCount = Object.values(prayersLogged).filter(Boolean).length;
 
   return (
-    <div 
-      className="bg-surface border border-vm-green/25 p-6 relative overflow-hidden transition-all duration-300 space-y-6"
-      style={{
-        boxShadow: '0 0 20px rgba(16,216,106,0.06), inset 0 0 15px rgba(16,216,106,0.02)',
-        background: 'linear-gradient(135deg, rgba(16,216,106,0.04), rgba(0,0,0,0.65))',
-        borderRadius: '2px',
-      }}
-    >
-      {/* Corner Glow */}
-      <div 
-        className="absolute top-0 right-0 w-32 h-32 pointer-events-none opacity-40"
-        style={{
-          background: 'radial-gradient(circle at top right, rgba(16,216,106,0.2), transparent 70%)'
-        }}
-      />
-
-      {/* Header Info */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/[0.04] pb-5 relative z-10 font-mono">
-        <div>
-          <span className="text-[8px] text-vm-green tracking-[0.4em] font-bold block mb-1">5 PRAYERS COMPLIANCE & DYNAMIC TIMINGS</span>
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🌿</span>
-            <h3 className="text-xs font-bold tracking-widest text-white/95 uppercase">
-              {data.hijri_readable || data.hijri}
-            </h3>
+    <div className="relative w-full space-y-8 pb-4">
+      
+      {/* HUD Header */}
+      <div className="flex flex-col items-center justify-center text-center gap-2 relative z-10 font-mono w-full">
+        <span className="text-[10px] text-vm-green tracking-[0.4em] font-bold block mb-1 uppercase">
+          {data.hijri_readable || data.hijri}
+        </span>
+        
+        {nextPrayer && (
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-[10px] tracking-[0.3em] text-text-dim font-bold uppercase">
+              NEXT PRAYER: {nextPrayer}
+            </span>
+            <span className="text-4xl sm:text-5xl tracking-widest text-vm-green font-bold uppercase animate-pulse drop-shadow-[0_0_15px_rgba(16,216,106,0.5)]">
+              {timeLeft}
+            </span>
           </div>
-        </div>
+        )}
 
-        <div className="flex flex-wrap gap-2 items-center self-stretch sm:self-auto justify-between sm:justify-start">
-          <span className="text-vm-green font-bold text-[10px] bg-vm-green/10 px-3 py-1.5 rounded-sm border border-vm-green/20 shrink-0">
+        <div className="mt-4 flex items-center justify-center">
+          <span className="text-vm-green font-bold text-[10px] tracking-widest border-b border-vm-green/30 pb-1">
             {securedCount} / 5 SECURED
           </span>
-          {nextPrayer && (
-            <div className="bg-vm-green/10 border border-vm-green/30 px-3 py-1.5 flex items-center gap-2 rounded-sm shrink-0">
-              <span className="w-1.5 h-1.5 bg-vm-green rounded-full animate-pulse" />
-              <span className="text-[9px] tracking-[0.2em] text-vm-green font-bold uppercase">
-                NEXT: {nextPrayer} IN {timeLeft}
-              </span>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Grid of 6 items (spacious layout) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 relative z-10 font-mono">
+      {activePrayer && activePrayer !== 'Sunrise' && (
+        <div className="text-center animate-pulse relative z-10 w-full">
+          <p className="text-[10px] text-vm-green tracking-[0.3em] font-bold font-mono">
+             SALAH PROTOCOL ACTIVE // DROP DUNYA, STAND AND PRAY
+          </p>
+        </div>
+      )}
+
+      {/* Minimalist Stack Layout */}
+      <div className="flex flex-col gap-2 relative z-10 font-mono max-w-md mx-auto w-full">
         {items.map(({ name, key, isObligatory }) => {
           const rawTime = timings[name];
           const time = formatTo12Hour(rawTime);
@@ -300,101 +322,69 @@ function PrayerComplianceWithTimings({
           const isAttended = isObligatory && prayersLogged[key] === true;
 
           if (!isObligatory) {
-            // Sunrise transit card (spacious)
+            // Sunrise transit item
             return (
               <div
                 key={name}
-                className="p-5 border border-surface2 bg-[#0c0c0c]/40 opacity-70 flex flex-col justify-between h-32"
-                style={{ borderRadius: '2px' }}
+                className="py-3 px-4 flex items-center justify-between opacity-50"
               >
-                <div className="flex justify-between items-start">
-                  <span className="text-[9px] tracking-widest uppercase font-bold text-text-dim/60">
+                <div className="flex items-center gap-4">
+                  <span className="text-[10px] tracking-widest uppercase font-bold text-text-dim">
                     {name}
                   </span>
-                  <span className="text-[7.5px] px-1.5 py-0.5 bg-surface2/30 text-text-dim/70 tracking-wider uppercase font-bold">
+                  <span className="text-[8px] text-text-dim tracking-[0.2em] uppercase">
                     TRANSIT
                   </span>
                 </div>
-                <div className="mt-4">
-                  <span className="text-sm font-bold tracking-widest text-text-dim">
-                    {time}
-                  </span>
-                  <span className="text-[7px] text-text-dim/40 block tracking-[0.2em] uppercase mt-0.5">
-                    SUNRISE
-                  </span>
-                </div>
+                <span className="text-sm font-bold tracking-widest text-text-dim">
+                  {time}
+                </span>
               </div>
             );
           }
 
-          // Obligatory prayers clickable buttons (spacious)
+          // Obligatory prayers
           return (
             <button
               key={name}
               onClick={() => handlePrayerToggle(key)}
-              className={`p-5 border text-left flex flex-col justify-between h-32 transition-all active:scale-[0.98] relative ${
+              className={`py-4 px-6 flex items-center justify-between w-full transition-all active:scale-[0.98] relative border rounded-xl mb-2 ${
                 isAttended
-                  ? 'border-vm-green/50 bg-vm-green/10 shadow-[0_0_12px_rgba(76,170,110,0.15)] text-vm-green font-bold'
+                  ? 'border-vm-green/20 text-vm-green bg-vm-green/5'
                   : isActive
-                  ? 'border-vm-green bg-vm-green/10 shadow-[0_0_12px_rgba(16,216,106,0.15)] text-vm-green scale-[1.02] font-bold'
-                  : 'border-surface2 bg-[#0c0c0c] text-text-dim hover:border-vm-green/30 hover:text-white'
+                  ? 'border-vm-green text-vm-green bg-vm-green/10'
+                  : 'border-surface2 text-text-dim hover:text-white hover:border-vm-green/50 bg-surface/50'
               }`}
-              style={{ borderRadius: '2px' }}
             >
               {isActive && !isAttended && (
-                <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-vm-green shadow-[0_0_8px_#10D86A]" />
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-3/4 rounded-r-full bg-vm-green shadow-[0_0_15px_#10D86A]" />
               )}
-              {isAttended && (
-                <div className="absolute top-1.5 right-1.5 w-3.5 h-3.5 bg-vm-green rounded-full flex items-center justify-center">
-                  <span className="text-[9px] text-obsidian font-bold">✓</span>
-                </div>
-              )}
-
-              <div className="flex justify-between items-start w-full">
-                <span className={`text-[10px] tracking-widest uppercase font-bold ${
-                  isAttended ? 'text-vm-green' : isActive ? 'text-vm-green' : 'text-text-dim'
+              
+              <div className="flex flex-col text-left">
+                <span className={`text-[12px] tracking-widest uppercase font-bold ${
+                  isAttended ? 'text-vm-green' : isActive ? 'text-vm-green' : 'text-white'
                 }`}>
                   {name}
                 </span>
-                {isActive && !isAttended && (
-                  <span className="text-[7.5px] px-1.5 py-0.5 bg-vm-green text-obsidian font-bold tracking-widest uppercase animate-pulse">
-                    ACTIVE
-                  </span>
-                )}
-                {isAttended && (
-                  <span className="text-[7.5px] px-1.5 py-0.5 bg-vm-green/20 text-vm-green font-bold tracking-widest uppercase">
-                    SECURED
-                  </span>
-                )}
+                <span className="text-[8px] text-text-dim tracking-[0.2em] uppercase mt-1">
+                  {isAttended ? 'SECURED ' : isActive ? 'ACTIVE NOW' : 'PENDING'}
+                </span>
               </div>
 
-              <div className="mt-4">
-                <span className={`text-base font-bold tracking-widest ${
-                  isAttended ? 'text-vm-green' : isActive ? 'text-vm-green' : 'text-white'
-                }`}>
-                  {time}
-                </span>
-                <span className="text-[7px] text-text-dim/50 block tracking-[0.2em] uppercase mt-0.5">
-                  {isAttended ? 'COMPLETED' : isActive ? 'DUE NOW' : 'SALAH'}
-                </span>
-              </div>
+              <span className={`text-lg font-bold tracking-widest ${
+                isAttended ? 'text-vm-green' : isActive ? 'text-vm-green' : 'text-white'
+              }`}>
+                {time}
+              </span>
             </button>
           );
         })}
       </div>
 
-      {activePrayer && activePrayer !== 'Sunrise' && (
-        <div className="mt-4 p-2.5 bg-vm-green/10 border border-vm-green/30 text-center animate-pulse relative z-10">
-          <p className="text-[8px] text-vm-green tracking-[0.3em] font-bold font-mono">
-            ⚠️ SALAH PROTOCOL ACTIVE // DROP DUNYA, STAND AND READ YOUR PRAYERS
-          </p>
-        </div>
-      )}
-
       {/* PRAYER HISTORY GRAPH INSIDE THE CARD */}
       {prayerHistory && prayerHistory.length > 0 && (
         <div 
-          className="mt-2 pt-5 border-t border-vm-green/10 relative w-full z-10 cursor-pointer group flex flex-col items-center"
+          className="mt-8 pt-8 border-t border-white/[0.05] relative w-full z-10 cursor-pointer group flex flex-col items-center max-w-md mx-auto"
           onClick={(e) => { 
             e.stopPropagation();
             triggerHaptic('medium'); 
@@ -402,7 +392,7 @@ function PrayerComplianceWithTimings({
             setShowPrayerHistoryModal(true); 
           }}
         >
-          <h4 className="text-[9px] text-text-dim tracking-widest uppercase mb-3 font-mono group-hover:text-vm-green transition-colors flex items-center gap-2">
+          <h4 className="text-[10px] text-text-dim tracking-widest uppercase mb-6 font-mono group-hover:text-vm-green transition-colors flex items-center gap-2">
             14-DAY SALAH VELOCITY <span className="text-[8px] opacity-60 text-vm-green-dim">(CLICK TO AUDIT)</span>
           </h4>
           <PrayerSalahVelocityChart 
@@ -749,7 +739,24 @@ export default function PillarFolder() {
   // Custom Toast State
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [loadedDate, setLoadedDate] = useState<string>('');
+  const [coords, setCoords] = useState<{lat: number, lng: number} | null>(null);
 
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCoords({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.warn('GPS Denied/Failed:', error);
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+      );
+    }
+  }, []);
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ message, type });
   };
@@ -757,6 +764,8 @@ export default function PillarFolder() {
   // Today's log for non-negotiables checks
   const [todayLog, setTodayLog] = useState<any>(null);
   const [nns, setNns] = useState<Record<string, boolean>>({});
+  const [operatingMode, setOperatingMode] = useState<'optimal' | 'deload' | 'black_swan'>('optimal');
+  const [lensCaptured, setLensCaptured] = useState(false);
 
   // Deen states
   const [tasbihCount, setTasbihCount] = useState(0);
@@ -793,6 +802,23 @@ export default function PillarFolder() {
   const [threadsPosted, setThreadsPosted] = useState(0);
   const [contentIdea, setContentIdea] = useState('');
   const [isContentSaving, setIsContentSaving] = useState(false);
+  
+  type PipelineItem = { id: string; url: string; hook: string; ig: boolean; tw: boolean; li: boolean; dc: boolean };
+  const [contentPipeline, setContentPipeline] = useState<PipelineItem[]>([]);
+  const [carouselsPosted, setCarouselsPosted] = useState(0);
+  const [reelsPosted, setReelsPosted] = useState(0);
+  const [longFormPosted, setLongFormPosted] = useState(0);
+  const [isRapidLogging, setIsRapidLogging] = useState(false);
+
+  type AITask = { id: string; name: string; estimated_minutes: number | null; xp_reward: number | null; time_remaining: number | null; status: 'pending' | 'running' | 'completed' | 'failed' };
+  const [focusTasks, setFocusTasks] = useState<AITask[]>([
+    { id: '1', name: '', estimated_minutes: null, xp_reward: null, time_remaining: null, status: 'pending' },
+    { id: '2', name: '', estimated_minutes: null, xp_reward: null, time_remaining: null, status: 'pending' },
+    { id: '3', name: '', estimated_minutes: null, xp_reward: null, time_remaining: null, status: 'pending' }
+  ]);
+  const [isEstimatingAI, setIsEstimatingAI] = useState(false);
+  const [bottleneck, setBottleneck] = useState('');
+  const [failingSystems, setFailingSystems] = useState('');
 
   // Influence states
   const [wordsWritten, setWordsWritten] = useState('');
@@ -811,20 +837,28 @@ export default function PillarFolder() {
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [entryText, setEntryText] = useState('');
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const todayStr = getLocalDateString();
-      setLoadedDate(todayStr);
-      const [logsResult, streakResult, prayerResult, elesiumResult, todayLogResult, prayerHistoryResult, tasbihResult] = await Promise.all([
-        api.logs.list(30).catch(() => []),
-        api.logs.streak().catch(() => null),
-        pillar === 'deen' ? api.deen.prayerTimes().catch(() => null) : Promise.resolve(null),
-        pillar === 'elesium' ? api.elesium.metrics().catch(() => null) : Promise.resolve(null),
-        api.logs.today().catch(() => null),
-        pillar === 'deen' ? api.deen.prayerHistory().catch(() => []) : Promise.resolve([]),
-        pillar === 'deen' ? api.deen.tasbihHistory().catch(() => null) : Promise.resolve(null)
-      ]);
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const todayStr = getLocalDateString();
+        setLoadedDate(todayStr);
+        const [logsResult, streakResult, elesiumResult, todayLogResult, prayerHistoryResult, tasbihResult] = await Promise.all([
+          api.logs.list(30).catch(() => []),
+          api.logs.streak().catch(() => null),
+          pillar === 'elesium' ? api.elesium.metrics().catch(() => null) : Promise.resolve(null),
+          api.logs.today().catch(() => null),
+          pillar === 'deen' ? api.deen.prayerHistory().catch(() => []) : Promise.resolve([]),
+          pillar === 'deen' ? api.deen.tasbihHistory().catch(() => null) : Promise.resolve(null)
+        ]);
+
+        let prayerResult = null;
+        if (pillar === 'deen') {
+          try {
+            prayerResult = await api.deen.prayerTimes(coords?.lat, coords?.lng);
+          } catch (e) {
+            console.warn('Failed to fetch prayer times');
+          }
+        }
       setLogs(Array.isArray(logsResult) ? logsResult : []);
       setStreak(streakResult);
       if (prayerResult) {
@@ -868,6 +902,33 @@ export default function PillarFolder() {
     }, 3000);
     return () => clearTimeout(timer);
   }, [toast]);
+
+  // Structural Fortification: Auto-Deload & Tiering
+  const [currentTier, setCurrentTier] = useState<1 | 2>(1);
+  const [hasRunFortification, setHasRunFortification] = useState(false);
+
+  useEffect(() => {
+    if (pillar === 'self' && logs.length > 0 && !hasRunFortification) {
+      setHasRunFortification(true);
+      const selfLogs = logs.filter(l => l.pillar?.toLowerCase() === 'self');
+      
+      // 1. Fatigue Detection
+      const selfLogsWithScore = selfLogs.filter(l => l.score !== undefined && l.score !== null);
+      if (selfLogsWithScore.length >= 3) {
+        const last3 = selfLogsWithScore.slice(0, 3);
+        const allBelow5 = last3.every(l => l.score < 5);
+        if (allBelow5 && operatingMode !== 'deload') {
+          setOperatingMode('deload');
+          showToast("SYSTEM DETECTS FATIGUE. FORCING DELOAD PROTOCOL.", "info");
+        }
+      }
+
+      // 2. Streak Tier Escalation
+      if (streak && streak.current_streak >= 7) {
+        setCurrentTier(2);
+      }
+    }
+  }, [pillar, logs, operatingMode, streak, hasRunFortification]);
 
   // Set default audit date when history modal opens
   useEffect(() => {
@@ -966,6 +1027,7 @@ export default function PillarFolder() {
     try {
       const res = await api.media.upload(file);
       setUploadedImageUrl(res.url);
+      if (pillar === 'self') setLensCaptured(true);
       setShowEntryModal(true);
     } catch (err) {
       console.error('Camera upload failed:', err);
@@ -1020,15 +1082,16 @@ export default function PillarFolder() {
     if (!learningText.trim()) return;
     try {
       triggerHaptic('medium');
+      const tag = operatingMode === 'black_swan' ? 'BLACK_SWAN_AUTOPSY' : operatingMode === 'deload' ? 'DELOAD_LOG' : 'LEARNING/CONCEPT';
       await api.logs.addEntry({
         timestamp: new Date().toISOString(),
         pillar: meta.label,
-        text: `[LEARNING/CONCEPT] ${learningText}`,
+        text: `[${tag}] ${learningText}`,
       });
       setLearningText('');
       await loadData();
       triggerHaptic('success');
-      showToast("Concept logged successfully", "success");
+      showToast("Entry logged successfully", "success");
     } catch(err) {
       showToast("Save failed", "error");
     }
@@ -1174,7 +1237,7 @@ export default function PillarFolder() {
   // Quran log submit
   const handleQuranSubmit = async () => {
     if (!quranPage.trim() && !quranSurah.trim()) return;
-    const textLog = `📖 [QURAN TRACKER] Successfully read Surah ${quranSurah || 'N/A'}, Page/Ayah: ${quranPage || 'N/A'}`;
+    const textLog = ` [QURAN TRACKER] Successfully read Surah ${quranSurah || 'N/A'}, Page/Ayah: ${quranPage || 'N/A'}`;
     try {
       await api.logs.addEntry({
         timestamp: new Date().toISOString(),
@@ -1218,7 +1281,7 @@ export default function PillarFolder() {
   const handleInfluenceTemplate = (tag: string) => {
     triggerHaptic('light');
     setUploadedImageUrl(null);
-    setEntryText(`✍️ ${tag} \n- Title:\n- Hook Concept:\n- Rhetorical Hooks:\n- core_message:\n`);
+    setEntryText(` ${tag} \n- Title:\n- Hook Concept:\n- Rhetorical Hooks:\n- core_message:\n`);
     setShowEntryModal(true);
   };
 
@@ -1226,7 +1289,7 @@ export default function PillarFolder() {
     if (!wordsWritten.trim()) return;
     const count = parseInt(wordsWritten);
     if (isNaN(count)) return;
-    const textLog = `✍️ [WRITING ENGINE] Logged ${count} written words into the Elesium content pipeline.`;
+    const textLog = ` [WRITING ENGINE] Logged ${count} written words into the Elesium content pipeline.`;
     try {
       await api.logs.addEntry({
         timestamp: new Date().toISOString(),
@@ -1284,7 +1347,7 @@ export default function PillarFolder() {
       await api.logs.submit(logData);
 
       // 2. Add entry to folder feed for visibility
-      const textLog = `🧠 [DISCIPLINE ENGINE] Self-reported accountability score: ${disciplineScore}/10 today. Status: Focused, zero alarm overrides.`;
+      const textLog = ` [DISCIPLINE ENGINE] Self-reported accountability score: ${disciplineScore}/10 today. Status: Focused, zero alarm overrides.`;
       await api.logs.addEntry({
         timestamp: new Date().toISOString(),
         pillar: 'SELF',
@@ -1355,37 +1418,20 @@ export default function PillarFolder() {
       <div className="scanline-overlay" />
 
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-obsidian/95 backdrop-blur border-b border-white/[0.04] px-6 py-4 pt-safe flex items-center gap-3">
+      <header className="sticky top-0 z-20 bg-obsidian/95 backdrop-blur border-b border-white/[0.04] px-6 py-4 pt-safe flex items-center gap-4">
         <button id={`${pillar}-back-btn`} onClick={() => router.push('/home')} className={`text-text-dim hover:${meta.color.replace("text-", "text-")} transition-colors`}>
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div>
-          <h1 className={`text-xl font-heading tracking-[0.2em] ${meta.color}`}>
-            {meta.icon} {meta.label}
-          </h1>
-          <p className="text-text-dim text-[10px] tracking-widest">{meta.desc.toUpperCase()}</p>
-        </div>
+        <h1 className={`text-lg sm:text-xl font-heading tracking-[0.3em] uppercase ${meta.color} flex items-center gap-2`}>
+          {meta.icon} {meta.label}
+        </h1>
       </header>
 
       <div className="px-4 py-6 max-w-5xl mx-auto space-y-8">
 
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { label: 'STREAK', value: `${pillarStreak}d` },
-            { label: 'ENTRIES', value: pillarEntries.length },
-            { label: 'TOTAL XP', value: pillarXP },
-          ].map(s => (
-            <div key={s.label} className={`bg-surface border ${meta.border} p-3 text-center`}>
-              <div className={`text-lg font-heading ${meta.color}`}>{s.value}</div>
-              <div className="text-[8px] text-text-dim tracking-widest mt-1">{s.label}</div>
-            </div>
-          ))}
-        </div>
-
         {/* ─── DYNAMIC UNIQUE WORKSPACE MODULES ─────────────────────────────── */}
         
-        {/* 🌿 DEEN SPIRITUAL INTERFACE */}
+        {/*  DEEN SPIRITUAL INTERFACE */}
         {pillar === 'deen' && (
           <div className="space-y-6 animate-fade-up">
             {prayerData && (
@@ -1409,25 +1455,25 @@ export default function PillarFolder() {
             {/* Notification settings card */}
             <PushNotificationToggle />
 
-            {/* 🌿 SPIRITUAL HABITS */}
-            <div className="bg-surface border border-surface2 p-5">
-              <h3 className="text-xs font-bold tracking-widest text-vm-green mb-4 uppercase flex items-center gap-1.5">
-                🌿 SPIRITUAL HABITS
+            {/*  SPIRITUAL HABITS */}
+            <div className="w-full flex flex-col items-center justify-center pt-4 pb-4 max-w-lg mx-auto">
+              <h3 className="text-[10px] font-bold tracking-[0.3em] text-vm-green/70 mb-6 uppercase flex items-center gap-2">
+                 SPIRITUAL HABITS
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full">
                 {[
-                  { key: 'fajr_without_alarm', label: '🌄 FAJR ON TIME' },
-                  { key: 'adhkar', label: '☀️ ADHKAR' },
-                  { key: 'quran_30min', label: '📗 QURAN 30M' },
-                  { key: 'memorization_session', label: '🧠 MEMORIZE' }
+                  { key: 'fajr_without_alarm', label: ' FAJR ON TIME' },
+                  { key: 'adhkar', label: ' ADHKAR' },
+                  { key: 'quran_30min', label: ' QURAN 30M' },
+                  { key: 'memorization_session', label: ' MEMORIZE' }
                 ].map(item => (
                   <button
                     key={item.key}
                     onClick={() => handleNNToggle(item.key, !nns[item.key])}
-                    className={`py-4 px-3 border text-center flex flex-col items-center justify-center h-24 transition-all active:scale-95 ${
+                    className={`py-4 px-3 border rounded-xl text-center flex flex-col items-center justify-center h-24 transition-all active:scale-95 ${
                       nns[item.key] 
                         ? 'border-vm-green bg-vm-green/10 text-vm-green shadow-[0_0_15px_rgba(16,216,106,0.2)]' 
-                        : 'border-surface2 bg-obsidian text-text-dim hover:border-vm-green/30 hover:text-vm-green shadow-lg'
+                        : 'border-white/[0.05] bg-surface/30 text-text-dim hover:border-vm-green/30 hover:text-vm-green'
                     }`}
                   >
                     <span className="text-[10px] sm:text-xs font-bold tracking-wider font-mono mb-2">{item.label}</span>
@@ -1440,62 +1486,64 @@ export default function PillarFolder() {
             </div>
 
             {/* Tasbih counter */}
-            <div className="bg-surface border border-surface2 p-6 flex flex-col items-center justify-center">
-              <h3 className="text-xs font-bold tracking-widest text-vm-green mb-6 uppercase flex items-center gap-1.5 self-start">
-                🟢 NATIVE TASBIH COUNT ENGINE
+            <div className="w-full flex flex-col items-center justify-center pt-8 pb-4">
+              <h3 className="text-[10px] font-bold tracking-[0.3em] text-vm-green/70 mb-8 uppercase flex items-center gap-2 self-center">
+                 NATIVE TASBIH ENGINE
               </h3>
               
-              <div className="w-full flex flex-col items-center gap-6">
+              <div className="w-full flex flex-col items-center gap-8 max-w-md mx-auto">
                 <div className="text-center w-full flex flex-col items-center">
-                  <span className="text-[9px] text-text-dim tracking-[0.3em] uppercase block mb-2">CURRENT RECITATION</span>
-                  <div className="flex items-center justify-center gap-4">
+                  <span className="text-[8px] text-text-dim tracking-[0.4em] uppercase block mb-3">CURRENT RECITATION</span>
+                  <div className="flex items-center justify-between w-full px-4">
                     <button 
                       onClick={handleTasbihPrev}
-                      className="p-2 text-vm-green/40 hover:text-vm-green transition-colors active:scale-95"
+                      className="p-3 text-vm-green/30 hover:text-vm-green transition-colors active:scale-95 rounded-xl"
                     >
-                      <ChevronLeft className="w-6 h-6" />
+                      <ChevronLeft className="w-8 h-8" />
                     </button>
-                    <span className="text-2xl sm:text-3xl font-bold text-white tracking-widest uppercase drop-shadow-md min-w-[200px] text-center">
+                    <span className="text-xl sm:text-2xl md:text-3xl font-black text-vm-green tracking-widest uppercase drop-shadow-[0_0_15px_rgba(16,216,106,0.5)] flex-1 text-center font-heading">
                       {tasbihPhase}
                     </span>
                     <button 
                       onClick={handleTasbihNext}
-                      className="p-2 text-vm-green/40 hover:text-vm-green transition-colors active:scale-95"
+                      className="p-3 text-vm-green/30 hover:text-vm-green transition-colors active:scale-95 rounded-xl"
                     >
-                      <ChevronRight className="w-6 h-6" />
+                      <ChevronRight className="w-8 h-8" />
                     </button>
                   </div>
-                  <span className="text-[9px] text-vm-green/60 mt-3 uppercase tracking-widest font-mono block">
+                  <span className="text-[8px] text-text-dim/50 mt-4 uppercase tracking-[0.3em] font-mono block">
                     Target: 33 (Subhan Allah) → 33 (Alhamdulillah) → 33 (Allahu Akbar) → ∞ (Astaghfirullah)
                   </span>
                 </div>
                 
                 <button 
                   onClick={handleTasbihTap}
-                  className="w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-vm-green/40 bg-vm-green/5 hover:bg-vm-green/15 active:bg-vm-green/30 active:scale-95 transition-all flex flex-col items-center justify-center shadow-[0_0_40px_rgba(16,216,106,0.15)] my-4"
+                  className="w-full aspect-square max-w-[280px] rounded-full border border-vm-green/20 hover:border-vm-green/50 active:scale-95 transition-all flex flex-col items-center justify-center relative group"
+                  style={{ backgroundColor: 'var(--color-obsidian)' }}
                 >
-                  <span className="text-6xl sm:text-8xl font-bold text-vm-green font-mono drop-shadow-[0_0_15px_rgba(16,216,106,0.6)]">{tasbihCount}</span>
-                  <span className="text-[10px] sm:text-xs text-vm-green/60 tracking-[0.4em] uppercase font-mono mt-2">TAP TO COUNT</span>
+                  <div className="absolute inset-4 rounded-full border border-vm-green/10 group-hover:border-vm-green/30 transition-colors" />
+                  <span className="text-7xl sm:text-9xl font-black text-vm-green font-mono drop-shadow-[0_0_20px_rgba(16,216,106,0.8)] z-10">{tasbihCount}</span>
+                  <span className="text-[10px] sm:text-xs text-vm-green tracking-[0.5em] uppercase font-bold mt-4 z-10">TAP TO COUNT</span>
                 </button>
 
-                <div className="flex w-full justify-between items-end mt-4 border-t border-surface2/50 pt-4">
-                  <div className="flex flex-col gap-1 text-[9px] tracking-widest font-mono uppercase text-text-dim/80">
-                    <span>Total Session: <span className="text-vm-green font-bold">{tasbihTotals.total}</span></span>
+                <div className="flex w-full flex-col gap-4 items-center mt-4">
+                  <div className="flex gap-6 text-[10px] tracking-[0.2em] font-mono uppercase text-text-dim">
+                    <span>SESSION: <span className="text-vm-green font-bold">{tasbihTotals.total}</span></span>
                     {tasbihHistory && (
-                      <span>All-Time Saved: <span className="text-vm-green font-bold">{tasbihHistory.all_time_total}</span></span>
+                      <span>ALL-TIME: <span className="text-vm-green font-bold">{tasbihHistory.all_time_total}</span></span>
                     )}
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex gap-4 w-full">
                     <button 
                       onClick={handleTasbihReset}
-                      className="px-5 py-3 border border-surface2 hover:border-vm-red/40 text-[10px] text-text-dim hover:text-vm-red transition-colors font-mono tracking-widest uppercase active:scale-95"
+                      className="flex-1 py-4 border border-white/[0.05] hover:border-vm-red/40 text-[10px] text-text-dim hover:text-vm-red transition-colors font-mono tracking-widest uppercase active:scale-95 rounded-xl"
                     >
-                      Clear
+                      RESET
                     </button>
                     <button 
                       onClick={handleTasbihSave}
                       disabled={isTasbihSaving || tasbihTotals.total === 0}
-                      className="px-5 py-3 border border-vm-green bg-vm-green/10 hover:bg-vm-green/20 text-[10px] text-vm-green transition-colors font-mono tracking-widest uppercase active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-[0_0_15px_rgba(16,216,106,0.2)]"
+                      className="flex-1 py-4 border border-vm-green/40 bg-vm-green/5 hover:bg-vm-green/10 text-[10px] text-vm-green transition-colors font-mono tracking-widest uppercase active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed font-bold rounded-xl"
                     >
                       {isTasbihSaving ? 'SAVING...' : 'SECURE & SAVE'}
                     </button>
@@ -1505,76 +1553,77 @@ export default function PillarFolder() {
             </div>
 
             {/* Quran progress log */}
-            <div className="bg-surface border border-surface2 p-5 flex flex-col md:flex-row gap-4 justify-between items-end">
-              <div className="flex-1 w-full space-y-3">
-                <h3 className="text-xs font-bold tracking-widest text-vm-green uppercase flex items-center gap-1.5">
-                  📗 QURAN PROGRESS LOGGER
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[8px] text-text-dim tracking-widest uppercase font-mono block">Surah Name</label>
+            <div className="w-full flex flex-col gap-6 pt-8 pb-4 max-w-md mx-auto">
+              <h3 className="text-[10px] font-bold tracking-[0.3em] text-vm-green/70 uppercase flex items-center justify-center gap-2">
+                 QURAN LOGGER
+              </h3>
+              <div className="flex flex-col gap-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[8px] text-text-dim tracking-[0.3em] uppercase font-mono block">Surah Name</label>
                     <input 
                       type="text" 
                       placeholder="e.g. Al-Mulk"
                       value={quranSurah}
                       onChange={e => setQuranSurah(e.target.value)}
-                      className="w-full bg-obsidian border border-surface2 p-2 text-xs text-white outline-none focus:border-vm-green/50 font-mono"
+                      className="w-full bg-surface border border-surface2 p-3 text-sm text-vm-green outline-none focus:border-vm-green/50 font-mono transition-colors text-center placeholder:text-white/20 rounded-xl"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[8px] text-text-dim tracking-widest uppercase font-mono block">Page / Ayah</label>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[8px] text-text-dim tracking-[0.3em] uppercase font-mono block">Page / Ayah</label>
                     <input 
                       type="text" 
                       placeholder="e.g. Page 562"
                       value={quranPage}
                       onChange={e => setQuranPage(e.target.value)}
-                      className="w-full bg-obsidian border border-surface2 p-2 text-xs text-white outline-none focus:border-vm-green/50 font-mono"
+                      className="w-full bg-surface border border-surface2 p-3 text-sm text-vm-green outline-none focus:border-vm-green/50 font-mono transition-colors text-center placeholder:text-white/20 rounded-xl"
                     />
                   </div>
                 </div>
+                <button 
+                  onClick={handleQuranSubmit}
+                  disabled={!quranPage.trim() && !quranSurah.trim()}
+                  className="w-full py-4 border border-vm-green/40 bg-vm-green/5 hover:border-vm-green hover:bg-vm-green/10 text-vm-green font-bold tracking-[0.3em] text-[10px] disabled:opacity-30 transition-all uppercase mt-2 rounded-xl"
+                >
+                  LOG PROGRESS
+                </button>
               </div>
-              <button 
-                onClick={handleQuranSubmit}
-                disabled={!quranPage.trim() && !quranSurah.trim()}
-                className="w-full md:w-auto px-6 py-2.5 bg-vm-green text-obsidian font-bold tracking-widest text-xs disabled:opacity-30 self-stretch md:self-end h-[36px]"
-              >
-                LOG PROGRESS
-              </button>
             </div>
 
-            {/* Prayer History Graph — Enhanced with range and stats */}
+            {/* Prayer History Graph — Borderless */}
             {prayerHistory.length > 0 && (
               <div 
-                className="bg-surface border border-surface2 p-4 mt-6 cursor-pointer group/card hover:border-vm-green/30 transition-colors"
+                className="w-full pt-8 cursor-pointer group flex flex-col items-center max-w-md mx-auto pb-12"
                 onClick={() => { 
                   triggerHaptic('medium'); 
                   setSelectedAuditDate(getLocalDateString()); 
                   setShowPrayerHistoryModal(true); 
                 }}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xs font-bold tracking-widest text-vm-green flex items-center gap-1.5 group-hover/card:text-vm-green/70 transition-colors">
-                    🌱 PRAYER COMMITMENT LOG <span className="text-[8px] opacity-60 font-normal lowercase tracking-normal text-text-dim">(click to audit)</span>
+                <div className="flex flex-col items-center justify-center w-full mb-8">
+                  <h2 className="text-[10px] font-bold tracking-[0.3em] text-vm-green flex items-center gap-2 group-hover:text-vm-green/70 transition-colors uppercase">
+                     PRAYER COMMITMENT LOG
                   </h2>
-                  <div className="flex items-center gap-3">
-                    {/* Streak badge */}
-                    {(() => {
-                      let streak = 0;
-                      for (let i = prayerHistory.length - 1; i >= 0; i--) {
-                        if (prayerHistory[i].count === 5) streak++;
-                        else break;
-                      }
-                      return streak > 0 ? (
-                        <span className="text-[8px] bg-vm-green/10 border border-vm-green/30 px-2 py-0.5 text-vm-green font-bold tracking-wider font-mono">
-                          🌿 {streak}D STREAK
-                        </span>
-                      ) : null;
-                    })()}
-                  </div>
+                  <span className="text-[8px] opacity-50 font-mono tracking-widest text-text-dim mt-2 uppercase">(CLICK TO AUDIT)</span>
+                  
+                  {/* Streak badge */}
+                  {(() => {
+                    let streak = 0;
+                    for (let i = prayerHistory.length - 1; i >= 0; i--) {
+                      if (prayerHistory[i].count === 5) streak++;
+                      else break;
+                    }
+                    return streak > 0 ? (
+                      <span className="mt-4 text-[9px] border-b border-vm-green/30 pb-1 text-vm-green font-bold tracking-[0.3em] font-mono">
+                         {streak}D STREAK
+                      </span>
+                    ) : null;
+                  })()}
                 </div>
 
                 {/* Line chart */}
-                <div className="mb-3">
+                <div className="w-full mb-6 relative">
+                  <div className="absolute inset-0 bg-vm-green/5 blur-2xl rounded-full" />
                   <PrayerCommitmentLogChart 
                     data={prayerHistory} 
                     onPointClick={(date) => {
@@ -1586,26 +1635,26 @@ export default function PillarFolder() {
                 </div>
 
                 {/* Summary stats */}
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/[0.04]">
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-vm-green font-mono">
+                <div className="grid grid-cols-3 gap-6 pt-6 border-t border-white/[0.05] w-full">
+                  <div className="text-center flex flex-col gap-1">
+                    <p className="text-xl sm:text-2xl font-bold text-vm-green font-mono">
                       {prayerHistory.filter(d => d.count === 5).length}
                     </p>
-                    <p className="text-[7px] text-text-dim tracking-[0.2em]">5/5 DAYS</p>
+                    <p className="text-[8px] text-text-dim tracking-[0.3em] uppercase">5/5 DAYS</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-vm-green font-mono">
+                  <div className="text-center flex flex-col gap-1">
+                    <p className="text-xl sm:text-2xl font-bold text-vm-green font-mono">
                       {prayerHistory.length > 0 
                         ? Math.round((prayerHistory.reduce((s, d) => s + d.count, 0) / (prayerHistory.length * 5)) * 100)
                         : 0}%
                     </p>
-                    <p className="text-[7px] text-text-dim tracking-[0.2em]">COMPLETION</p>
+                    <p className="text-[8px] text-text-dim tracking-[0.3em] uppercase">COMPLETION</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-vm-green font-mono">
+                  <div className="text-center flex flex-col gap-1">
+                    <p className="text-xl sm:text-2xl font-bold text-vm-green font-mono">
                       {prayerHistory.reduce((s, d) => s + d.count, 0)}
                     </p>
-                    <p className="text-[7px] text-text-dim tracking-[0.2em]">TOTAL SALAH</p>
+                    <p className="text-[8px] text-text-dim tracking-[0.3em] uppercase">TOTAL SALAH</p>
                   </div>
                 </div>
               </div>
@@ -1613,143 +1662,247 @@ export default function PillarFolder() {
           </div>
         )}
 
-        {/* 💎 ELESIUM EMPIRE — BUSINESS + CONTENT */}
+        {/*  ELESIUM EMPIRE — BUSINESS + CONTENT */}
         {pillar === 'elesium' && (
           <div className="space-y-6 animate-fade-up">
             
-            {/* Tabs Selector */}
-            <div className="flex border border-surface2 rounded-sm overflow-hidden p-1 bg-surface/50">
+            {/* Premium Tabs Selector */}
+            <div className="flex bg-black/40 backdrop-blur-md border border-white/10 rounded-xl p-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
               <button
                 onClick={() => { triggerHaptic('light'); setElesiumTab('business'); }}
-                className={`flex-1 py-2.5 text-[10px] font-bold tracking-widest uppercase transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 py-3 text-[11px] font-bold tracking-[0.2em] uppercase transition-all duration-300 rounded-lg flex items-center justify-center gap-2 ${
                   elesiumTab === 'business'
-                    ? 'bg-vm-blue/20 text-vm-blue border border-vm-blue/30 shadow-[0_0_10px_rgba(76,126,201,0.2)]'
+                    ? 'bg-gradient-to-r from-amber-500/20 to-amber-500/5 text-amber-500 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
                     : 'text-text-dim hover:text-white hover:bg-white/5'
                 }`}
               >
-                <Zap className="w-3.5 h-3.5" /> Business
+                Business
               </button>
               <button
                 onClick={() => { triggerHaptic('light'); setElesiumTab('content'); }}
-                className={`flex-1 py-2.5 text-[10px] font-bold tracking-widest uppercase transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 py-3 text-[11px] font-bold tracking-[0.2em] uppercase transition-all duration-300 rounded-lg flex items-center justify-center gap-2 ${
                   elesiumTab === 'content'
-                    ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30 shadow-[0_0_10px_rgba(167,139,250,0.2)]'
+                    ? 'bg-gradient-to-r from-purple-500/20 to-purple-500/5 text-purple-400 border border-purple-500/30 shadow-[0_0_15px_rgba(167,139,250,0.15)]'
                     : 'text-text-dim hover:text-white hover:bg-white/5'
                 }`}
               >
-                <Target className="w-3.5 h-3.5" /> Content
+                Content
               </button>
             </div>
 
             {/* ── CONTAINER 1: BUSINESS ─────────────────────────────────── */}
             {elesiumTab === 'business' && (
             <div
-              className="border p-5 relative overflow-hidden space-y-5"
+              className="relative overflow-hidden space-y-6 p-6 rounded-2xl animate-fade-up"
               style={{
-                borderRadius: '3px',
-                borderColor: 'rgba(76,126,201,0.35)',
-                background: 'linear-gradient(135deg, rgba(76,126,201,0.05) 0%, rgba(0,0,0,0.70) 100%)',
-                boxShadow: '0 0 20px rgba(76,126,201,0.06), inset 0 1px 0 rgba(76,126,201,0.12)',
+                borderColor: 'rgba(245,158,11,0.2)',
+                borderWidth: '1px',
+                background: 'linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(0,0,0,0.85) 100%)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(245,158,11,0.15)',
+                backdropFilter: 'blur(12px)'
               }}
             >
               {/* Section header */}
-              <div className="flex items-center gap-3 mb-1">
-                <div className="w-8 h-8 rounded-sm bg-vm-blue/15 border border-vm-blue/30 flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-vm-blue" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold tracking-[0.2em] text-vm-blue uppercase font-mono">BUSINESS</h3>
-                  <p className="text-[8px] text-text-dim tracking-widest uppercase font-mono mt-0.5">Empire Pipeline · Revenue · Outreach</p>
-                </div>
+              <div className="flex flex-col gap-2 mb-4">
+                <h3 className="text-sm font-bold tracking-[0.25em] text-amber-500 uppercase font-mono drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]">DYNAMIC OPERATIONS</h3>
+                <p className="text-[9px] text-text-dim tracking-[0.2em] uppercase font-mono">Daily Questionnaire · Iterations · Focus</p>
               </div>
 
-              {/* Metrics grid */}
-              <div className="grid grid-cols-2 gap-3">
-                {/* Emails Sent */}
-                <div className="bg-obsidian border border-surface2 p-3 flex flex-col justify-between h-24">
-                  <span className="text-[8px] text-text-dim tracking-widest uppercase font-mono">Outreach Today</span>
-                  <div className="flex items-center justify-between">
-                    <ScrubNumberInput value={emailsSent} onChangeValue={(val) => setEmailsSent(Number(val) || 0)} className="w-14 bg-transparent text-xl font-bold text-white font-mono outline-none" />
-                    <div className="flex flex-col gap-1">
-                      <button onClick={() => { triggerHaptic('light'); setEmailsSent(n => n+5); }} className="w-7 h-5 border border-surface2 hover:border-vm-blue text-[9px] flex items-center justify-center font-bold">+5</button>
-                      <button onClick={() => { triggerHaptic('light'); setEmailsSent(n => Math.max(0, n-5)); }} className="w-7 h-5 border border-surface2 hover:border-vm-blue text-[9px] flex items-center justify-center font-bold">-5</button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Positive Replies */}
-                <div className="bg-obsidian border border-surface2 p-3 flex flex-col justify-between h-24">
-                  <span className="text-[8px] text-text-dim tracking-widest uppercase font-mono">Positive Replies</span>
-                  <div className="flex items-center justify-between">
-                    <ScrubNumberInput value={positiveReplies} onChangeValue={(val) => setPositiveReplies(Number(val) || 0)} className="w-14 bg-transparent text-xl font-bold text-white font-mono outline-none" />
-                    <div className="flex flex-col gap-1">
-                      <button onClick={() => { triggerHaptic('light'); setPositiveReplies(n => n+1); }} className="w-7 h-5 border border-surface2 hover:border-vm-blue text-[9px] flex items-center justify-center font-bold">+</button>
-                      <button onClick={() => { triggerHaptic('light'); setPositiveReplies(n => Math.max(0, n-1)); }} className="w-7 h-5 border border-surface2 hover:border-vm-blue text-[9px] flex items-center justify-center font-bold">-</button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Meetings Booked */}
-                <div className="bg-obsidian border border-surface2 p-3 flex flex-col justify-between h-24">
-                  <span className="text-[8px] text-text-dim tracking-widest uppercase font-mono">Meetings / Month</span>
-                  <div className="flex items-center justify-between">
-                    <ScrubNumberInput value={meetingsBooked} onChangeValue={(val) => setMeetingsBooked(Number(val) || 0)} className="w-14 bg-transparent text-xl font-bold text-white font-mono outline-none" />
-                    <div className="flex flex-col gap-1">
-                      <button onClick={() => { triggerHaptic('light'); setMeetingsBooked(n => n+1); }} className="w-7 h-5 border border-surface2 hover:border-vm-blue text-[9px] flex items-center justify-center font-bold">+</button>
-                      <button onClick={() => { triggerHaptic('light'); setMeetingsBooked(n => Math.max(0, n-1)); }} className="w-7 h-5 border border-surface2 hover:border-vm-blue text-[9px] flex items-center justify-center font-bold">-</button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* MRR */}
-                <div className="bg-obsidian border border-surface2 p-3 flex flex-col justify-between h-24">
-                  <span className="text-[8px] text-text-dim tracking-widest uppercase font-mono">MRR (USD)</span>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="text-lg font-bold text-white font-mono">$</span>
-                      <ScrubNumberInput value={mrrUsd} onChangeValue={(val) => setMrrUsd(Number(val) || 0)} className="w-14 bg-transparent text-lg font-bold text-white font-mono outline-none" />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <button onClick={() => { triggerHaptic('light'); setMrrUsd(n => n+250); }} className="w-7 h-5 border border-surface2 hover:border-vm-blue text-[7px] flex items-center justify-center font-bold">+250</button>
-                      <button onClick={() => { triggerHaptic('light'); setMrrUsd(n => Math.max(0, n-100)); }} className="w-7 h-5 border border-surface2 hover:border-vm-blue text-[7px] flex items-center justify-center font-bold">-100</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* MRR progress bar */}
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-[8px] text-text-dim uppercase tracking-wider font-mono">TARGET: $1,000 MRR</span>
-                  <span className="text-[8px] text-vm-blue font-bold font-mono">{Math.min(100, Math.round((mrrUsd / 1000) * 100))}%</span>
-                </div>
-                <div className="h-1 bg-surface2 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-vm-blue transition-all duration-500"
-                    style={{ width: `${Math.min(100, (mrrUsd / 1000) * 100)}%` }}
+              {/* Questionnaire Form */}
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <label className="text-[10px] text-amber-500/80 font-bold tracking-widest uppercase font-mono">
+                    What is the primary operational bottleneck today?
+                  </label>
+                  <textarea 
+                    value={bottleneck}
+                    onChange={(e) => setBottleneck(e.target.value)}
+                    className="w-full bg-black/40 border border-white/5 focus:border-amber-500/40 rounded-xl p-4 text-sm text-white font-mono placeholder:text-white/20 outline-none transition-all resize-none min-h-[80px]"
+                    placeholder="e.g. The website is not indexing on Google search..."
                   />
                 </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] text-amber-500/80 font-bold tracking-widest uppercase font-mono">
+                    What systems are failing & require iteration?
+                  </label>
+                  <textarea 
+                    value={failingSystems}
+                    onChange={(e) => setFailingSystems(e.target.value)}
+                    className="w-full bg-black/40 border border-white/5 focus:border-amber-500/40 rounded-xl p-4 text-sm text-white font-mono placeholder:text-white/20 outline-none transition-all resize-none min-h-[80px]"
+                    placeholder="e.g. SEO tagging, meta descriptions, sitemap structure..."
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] text-amber-500/80 font-bold tracking-widest uppercase font-mono">
+                      Daily Uncompromising Focus Tasks
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => setFocusTasks([...focusTasks, { id: Math.random().toString(), name: '', estimated_minutes: null, xp_reward: null, time_remaining: null, status: 'pending' }])}
+                        className="w-6 h-6 rounded flex items-center justify-center bg-amber-500/10 text-amber-500 hover:bg-amber-500/30 transition-all"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {focusTasks.map((task, i) => (
+                      <div key={task.id} className={`flex flex-col gap-2 bg-black/30 border p-3 rounded-lg transition-all group ${
+                        task.status === 'completed' ? 'border-vm-green/40 opacity-60' : 
+                        task.status === 'failed' ? 'border-red-500/40 opacity-60' : 
+                        task.status === 'running' ? 'border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'border-white/5 hover:border-amber-500/20'
+                      }`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
+                            task.status === 'completed' ? 'border-vm-green bg-vm-green/20' : 'border-amber-500/40'
+                          }`}>
+                            {task.status === 'completed' && <div className="w-2 h-2 bg-vm-green rounded-full" />}
+                          </div>
+                          <input 
+                            type="text" 
+                            value={task.name}
+                            onChange={(e) => {
+                              const newTasks = [...focusTasks];
+                              newTasks[i] = { ...task, name: e.target.value };
+                              setFocusTasks(newTasks);
+                            }}
+                            disabled={task.status !== 'pending'}
+                            className="bg-transparent border-none outline-none text-xs font-mono text-white w-full placeholder:text-white/20 disabled:opacity-50"
+                            placeholder={`Focus Action 0${i + 1}`}
+                          />
+                          {task.status === 'pending' && (
+                            <button 
+                              onClick={() => setFocusTasks(focusTasks.filter((_, index) => index !== i))}
+                              className="text-text-dim hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* AI Active Status Bar */}
+                        {task.status !== 'pending' && task.estimated_minutes && (
+                          <div className="pl-7 pr-2 flex items-center justify-between text-[10px] font-mono">
+                            <div className="flex items-center gap-3">
+                              <span className={`font-bold ${task.status === 'failed' ? 'text-red-500' : 'text-amber-500/80'}`}>
+                                {task.time_remaining !== null 
+                                  ? `${Math.floor(task.time_remaining / 60).toString().padStart(2, '0')}:${(task.time_remaining % 60).toString().padStart(2, '0')}` 
+                                  : '00:00'}
+                              </span>
+                              <span className="text-purple-400 font-bold">+{task.xp_reward} XP</span>
+                            </div>
+                            
+                            {task.status === 'running' && (
+                              <button 
+                                onClick={async () => {
+                                  triggerHaptic('success');
+                                  const newTasks = [...focusTasks];
+                                  newTasks[i] = { ...task, status: 'completed' };
+                                  setFocusTasks(newTasks);
+                                  await api.logs.addEntry({
+                                    timestamp: new Date().toISOString(),
+                                    pillar: 'ELESIUM',
+                                    text: `[AI GAMIFICATION SUCCESS] Earned ${task.xp_reward} XP for finishing: ${task.name}`
+                                  });
+                                }}
+                                className="px-3 py-1 bg-vm-green/20 text-vm-green border border-vm-green/30 rounded font-bold hover:bg-vm-green/30 transition-all shadow-[0_0_10px_rgba(16,216,106,0.2)]"
+                              >
+                                COMPLETE
+                              </button>
+                            )}
+                            {task.status === 'completed' && <span className="text-vm-green">ACCOMPLISHED</span>}
+                            {task.status === 'failed' && <span className="text-red-500">FAILED</span>}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* AI Estimate Button */}
+                  {focusTasks.some(t => t.status === 'pending' && t.name.trim() !== '') && (
+                    <button
+                      disabled={isEstimatingAI}
+                      onClick={async () => {
+                        setIsEstimatingAI(true);
+                        triggerHaptic('light');
+                        try {
+                          const activeNames = focusTasks.filter(t => t.status === 'pending' && t.name.trim() !== '').map(t => t.name);
+                          if (activeNames.length === 0) return;
+                          
+                          const response = await fetch('/api/oracle/estimate-tasks', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ tasks: activeNames })
+                          });
+                          const data = await response.json();
+                          
+                          if (data.estimates) {
+                            const newTasks = focusTasks.map(t => {
+                              if (t.status === 'pending' && t.name.trim() !== '') {
+                                const estimate = data.estimates.find((e: any) => e.task_name === t.name);
+                                if (estimate) {
+                                  return { 
+                                    ...t, 
+                                    estimated_minutes: estimate.estimated_minutes,
+                                    xp_reward: estimate.xp_reward,
+                                    time_remaining: estimate.estimated_minutes * 60,
+                                    status: 'running' as const
+                                  };
+                                }
+                              }
+                              return t;
+                            });
+                            setFocusTasks(newTasks);
+                            triggerHaptic('medium');
+                          }
+                        } catch (e) {
+                          console.error('Failed AI estimate', e);
+                        } finally {
+                          setIsEstimatingAI(false);
+                        }
+                      }}
+                      className="w-full py-3 bg-gradient-to-r from-purple-500/10 to-purple-600/5 hover:from-purple-500/20 hover:to-purple-600/10 text-purple-400 border border-purple-500/30 rounded-xl font-mono text-[10px] font-bold tracking-[0.2em] transition-all shadow-[0_0_15px_rgba(167,139,250,0.15)] flex items-center justify-center gap-2"
+                    >
+                      {isEstimatingAI ? 'CALCULATING CONSTRAINTS...' : 'ESTIMATE AI TIME & START'}
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Deep Work toggle + Save row */}
-              <div className="flex items-center gap-3">
+              {/* Save Action */}
+              <div className="pt-4 border-t border-white/5 mt-6">
                 <button
-                  onClick={() => handleNNToggle('deep_work_4hr', !nns['deep_work_4hr'])}
-                  className={`flex-1 flex items-center gap-2 px-3 py-2.5 border text-[10px] font-bold tracking-widest transition-colors ${
-                    nns['deep_work_4hr']
-                      ? 'border-vm-blue bg-vm-blue/10 text-vm-blue'
-                      : 'border-surface2 text-text-dim hover:text-white hover:border-vm-blue/40'
-                  }`}
-                >
-                  <Timer className="w-4 h-4 shrink-0" />
-                  {nns['deep_work_4hr'] ? '✅ 4HR DEEP WORK DONE' : '4-HR DEEP WORK — MARK DONE'}
-                </button>
-                <button
-                  onClick={handleElesiumSave}
                   disabled={isElesiumSaving}
-                  className="px-5 py-2.5 bg-vm-blue text-white font-bold tracking-widest text-[10px] disabled:opacity-40 shrink-0"
+                  onClick={async () => {
+                    setIsElesiumSaving(true);
+                    triggerHaptic('medium');
+                    try {
+                      const activeTasks = focusTasks.filter(t => t.name.trim() !== '').map(t => t.name);
+                      const textToLog = `[ELESIUM DAILY OPS]
+Bottleneck: ${bottleneck.trim() || 'None specified'}
+Failing Systems: ${failingSystems.trim() || 'None specified'}
+Focus Tasks: ${activeTasks.length > 0 ? activeTasks.join(', ') : 'None specified'}`;
+
+                      await api.logs.addEntry({
+                        timestamp: new Date().toISOString(),
+                        pillar: 'ELESIUM',
+                        text: textToLog,
+                      });
+                      triggerHaptic('success');
+                      await loadData();
+                    } catch (e) {
+                      console.error('Failed to log daily operations', e);
+                    } finally {
+                      setIsElesiumSaving(false);
+                    }
+                  }}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-amber-500/20 to-amber-600/10 hover:from-amber-500/30 hover:to-amber-600/20 text-amber-400 border border-amber-500/40 rounded-xl font-bold tracking-[0.2em] text-[11px] disabled:opacity-50 transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)] active:scale-95"
                 >
-                  {isElesiumSaving ? 'SAVING...' : 'SYNC'}
+                  {isElesiumSaving ? 'LOCKING IN...' : 'LOCK IN DAILY OPERATIONS'}
                 </button>
               </div>
             </div>
@@ -1758,84 +1911,179 @@ export default function PillarFolder() {
             {/* ── CONTAINER 2: CONTENT SYSTEM ───────────────────────────── */}
             {elesiumTab === 'content' && (
             <div
-              className="border p-5 relative overflow-hidden space-y-5"
+              className="relative overflow-hidden space-y-6 p-6 rounded-2xl animate-fade-up"
               style={{
-                borderRadius: '3px',
-                borderColor: 'rgba(167,139,250,0.35)',
-                background: 'linear-gradient(135deg, rgba(167,139,250,0.05) 0%, rgba(0,0,0,0.70) 100%)',
-                boxShadow: '0 0 20px rgba(167,139,250,0.06), inset 0 1px 0 rgba(167,139,250,0.12)',
+                borderColor: 'rgba(167,139,250,0.2)',
+                borderWidth: '1px',
+                background: 'linear-gradient(135deg, rgba(167,139,250,0.08) 0%, rgba(0,0,0,0.85) 100%)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(167,139,250,0.15)',
+                backdropFilter: 'blur(12px)'
               }}
             >
               {/* Section header */}
-              <div className="flex items-center gap-3 mb-1">
-                <div className="w-8 h-8 rounded-sm bg-purple-500/15 border border-purple-500/30 flex items-center justify-center">
-                  <Target className="w-4 h-4 text-purple-400" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold tracking-[0.2em] text-purple-400 uppercase font-mono">CONTENT SYSTEM</h3>
-                  <p className="text-[8px] text-text-dim tracking-widest uppercase font-mono mt-0.5">Videos · Threads · Ideas Pipeline</p>
-                </div>
+              <div className="flex flex-col gap-2 mb-4">
+                <h3 className="text-sm font-bold tracking-[0.25em] text-purple-400 uppercase font-mono drop-shadow-[0_0_8px_rgba(167,139,250,0.5)]">CONTENT DISTRIBUTION</h3>
+                <p className="text-[9px] text-text-dim tracking-[0.2em] uppercase font-mono">Central Node · Automated Routing · Mind Map</p>
               </div>
 
-              {/* Content metrics */}
-              <div className="grid grid-cols-2 gap-3">
-                {/* Videos Posted */}
-                <div className="bg-obsidian border border-surface2 p-3 flex flex-col justify-between h-24">
-                  <span className="text-[8px] text-text-dim tracking-widest uppercase font-mono">Videos Posted</span>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-purple-400 font-mono tabular-nums">{videosPosted}</span>
-                    <div className="flex flex-col gap-1">
-                      <button onClick={() => { triggerHaptic('light'); setVideosPosted(n => n + 1); }} className="w-7 h-5 border border-surface2 hover:border-purple-500 text-[9px] flex items-center justify-center font-bold text-purple-400">+</button>
-                      <button onClick={() => { triggerHaptic('light'); setVideosPosted(n => Math.max(0, n - 1)); }} className="w-7 h-5 border border-surface2 hover:border-purple-500 text-[9px] flex items-center justify-center font-bold text-text-dim">-</button>
+              {/* Rapid Tally Engine */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pb-6 border-b border-white/5">
+                {[
+                  { label: 'CAROUSELS', count: carouselsPosted, setter: setCarouselsPosted, field: 'carousels' },
+                  { label: 'REELS/SHORTS', count: reelsPosted, setter: setReelsPosted, field: 'reels' },
+                  { label: 'THREADS', count: threadsPosted, setter: setThreadsPosted, field: 'threads' },
+                  { label: 'LONG FORM', count: longFormPosted, setter: setLongFormPosted, field: 'long_form' }
+                ].map((item) => (
+                  <div key={item.label} className="bg-black/40 border border-purple-500/20 p-3 rounded-xl flex flex-col items-center gap-2 group hover:border-purple-500/50 transition-all">
+                    <span className="text-[9px] text-purple-400/80 font-mono tracking-widest">{item.label}</span>
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={async () => {
+                          if (item.count > 0) item.setter(c => c - 1);
+                        }}
+                        className="w-6 h-6 rounded bg-white/5 text-white/40 hover:bg-white/10 hover:text-white flex items-center justify-center transition-all"
+                      >-</button>
+                      <span className="text-xl font-bold font-mono text-white min-w-[24px] text-center">{item.count}</span>
+                      <button 
+                        disabled={isRapidLogging}
+                        onClick={async () => {
+                          triggerHaptic('light');
+                          item.setter(c => c + 1);
+                          setIsRapidLogging(true);
+                          try {
+                            await fetch('/api/elesium/content/log', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ [item.field]: 1 })
+                            });
+                            triggerHaptic('success');
+                          } catch (e) {
+                            console.error('Failed to rapid log content', e);
+                          } finally {
+                            setIsRapidLogging(false);
+                          }
+                        }}
+                        className="w-6 h-6 rounded bg-purple-500/20 text-purple-400 hover:bg-purple-500/40 flex items-center justify-center transition-all shadow-[0_0_10px_rgba(167,139,250,0.2)]"
+                      >+</button>
                     </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Active Pipeline */}
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-text-dim tracking-widest uppercase font-mono">ACTIVE DISTRIBUTION PIPELINE</span>
+                </div>
+                
+                {/* Add to Pipeline */}
+                <div className="flex flex-col gap-2 bg-black/30 p-3 border border-purple-500/20 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={contentIdea}
+                      onChange={e => setContentIdea(e.target.value)}
+                      placeholder="Drop Content URL..."
+                      className="flex-1 bg-transparent border-none text-xs text-white font-mono focus:outline-none placeholder:text-white/20"
+                    />
+                    <button
+                      disabled={!contentIdea.trim()}
+                      onClick={() => {
+                        setContentPipeline([{ id: Math.random().toString(), url: contentIdea, hook: '', ig: false, tw: false, li: false, dc: false }, ...contentPipeline]);
+                        setContentIdea('');
+                        triggerHaptic('medium');
+                      }}
+                      className="px-4 py-1.5 bg-purple-500/20 text-purple-400 text-[10px] font-bold rounded tracking-wider hover:bg-purple-500/40 transition-all disabled:opacity-30"
+                    >
+                      ADD TO PIPELINE
+                    </button>
                   </div>
                 </div>
 
-                {/* Threads / Posts */}
-                <div className="bg-obsidian border border-surface2 p-3 flex flex-col justify-between h-24">
-                  <span className="text-[8px] text-text-dim tracking-widest uppercase font-mono">Threads / Posts</span>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-purple-400 font-mono tabular-nums">{threadsPosted}</span>
-                    <div className="flex flex-col gap-1">
-                      <button onClick={() => { triggerHaptic('light'); setThreadsPosted(n => n + 1); }} className="w-7 h-5 border border-surface2 hover:border-purple-500 text-[9px] flex items-center justify-center font-bold text-purple-400">+</button>
-                      <button onClick={() => { triggerHaptic('light'); setThreadsPosted(n => Math.max(0, n - 1)); }} className="w-7 h-5 border border-surface2 hover:border-purple-500 text-[9px] flex items-center justify-center font-bold text-text-dim">-</button>
+                {/* Pipeline List */}
+                <div className="space-y-2">
+                  {contentPipeline.map((item, i) => (
+                    <div key={item.id} className="flex flex-col gap-3 bg-black/50 border border-white/5 hover:border-purple-500/30 p-4 rounded-xl transition-all group">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-purple-300/80 font-mono truncate max-w-[200px] md:max-w-sm">{item.url}</span>
+                        <button 
+                          onClick={() => setContentPipeline(contentPipeline.filter(p => p.id !== item.id))}
+                          className="text-white/20 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      
+                      <input 
+                        value={item.hook}
+                        onChange={(e) => {
+                          const newPipe = [...contentPipeline];
+                          newPipe[i].hook = e.target.value;
+                          setContentPipeline(newPipe);
+                        }}
+                        onBlur={async (e) => {
+                          if (!e.target.value.trim()) return;
+                          try {
+                            await fetch('/api/elesium/content/log', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ hooks_used: [e.target.value.trim()] })
+                            });
+                          } catch (err) {}
+                        }}
+                        placeholder="Log hook used... (e.g. 'Contrast Hook')"
+                        className="w-full bg-transparent border-b border-white/10 pb-1 text-[11px] text-white focus:outline-none focus:border-purple-500/50 transition-all"
+                      />
+                      
+                      <div className="flex items-center gap-2 pt-1">
+                        {[
+                          { key: 'ig', label: 'IG' },
+                          { key: 'tw', label: 'TW' },
+                          { key: 'li', label: 'LI' },
+                          { key: 'dc', label: 'DC' }
+                        ].map(platform => {
+                          const isActive = item[platform.key as keyof typeof item] as boolean;
+                          return (
+                            <button
+                              key={platform.key}
+                              onClick={async () => {
+                                triggerHaptic('light');
+                                const newPipe = [...contentPipeline];
+                                (newPipe[i] as any)[platform.key] = !isActive;
+                                setContentPipeline(newPipe);
+                                
+                                // Auto-sync to backend
+                                try {
+                                  await fetch('/api/elesium/content/log', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ 
+                                      platforms: [platform.label], 
+                                      notes: `Distributed ${item.url} to ${platform.label}` 
+                                    })
+                                  });
+                                } catch (e) {
+                                  console.error('Failed to sync pipeline', e);
+                                }
+                              }}
+                              className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold transition-all border ${
+                                isActive 
+                                  ? 'bg-purple-500/20 text-purple-400 border-purple-500/50 shadow-[0_0_10px_rgba(167,139,250,0.3)]' 
+                                  : 'bg-black text-white/30 border-white/10 hover:border-white/30 hover:text-white/60'
+                              }`}
+                            >
+                              {platform.label}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
+                  ))}
+                  {contentPipeline.length === 0 && (
+                    <div className="text-center py-8 text-white/20 text-[10px] font-mono tracking-widest border border-dashed border-white/10 rounded-xl">
+                      PIPELINE EMPTY
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              {/* Content idea logger */}
-              <div className="space-y-2">
-                <label className="text-[8px] text-purple-400/70 tracking-[0.2em] uppercase font-mono block">💎 LOG CONTENT IDEA / HOOK</label>
-                <textarea
-                  value={contentIdea}
-                  onChange={e => setContentIdea(e.target.value)}
-                  placeholder="Drop a content idea, hook, or script concept..."
-                  className="w-full bg-black/40 border border-purple-500/20 p-3 text-sm text-white font-mono focus:outline-none focus:border-purple-500/50 min-h-[80px] resize-none placeholder:text-white/20"
-                />
-                <button
-                  disabled={!contentIdea.trim() || isContentSaving}
-                  onClick={async () => {
-                    if (!contentIdea.trim()) return;
-                    setIsContentSaving(true);
-                    triggerHaptic('medium');
-                    try {
-                      await api.logs.addEntry({
-                        timestamp: new Date().toISOString(),
-                        pillar: 'ELESIUM',
-                        text: `🎯 [CONTENT IDEA] ${contentIdea.trim()}`,
-                      });
-                      setContentIdea('');
-                      triggerHaptic('success');
-                      await loadData();
-                    } catch { /* ignore */ } finally {
-                      setIsContentSaving(false);
-                    }
-                  }}
-                  className="w-full py-3 bg-purple-500/20 border border-purple-500/40 hover:bg-purple-500/30 text-purple-300 font-bold tracking-[0.2em] text-[10px] disabled:opacity-30 transition-colors"
-                >
-                  {isContentSaving ? 'SAVING IDEA...' : 'LOCK IN IDEA →'}
-                </button>
               </div>
             </div>
             )}
@@ -1843,7 +2091,7 @@ export default function PillarFolder() {
           </div>
         )}
 
-        {/* 🎯 INFLUENCE content weapon */}
+        {/*  INFLUENCE content weapon */}
         {pillar === 'influence' && (
           <div className="space-y-6 animate-fade-up">
             {/* BIG CAMERA ZONE */}
@@ -1875,7 +2123,7 @@ export default function PillarFolder() {
             {/* Template Tag Injectors */}
             <div className="bg-surface border border-surface2 p-5">
               <h3 className="text-xs font-bold tracking-widest text-purple-400 mb-3 uppercase flex items-center gap-1.5">
-                ✍️ QUICK ESSAY & CONTENT IDEATOR TEMPLATES
+                 QUICK ESSAY & CONTENT IDEATOR TEMPLATES
               </h3>
               <p className="text-[9px] text-text-dim tracking-wide mb-4">TAP TO INJECT INFLUENCE TEMPLATES TO ELIMINATE WRITING FRICTION:</p>
               
@@ -1902,7 +2150,7 @@ export default function PillarFolder() {
             <div className="bg-surface border border-surface2 p-5 flex flex-col md:flex-row gap-4 justify-between items-end">
               <div className="flex-1 w-full space-y-2">
                 <h3 className="text-xs font-bold tracking-widest text-purple-400 uppercase flex items-center gap-1.5">
-                  ✍️ PIPELINE WORD COUNT LOGGER
+                   PIPELINE WORD COUNT LOGGER
                 </h3>
                 <label className="text-[8px] text-text-dim tracking-widest uppercase font-mono block">Words Written Today</label>
                 <ScrubNumberInput 
@@ -1923,175 +2171,388 @@ export default function PillarFolder() {
           </div>
         )}
 
-        {/* 🧠 SELF discipline control */}
-        {pillar === 'self' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-up">
-            <div className="space-y-6 flex flex-col">
-              {/* Trigger Avoidance checklist */}
-              <div className="bg-surface border border-vm-amethyst/30 p-5 flex-1" style={{ borderRadius: '2px', background: 'linear-gradient(135deg, rgba(168,85,247,0.02), rgba(0,0,0,0.65))' }}>
-                <h3 className="text-xs font-bold tracking-widest text-vm-amethyst mb-3 uppercase flex items-center gap-1.5">
-                  🧠 DAILY VULNERABILITY & TRIGGER CHECKLIST
-                </h3>
-                <p className="text-[9px] text-text-dim tracking-wide mb-4">CHECK OFF WHEN YOU SUCCESSFULLY COMBAT AND AVOID A DISCIPLINE TRIGGER:</p>
+        {/*  SELF discipline control */}
+        {/*  SELF PROTOCOL INTERFACE */}
+        {pillar === 'self' && (() => {
+          // Dynamic Mode Logic
+          const isBlackSwan = operatingMode === 'black_swan';
+          const isDeload = operatingMode === 'deload';
+          const isOptimal = operatingMode === 'optimal';
 
-                <div className="grid grid-cols-1 gap-2.5">
-                  {[
-                    { key: 'no_sugar', label: '🚫 No Sugar Today' },
-                    { key: 'sleep_on_floor', label: '🪵 Slept on Floor (Comfort Lock)' },
-                    { key: 'cold_shower', label: '🚿 Neuro Cold Shower' },
-                    { key: 'combat_training', label: '🥋 Combat Training (OCI)' },
-                    { key: 'learned_concept', label: '🧠 Learned a New Concept / Deep Study' },
-                  ].map(item => (
-                    <button
-                      key={item.key}
-                      onClick={() => handleNNToggle(item.key, !nns[item.key])}
-                      className={`p-3.5 border text-left flex items-center justify-between gap-3 transition-colors ${
-                        nns[item.key] 
-                          ? 'border-vm-amethyst bg-vm-amethyst/10 text-vm-amethyst font-bold' 
-                          : 'border-surface2 bg-obsidian text-text-dim hover:border-vm-amethyst/30 hover:text-white'
-                      }`}
-                    >
-                      <span className="text-[10px] tracking-wider font-mono">{item.label}</span>
-                      <span className="text-[8px] font-mono font-bold tracking-widest bg-obsidian/40 px-2 py-0.5 border border-white/[0.04]">
-                        {nns[item.key] ? 'AVOIDED' : 'UNSECURED'}
-                      </span>
-                    </button>
-                  ))}
+          // Colors
+          const themeColor = isBlackSwan ? 'text-amber-500' : isDeload ? 'text-cyan-400' : 'text-vm-amethyst';
+          const themeBorder = isBlackSwan ? 'border-amber-500/30' : isDeload ? 'border-cyan-400/30' : 'border-vm-amethyst/30';
+          const themeBorderFull = isBlackSwan ? 'border-amber-500' : isDeload ? 'border-cyan-400' : 'border-vm-amethyst';
+          const themeBg = isBlackSwan ? 'bg-amber-500' : isDeload ? 'bg-cyan-400' : 'bg-vm-amethyst';
+          const themeBgLight = isBlackSwan ? 'bg-amber-500/20' : isDeload ? 'bg-cyan-400/20' : 'bg-vm-amethyst/20';
+          const themeHover = isBlackSwan ? 'hover:bg-amber-500/20' : isDeload ? 'hover:bg-cyan-400/20' : 'hover:bg-vm-amethyst/20';
+          const themeGlow = isBlackSwan ? 'rgba(245,158,11,0.08)' : isDeload ? 'rgba(34,211,238,0.08)' : 'rgba(168,85,247,0.08)';
+          const shadowColor = isBlackSwan ? 'rgba(245,158,11,0.5)' : isDeload ? 'rgba(34,211,238,0.5)' : 'rgba(168,85,247,0.5)';
+          const dropShadow = `drop-shadow-[0_0_20px_${shadowColor.replace(/ /g,'')}]`;
+
+          // Triggers
+          const triggersOptimal = [
+            { key: 'no_sugar', label: 'No Sugar Today', desc: 'Maintain metabolic purity' },
+            { key: 'sleep_on_floor', label: 'Slept on Floor', desc: 'Comfort lock engaged' },
+            { key: 'cold_shower', label: 'Cold Shower', desc: 'Neuro reset protocol' },
+            { key: 'combat_training', label: 'Combat Training', desc: 'Physical aggression outlet' },
+            { key: 'learned_concept', label: 'Deep Study', desc: 'Absorbed new concept' },
+          ];
+
+          const triggersDeload = [
+            { key: 'sleep_8hr', label: '8hr Sleep Locked', desc: 'Mandatory deep recovery' },
+            { key: 'no_media', label: 'Zero High-Dopamine Media', desc: 'Neural cooling' },
+            { key: 'deep_stretch', label: 'Deep Tissue Stretch', desc: 'Physical restoration' },
+            { key: 'nature_walk', label: 'Nature Walk', desc: 'Parasympathetic shift' },
+          ];
+
+          const triggersBlackSwan = [
+            { key: 'hydrate_3l', label: 'Hydrate 3L', desc: 'Biological baseline survival' },
+            { key: 'zero_sugar_spill', label: 'Zero Sugar Spillover', desc: 'Limit metabolic damage' },
+            { key: 'mobility_10m', label: '10-Min Mobility', desc: 'Joint maintenance' },
+            { key: 'box_breath', label: 'Box Breathing', desc: 'Stress modulation' },
+          ];
+
+        {/*  SELF PROTOCOL INTERFACE */}
+        {pillar === 'self' && (() => {
+          // Dynamic Mode Logic
+          const isBlackSwan = operatingMode === 'black_swan';
+          const isDeload = operatingMode === 'deload';
+          const isOptimal = operatingMode === 'optimal';
+
+          // Colors
+          const themeColor = isBlackSwan ? 'text-amber-500' : isDeload ? 'text-cyan-400' : 'text-vm-amethyst';
+          const themeBorder = isBlackSwan ? 'border-amber-500/30' : isDeload ? 'border-cyan-400/30' : 'border-vm-amethyst/30';
+          const themeBorderFull = isBlackSwan ? 'border-amber-500' : isDeload ? 'border-cyan-400' : 'border-vm-amethyst';
+          const themeBg = isBlackSwan ? 'bg-amber-500' : isDeload ? 'bg-cyan-400' : 'bg-vm-amethyst';
+          const themeBgLight = isBlackSwan ? 'bg-amber-500/20' : isDeload ? 'bg-cyan-400/20' : 'bg-vm-amethyst/20';
+          const themeHover = isBlackSwan ? 'hover:bg-amber-500/20' : isDeload ? 'hover:bg-cyan-400/20' : 'hover:bg-vm-amethyst/20';
+          const themeGlow = isBlackSwan ? 'rgba(245,158,11,0.08)' : isDeload ? 'rgba(34,211,238,0.08)' : 'rgba(168,85,247,0.08)';
+          const shadowColor = isBlackSwan ? 'rgba(245,158,11,0.5)' : isDeload ? 'rgba(34,211,238,0.5)' : 'rgba(168,85,247,0.5)';
+          const dropShadow = `drop-shadow-[0_0_20px_${shadowColor.replace(/ /g,'')}]`;
+
+          // Triggers
+          const triggersOptimalT2 = [
+            { key: 'fast_24hr', label: '24hr Fasting Window', desc: 'Absolute metabolic control' },
+            { key: 'ice_bath', label: 'Ice Bath / Extreme Cold', desc: 'Maximal neuro reset' },
+            { key: 'sleep_on_floor_full', label: 'Complete Floor Sleep', desc: 'Comfort lock engaged' },
+            { key: 'combat_training', label: 'Combat Training', desc: 'Physical aggression outlet' },
+            { key: 'deep_study_2hr', label: 'Deep Study (2hrs)', desc: 'Extended cognitive load' },
+          ];
+
+          const triggersOptimalT1 = [
+            { key: 'no_sugar', label: 'No Sugar Today', desc: 'Maintain metabolic purity' },
+            { key: 'sleep_on_floor', label: 'Slept on Floor', desc: 'Comfort lock engaged' },
+            { key: 'cold_shower', label: 'Cold Shower', desc: 'Neuro reset protocol' },
+            { key: 'combat_training', label: 'Combat Training', desc: 'Physical aggression outlet' },
+            { key: 'learned_concept', label: 'Deep Study', desc: 'Absorbed new concept' },
+          ];
+
+          const triggersOptimal = currentTier === 2 ? triggersOptimalT2 : triggersOptimalT1;
+
+          const triggersDeload = [
+            { key: 'sleep_8hr', label: '8hr Sleep Locked', desc: 'Mandatory deep recovery' },
+            { key: 'no_media', label: 'Zero High-Dopamine Media', desc: 'Neural cooling' },
+            { key: 'deep_stretch', label: 'Deep Tissue Stretch', desc: 'Physical restoration' },
+            { key: 'nature_walk', label: 'Nature Walk', desc: 'Parasympathetic shift' },
+          ];
+
+          const triggersBlackSwan = [
+            { key: 'hydrate_3l', label: 'Hydrate 3L', desc: 'Biological baseline survival' },
+            { key: 'zero_sugar_spill', label: 'Zero Sugar Spillover', desc: 'Limit metabolic damage' },
+            { key: 'mobility_10m', label: '10-Min Mobility', desc: 'Joint maintenance' },
+            { key: 'box_breath', label: 'Box Breathing', desc: 'Stress modulation' },
+          ];
+
+          const currentTriggers = isBlackSwan ? triggersBlackSwan : isDeload ? triggersDeload : triggersOptimal;
+          
+          return (
+          <div className="w-full space-y-8 pb-4 animate-fade-up">
+
+            {/* Operating Mode Toggle */}
+            <div className="w-full flex justify-center pt-2 z-20 relative">
+              <div className="flex bg-surface border border-surface2 rounded-xl overflow-hidden shadow-sm">
+                <button 
+                  onClick={() => { triggerHaptic('light'); setOperatingMode('optimal'); }}
+                  className={`px-4 py-2 text-[10px] tracking-widest font-bold uppercase transition-colors ${isOptimal ? 'bg-vm-amethyst/10 text-vm-amethyst border-b-2 border-vm-amethyst' : 'text-text-dim hover:bg-surface2 border-b-2 border-transparent'}`}
+                >
+                  OPTIMAL
+                </button>
+                <button 
+                  onClick={() => { triggerHaptic('light'); setOperatingMode('deload'); }}
+                  className={`px-4 py-2 text-[10px] tracking-widest font-bold uppercase transition-colors ${isDeload ? 'bg-cyan-400/10 text-cyan-400 border-b-2 border-cyan-400' : 'text-text-dim hover:bg-surface2 border-b-2 border-transparent'}`}
+                >
+                  DELOAD
+                </button>
+                <button 
+                  onClick={() => { triggerHaptic('light'); setOperatingMode('black_swan'); }}
+                  className={`px-4 py-2 text-[10px] tracking-widest font-bold uppercase transition-colors ${isBlackSwan ? 'bg-amber-500/10 text-amber-500 border-b-2 border-amber-500' : 'text-text-dim hover:bg-surface2 border-b-2 border-transparent'}`}
+                >
+                  BLACK SWAN
+                </button>
+              </div>
+            </div>
+            
+            {/* HUD Header & Major Action (Accountability Lens) */}
+            <div className="w-full flex flex-col items-center justify-center relative pt-4 pb-10">
+              <div className="absolute inset-0 pointer-events-none transition-all duration-1000" style={{ background: `radial-gradient(circle at center, ${themeGlow} 0%, transparent 60%)` }} />
+              <div className="z-10 flex flex-col items-center gap-8 w-full max-w-sm">
+                <button
+                  onClick={() => {
+                    if (!isUploading && fileInputRef.current) {
+                      fileInputRef.current.value = '';
+                      fileInputRef.current.click();
+                    }
+                  }}
+                  disabled={isUploading}
+                  className="group relative w-full max-w-[260px] aspect-square rounded-full flex flex-col items-center justify-center gap-4 transition-all duration-500 hover:scale-105 active:scale-95"
+                  style={{ 
+                    backgroundColor: 'var(--color-obsidian)',
+                    borderColor: lensCaptured ? themeBg : shadowColor,
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    boxShadow: lensCaptured ? `0 0 40px ${shadowColor}` : `0 0 30px ${shadowColor.replace('0.5', '0.15')}`
+                  }}
+                >
+                  <div className={`absolute inset-2 rounded-full border ${lensCaptured ? themeBorderFull : themeBorder}`} />
+                  <Camera className={`w-20 h-20 transition-transform duration-500 group-hover:scale-110 ${themeColor} ${isUploading ? 'animate-pulse' : ''}`} style={{ filter: `drop-shadow(0 0 10px ${shadowColor})` }} />
+                  <div className="flex flex-col items-center text-center">
+                    <span className="font-heading text-xl tracking-[0.3em] text-white">
+                      {isUploading ? 'SYNCING' : lensCaptured ? 'VERIFIED' : 'CAPTURE'}
+                    </span>
+                    <p className={`text-[12px] tracking-widest font-bold mt-2 ${themeColor}`}>
+                      {lensCaptured ? 'LENS SYNCED' : 'LENS ACTIVE'}
+                    </p>
+                  </div>
+                  <p className="text-[9px] text-text-dim tracking-widest absolute bottom-8 font-bold uppercase">
+                    ACCOUNTABILITY PROOF
+                  </p>
+                </button>
+              </div>
+            </div>
+
+            {/* Minimalist Stack Layout */}
+            <div className="flex flex-col gap-2 relative z-10 font-mono max-w-md mx-auto w-full px-6 md:px-0">
+              
+              {/* Daily Vulnerability & Trigger Checklist */}
+              <div className="mb-6 w-full">
+                <div className="flex items-center justify-between mb-2 pl-1">
+                  <h3 className="text-[10px] tracking-[0.3em] text-text-dim uppercase font-bold">
+                    {isBlackSwan ? 'MINIMAL SURVIVAL PROTOCOL' : isDeload ? 'DEEP RECOVERY PROTOCOL' : 'TRIGGER AVOIDANCE PROTOCOL'}
+                  </h3>
+                  {isOptimal && currentTier === 2 && (
+                    <span className="text-[9px] text-vm-amethyst font-bold tracking-widest uppercase px-2 py-0.5 border border-vm-amethyst/30 rounded">TIER 2</span>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2 w-full">
+                  {currentTriggers.map(item => {
+                    const isSecured = nns[item.key];
+                    const borderClass = isSecured ? (isBlackSwan ? 'border-amber-500/20 bg-amber-500/5' : isDeload ? 'border-cyan-400/20 bg-cyan-400/5' : 'border-vm-amethyst/20 bg-vm-amethyst/5') : 'border-surface2 bg-surface/50 hover:text-white hover:border-surface2';
+                    
+                    return (
+                      <button
+                        key={item.key}
+                        onClick={() => handleNNToggle(item.key, !nns[item.key])}
+                        className={`py-4 px-6 flex items-center justify-between w-full transition-all active:scale-[0.98] relative border rounded-xl ${borderClass}`}
+                      >
+                        {isSecured && (
+                          <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-3/4 rounded-r-full ${themeBg}`} style={{ boxShadow: `0 0 15px ${shadowColor}` }} />
+                        )}
+                        
+                        <div className="flex flex-col text-left">
+                          <span className={`text-[12px] tracking-widest uppercase font-bold ${
+                            isSecured ? themeColor : 'text-white'
+                          }`}>
+                            {item.label}
+                          </span>
+                          <span className="text-[8px] text-text-dim tracking-[0.2em] uppercase mt-1">
+                            {item.desc}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-col items-end">
+                          <span className={`text-[8px] font-bold tracking-widest uppercase mb-1 ${
+                            isSecured ? themeColor : 'text-text-dim/40'
+                          }`}>
+                            {isSecured ? 'AVOIDED ' : 'UNSECURED'}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Knowledge Bank Log */}
-              <div className="bg-surface border border-vm-amethyst/30 p-5 space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-xs font-bold tracking-widest text-vm-amethyst uppercase flex items-center gap-1.5">
-                    📚 KNOWLEDGE BANK
+               {/* Discipline Score Widget */}
+              <div className="w-full mb-6 flex flex-col gap-2 relative z-10 font-mono">
+                <h3 className="text-[10px] tracking-[0.3em] text-text-dim uppercase font-bold mb-1 pl-1">
+                  {isBlackSwan ? 'ADAPTIVE RESILIENCE SCORE' : 'ACCOUNTABILITY SCORE'}
+                </h3>
+                
+                {todayLog?.score !== undefined && todayLog?.score !== null ? (
+                  <div className={`bg-surface border ${themeBorder} p-5 rounded-xl flex items-center justify-between relative overflow-hidden`} style={{ boxShadow: `0 0 20px ${shadowColor.replace('0.5', '0.1')}` }}>
+                    <div className={`absolute right-0 top-0 bottom-0 w-1/3 pointer-events-none`} style={{ background: `linear-gradient(to left, ${shadowColor.replace('0.5', '0.1')}, transparent)` }} />
+                    <div className="flex items-center gap-4 relative z-10">
+                      <CheckCircle className={`w-6 h-6 ${themeColor}`} />
+                      <div className="flex flex-col text-left">
+                        <span className="text-[11px] font-bold text-white tracking-[0.15em] uppercase">
+                          {isBlackSwan ? 'RESILIENCE RATING' : 'DISCIPLINE RATING'}
+                        </span>
+                        <span className="text-[9px] text-text-dim tracking-widest uppercase font-mono">
+                          LOCKED UNTIL MIDNIGHT
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right relative z-10">
+                      <div className="flex items-baseline gap-1">
+                        <span className={`text-2xl font-bold ${themeColor}`} style={{ textShadow: `0 0 10px ${shadowColor}` }}>
+                          {todayLog.score}
+                        </span>
+                        <span className="text-text-dim text-xs">/10</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={`bg-surface border border-surface2 p-5 rounded-xl flex flex-col relative transition-colors`}>
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="flex items-center gap-3">
+                        <Target className={`w-5 h-5 ${themeColor}`} />
+                        <span className="text-[12px] tracking-[0.2em] font-bold text-white uppercase">DAILY RATING</span>
+                      </div>
+                      <span className={`text-lg font-bold tracking-widest ${themeColor}`}>
+                        {disciplineScore}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-4 relative z-10 w-full mb-4">
+                      <input 
+                        type="range" 
+                        min="1" 
+                        max="10" 
+                        value={disciplineScore}
+                        onChange={e => setDisciplineScore(parseInt(e.target.value))}
+                        className="flex-1 h-1 bg-surface2 rounded-lg appearance-none cursor-pointer"
+                        style={{ accentColor: isBlackSwan ? '#f59e0b' : isDeload ? '#22d3ee' : '#a855f7' }}
+                      />
+                    </div>
+                    
+                    <button
+                      onClick={handleDisciplineScoreSubmit}
+                      disabled={!lensCaptured}
+                      className={`w-full py-3 border font-bold text-[10px] tracking-[0.2em] transition-all rounded-lg disabled:opacity-40 disabled:cursor-not-allowed ${!lensCaptured ? 'bg-surface2 text-text-dim border-surface2' : isBlackSwan ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20' : isDeload ? 'bg-cyan-400/10 border-cyan-400/30 text-cyan-400 hover:bg-cyan-400/20' : 'bg-vm-amethyst/10 border-vm-amethyst/30 text-vm-amethyst hover:bg-vm-amethyst/20'}`}
+                    >
+                      {!lensCaptured ? '[ REQUIRES LENS SYNC ]' : 'SECURE SCORE'}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Neural Auditor Widget */}
+              {(() => {
+                const selfLogs = logs.filter(l => l.pillar?.toLowerCase() === 'self');
+                const autopsies = selfLogs.filter(l => l.text && l.text.includes('[BLACK_SWAN_AUTOPSY]'));
+                if (autopsies.length === 0) return null;
+                
+                // Extremely basic keyword extraction for mock insight
+                const texts = autopsies.map(a => a.text.toLowerCase());
+                let keyword = 'fatigue';
+                if (texts.some(t => t.includes('sleep') || t.includes('tired'))) keyword = 'sleep deprivation';
+                else if (texts.some(t => t.includes('work') || t.includes('busy'))) keyword = 'workload saturation';
+                else if (texts.some(t => t.includes('sugar') || t.includes('eat'))) keyword = 'dietary slippage';
+
+                const percent = Math.min(100, Math.round((texts.filter(t => t.includes(keyword.split(' ')[0])).length / texts.length) * 100) + 40);
+
+                return (
+                  <div className="w-full mb-6 flex flex-col gap-2 relative z-10 font-mono">
+                    <div className="flex items-center gap-2 mb-1 pl-1">
+                      <Activity className={`w-3 h-3 ${themeColor}`} />
+                      <h3 className="text-[10px] tracking-[0.3em] text-text-dim uppercase font-bold">
+                        NEURAL AUDITOR
+                      </h3>
+                    </div>
+                    <div className={`bg-surface border border-surface2 p-4 rounded-xl flex items-start gap-3`}>
+                      <AlertTriangle className={`w-4 h-4 mt-0.5 shrink-0 ${themeColor}`} />
+                      <p className="text-[10px] leading-relaxed text-gray-300 font-mono uppercase tracking-widest">
+                        <span className={`font-bold ${themeColor}`}>PATTERN DETECTED:</span> '{keyword.toUpperCase()}' IS THE ROOT CAUSE IN ~{percent}% OF RECENT BLACK SWAN FAILURES. ARMOR THIS VULNERABILITY.
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Knowledge Bank Widget */}
+              <div className="w-full flex flex-col gap-2 relative z-10 font-mono">
+                <div className="flex justify-between items-end mb-1 pl-1">
+                  <h3 className="text-[10px] tracking-[0.3em] text-text-dim uppercase font-bold">
+                    {isBlackSwan ? 'INCIDENT AUTOPSY' : 'KNOWLEDGE BANK'}
                   </h3>
                   <button
                     onClick={handleOpenMaterials}
-                    className="px-3 py-1 bg-vm-amethyst/10 border border-vm-amethyst/30 hover:bg-vm-amethyst/20 text-vm-amethyst text-[9px] font-bold tracking-widest uppercase transition-colors"
-                    style={{ borderRadius: '2px' }}
+                    className={`text-[9px] tracking-widest font-bold uppercase transition-colors ${themeColor}`}
                   >
-                    📚 MATERIALS
+                    READINGS [&gt;&gt;]
                   </button>
                 </div>
-                <p className="text-[9px] text-text-dim tracking-wide">LOG ANY NEW CONCEPTS OR TOPICS STUDIED TODAY:</p>
-                <textarea
-                  value={learningText}
-                  onChange={(e) => setLearningText(e.target.value)}
-                  placeholder="e.g. Studied NAVY SEAL breathing patterns..."
-                  className="w-full bg-black/40 border border-white/10 p-3 text-sm text-white font-mono focus:outline-none focus:border-vm-amethyst/50 min-h-[80px]"
-                />
-                <button
-                  onClick={handleLogLearning}
-                  disabled={!learningText.trim()}
-                  className="w-full py-3 bg-vm-amethyst/20 border border-vm-amethyst/50 text-vm-amethyst font-bold text-[10px] tracking-widest hover:bg-vm-amethyst/30 disabled:opacity-40 transition-colors"
-                >
-                  UPLOAD TO BRAIN
-                </button>
-
-                {/* Today's topics studied list */}
-                {(() => {
-                  const todayStr = getLocalDateString();
-                  const todaySelfEntries = pillarEntries.filter(e => {
-                    const entryDate = e.timestamp.split('T')[0];
-                    return entryDate === todayStr && e.text.startsWith('[LEARNING/CONCEPT]');
-                  });
-
-                  if (todaySelfEntries.length === 0) return null;
-
-                  return (
-                    <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
-                      <p className="text-[9px] text-vm-green tracking-widest font-bold uppercase">TODAY&apos;S TOPICS STUDIED:</p>
-                      <div className="space-y-1.5 max-h-[160px] overflow-y-auto scrollbar-thin pr-1">
-                        {todaySelfEntries.map((e, idx) => {
-                          const cleanText = e.text.replace('[LEARNING/CONCEPT] ', '');
-                          return (
-                            <div key={idx} className="p-2.5 bg-black/30 border border-vm-green/10 text-xs font-mono text-white flex items-start justify-between">
-                              <span className="leading-relaxed">{cleanText}</span>
-                              <span className="text-[7.5px] text-text-dim shrink-0 ml-2 font-mono mt-0.5">
-                                {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-
-            <div className="space-y-6 flex flex-col">
-              {/* Accountability Lens Camera Zone */}
-              <div 
-                onClick={() => {
-                  if (!isUploading && fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                    fileInputRef.current.click();
-                  }
-                }}
-                className="bg-surface border border-vm-green/30 p-8 flex flex-col items-center justify-center text-center flex-1 min-h-[250px] cursor-pointer hover:border-vm-green/50 active:scale-[0.99] transition-all"
-                style={{ background: 'linear-gradient(135deg, rgba(76,170,110,0.04), rgba(0,0,0,0.75))' }}
-              >
-                <div className="w-20 h-20 rounded-full border-2 border-vm-green/50 flex items-center justify-center mb-4 bg-vm-green/10 shadow-[0_0_20px_rgba(76,170,110,0.2)]">
-                  <Camera className="w-10 h-10 text-vm-green" />
-                </div>
-                <h3 className="text-sm font-bold text-vm-green tracking-widest font-mono mb-2">ACCOUNTABILITY LENS</h3>
-                <p className="text-[9px] text-text-dim tracking-widest mb-6">SNAP PROOF OF YOUR DISCIPLINE.</p>
-                <button
-                  disabled={isUploading}
-                  className="w-full py-4 bg-vm-green text-obsidian font-bold tracking-[0.2em] hover:bg-vm-green/90 transition-colors pointer-events-none"
-                >
-                  {isUploading ? 'PROCESSING...' : 'CAPTURE PROOF'}
-                </button>
-              </div>
-
-              {/* Discipline 1-10 Slider */}
-              <div className="bg-surface border border-surface2 p-5 space-y-4 shrink-0">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-xs font-bold tracking-widest text-vm-green uppercase flex items-center gap-1.5">
-                    🧠 DAILY DISCIPLINE ACCOUNTABILITY SCORE
-                  </h3>
-                  <span className="text-lg font-bold text-vm-green font-mono">{disciplineScore}/10</span>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <input 
-                    type="range" 
-                    min="1" 
-                    max="10" 
-                    value={disciplineScore}
-                    disabled={todayLog?.score !== undefined && todayLog?.score !== null}
-                    onChange={e => setDisciplineScore(parseInt(e.target.value))}
-                    className={`flex-1 accent-vm-green h-1 bg-surface2 rounded-lg appearance-none cursor-pointer ${
-                      todayLog?.score !== undefined && todayLog?.score !== null ? 'opacity-40 cursor-not-allowed' : ''
-                    }`}
-                  />
-                  <button
-                    disabled={todayLog?.score !== undefined && todayLog?.score !== null}
-                    onClick={handleDisciplineScoreSubmit}
-                    className={`px-5 py-2 font-mono font-bold text-[10px] tracking-widest transition-all duration-300
-                      ${todayLog?.score !== undefined && todayLog?.score !== null 
-                        ? 'bg-vm-green/5 border border-vm-green/10 text-vm-green/40 opacity-50 cursor-not-allowed' 
-                        : 'bg-vm-green/20 border border-vm-green/50 text-vm-green hover:bg-vm-green/30'
-                      }`}
-                  >
-                    {todayLog?.score !== undefined && todayLog?.score !== null ? 'SCORE SECURED' : 'SECURE SCORE'}
-                  </button>
-                </div>
-                {todayLog?.score !== undefined && todayLog?.score !== null ? (
-                  <div className="space-y-1">
-                    <p className="text-[8px] text-vm-green tracking-widest uppercase font-mono text-center animate-pulse">
-                      ⚡ SCORE SECURED. NEXT DAY OPENS AT 12:00 AM MIDNIGHT ⚡
-                    </p>
+                
+                <div className={`bg-surface border border-surface2 p-5 rounded-xl flex flex-col relative overflow-hidden group transition-colors hover:border-surface2`}>
+                  <div className="absolute inset-0 pointer-events-none opacity-10">
+                    <div className={`absolute bottom-0 left-0 right-0 transition-all duration-1000 ease-in-out h-[20%] ${themeBg}`} />
                   </div>
-                ) : (
-                  <p className="text-[8px] text-text-dim tracking-widest uppercase font-mono text-center">HONEST ACCOUNTABILITY DRIVES LONG-TERM EMPIRE POWER</p>
-                )}
+                  
+                  <div className={`relative flex-1 min-h-[80px] rounded-lg border bg-obsidian/60 overflow-hidden mb-3 transition-all duration-300 border-surface2 hover:${themeBorder}`}>
+                    <textarea
+                      value={learningText}
+                      onChange={(e) => setLearningText(e.target.value)}
+                      placeholder={isBlackSwan ? "What broke the routine? How are you adapting?" : isDeload ? "Log rest protocols and recovery notes..." : "Log new concepts, frameworks, or deep studies..."}
+                      className="w-full h-full bg-transparent p-3 text-[12px] resize-none outline-none text-gray-200 placeholder:text-gray-600 font-mono leading-relaxed"
+                    />
+                  </div>
+                  
+                  <button
+                    onClick={handleLogLearning}
+                    disabled={!learningText.trim()}
+                    className={`w-full py-3 text-obsidian font-bold text-[10px] tracking-[0.2em] transition-all rounded-lg disabled:opacity-40 disabled:bg-surface2 disabled:text-text-dim ${themeBg} hover:opacity-90`}
+                  >
+                    {isBlackSwan ? 'LOG ADAPTATION' : 'UPLOAD TO BRAIN'}
+                  </button>
+
+                  {/* Today's topics studied list */}
+                  {(() => {
+                    const todayStr = getLocalDateString();
+                    const tagFilter = isBlackSwan ? '[BLACK_SWAN_AUTOPSY]' : isDeload ? '[DELOAD_LOG]' : '[LEARNING/CONCEPT]';
+                    const todaySelfEntries = pillarEntries.filter(e => {
+                      const entryDate = e.timestamp.split('T')[0];
+                      return entryDate === todayStr && e.text.startsWith(tagFilter);
+                    });
+
+                    if (todaySelfEntries.length === 0) return null;
+
+                    return (
+                      <div className="mt-4 pt-4 border-t border-surface2 space-y-2 relative z-10">
+                        <p className="text-[9px] text-text-dim tracking-widest font-bold uppercase">TODAY&apos;S INGESTION:</p>
+                        <div className="space-y-2 max-h-[160px] overflow-y-auto scrollbar-thin pr-1">
+                          {todaySelfEntries.map((e, idx) => {
+                            const cleanText = e.text.replace(`${tagFilter} `, '');
+                            return (
+                              <div key={idx} className="p-3 bg-surface/80 border border-surface2 rounded-lg text-xs font-mono text-white flex items-start justify-between">
+                                <span className="leading-relaxed text-gray-300">{cleanText}</span>
+                                <span className="text-[8px] text-text-dim shrink-0 ml-3 font-mono mt-0.5">
+                                  {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
+
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* ─── FEED & GRAPHS SECTION (Standard for all) ─────────────────────── */}
 
@@ -2187,7 +2648,7 @@ export default function PillarFolder() {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           className={`w-14 h-14 rounded-full bg-vm-green text-obsidian flex items-center justify-center shadow-[0_0_20px_rgba(16,216,106,0.3)] active:scale-95 transition-all cursor-pointer ${isUploading ? 'opacity-50 animate-pulse pointer-events-none' : ''}`}
-          style={{ backgroundColor: meta.color.includes('gold') ? '#10D86A' : meta.color.includes('blue') ? '#4c7ec9' : meta.color.includes('purple') ? '#a78bfa' : '#4caa6e' }}
+          style={{ backgroundColor: meta.color.includes('amber') ? '#F59E0B' : meta.color.includes('blue') ? '#3B82F6' : meta.color.includes('purple') ? '#A855F7' : '#10D86A' }}
         >
           <Camera className="w-6 h-6" />
         </button>
@@ -2303,7 +2764,7 @@ export default function PillarFolder() {
           <div className="bg-surface w-full max-w-md border border-vm-green/40 p-6 flex flex-col">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-vm-green font-bold tracking-widest text-sm flex items-center gap-2">
-                🌿 SALAH LOG
+                 SALAH LOG
               </h3>
               <button onClick={() => setShowPrayerModal(false)} className="text-text-dim hover:text-white"><X className="w-6 h-6" /></button>
             </div>
@@ -2347,7 +2808,7 @@ export default function PillarFolder() {
         </div>
       )}
 
-      {/* 🌿 Prayer History Tracker/Audit Modal */}
+      {/*  Prayer History Tracker/Audit Modal */}
       {showPrayerHistoryModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           {/* Backdrop */}
@@ -2582,7 +3043,7 @@ export default function PillarFolder() {
         </div>
       )}
 
-      {/* 📚 Study Materials Modal */}
+      {/*  Study Materials Modal */}
       {showMaterialsModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           {/* Backdrop */}
@@ -2605,7 +3066,7 @@ export default function PillarFolder() {
             <div className="flex justify-between items-start mb-4 border-b border-white/[0.04] pb-4 shrink-0">
               <div>
                 <h3 className="text-sm font-bold text-vm-green tracking-widest uppercase font-mono flex items-center gap-2">
-                  📚 STUDY MATERIALS & CORE READINGS
+                   STUDY MATERIALS & CORE READINGS
                 </h3>
                 <p className="text-[8px] text-text-dim tracking-widest uppercase mt-0.5">THE BOOKS THAT BUILD IRON CONVICTION</p>
               </div>
@@ -2621,7 +3082,7 @@ export default function PillarFolder() {
             <div className="flex-1 overflow-y-auto pr-1 scrollbar-thin my-2 text-xs font-mono leading-relaxed space-y-4">
               {isMaterialsLoading ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3">
-                  <div className="animate-spin text-2xl">⏳</div>
+                  <div className="animate-spin text-2xl"></div>
                   <span className="text-[9px] text-vm-green tracking-widest uppercase animate-pulse">RETRIEVING LATEST READINGS FROM CORE...</span>
                 </div>
               ) : (
@@ -2694,7 +3155,7 @@ export default function PillarFolder() {
         >
           <div className="flex items-center gap-2">
             <span className="text-xs font-black">
-              {toast.type === 'success' ? '✓' : toast.type === 'error' ? '⚡' : 'ℹ'}
+              {toast.type === 'success' ? '' : toast.type === 'error' ? '' : 'ℹ'}
             </span>
             <span>{toast.message}</span>
           </div>

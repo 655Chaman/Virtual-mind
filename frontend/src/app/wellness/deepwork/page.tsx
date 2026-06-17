@@ -138,7 +138,7 @@ export default function DeepWorkControlCenter() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex-1">
-          <h1 className="text-vm-green font-mono font-bold tracking-[0.3em] text-base">⚡ FLOW STATE</h1>
+          <h1 className="text-vm-green font-mono font-bold tracking-[0.3em] text-base"> FLOW STATE</h1>
           <p className="text-[9px] text-text-dim tracking-widest mt-0.5">FOCUS · PRODUCTIVITY · EMPIRE</p>
         </div>
         <Timer className="w-4 h-4 text-vm-green/50" />
@@ -255,7 +255,7 @@ export default function DeepWorkControlCenter() {
         {/* ── DAILY SUMMARY & TARGETS ───────────────────────────── */}
         <div className="bg-surface border border-white/[0.06] p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 border border-vm-green/20 bg-vm-green/5 flex items-center justify-center text-lg">🏆</div>
+            <div className="w-10 h-10 border border-vm-green/20 bg-vm-green/5 flex items-center justify-center text-lg"></div>
             <div>
               <p className="text-[10px] text-text-dim tracking-widest font-bold">DAILY FLOW STATUS</p>
               <p className="text-xs font-bold text-white mt-0.5">
@@ -309,7 +309,7 @@ export default function DeepWorkControlCenter() {
                       </div>
                     </div>
                     <div className={`w-5 h-5 flex items-center justify-center text-[10px] ${goalHit ? 'text-vm-green' : 'text-text-dim/30'}`}>
-                      {goalHit ? '✓' : '·'}
+                      {goalHit ? '' : '·'}
                     </div>
                   </div>
                 );
