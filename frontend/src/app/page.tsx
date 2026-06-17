@@ -3,11 +3,9 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function WelcomeScreen() {
-  const router = useRouter();
-  
   useEffect(() => {
-    router.replace('/home');
-  }, [router]);
+    window.location.replace('/home');
+  }, []);
 
   return (
     <div className="flex h-screen items-center justify-center bg-black">
