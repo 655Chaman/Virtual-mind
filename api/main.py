@@ -50,6 +50,29 @@ app = FastAPI(
 )
 
 @app.middleware("http")
+async def nextjs_rsc_middleware(request: Request, call_next):
+    # If this is a Next.js client-side navigation (RSC request)
+    if request.method == "GET" and request.headers.get("RSC") == "1":
+        path = request.url.path
+        if not path.startswith("/api/"):
+            import os
+            from fastapi.responses import FileResponse
+            frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "out")
+            base_path = path.strip("/")
+            if not base_path:
+                base_path = "index"
+                
+            txt_path1 = os.path.join(frontend_dir, f"{base_path}.txt")
+            txt_path2 = os.path.join(frontend_dir, base_path, "index.txt")
+            
+            if os.path.exists(txt_path1):
+                return FileResponse(txt_path1, media_type="text/x-component")
+            elif os.path.exists(txt_path2):
+                return FileResponse(txt_path2, media_type="text/x-component")
+                
+    return await call_next(request)
+
+@app.middleware("http")
 async def dynamic_cors_middleware(request: Request, call_next):
     if request.method == "OPTIONS":
         response = Response(status_code=204)

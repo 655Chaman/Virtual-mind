@@ -118,7 +118,7 @@ function DashboardSwipeInner() {
           return (
             <div 
               key={p.id} 
-              className="h-full w-full shrink-0 snap-center flex flex-col justify-center px-6 transition-opacity duration-300"
+              className="h-full w-screen shrink-0 snap-center flex flex-col justify-center px-6 transition-opacity duration-300"
               style={{ opacity: isActive ? 1 : 0.3 }}
             >
               <div className="flex-1 flex flex-col justify-center transition-transform duration-500"
