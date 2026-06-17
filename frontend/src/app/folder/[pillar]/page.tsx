@@ -863,6 +863,13 @@ export default function PillarFolder() {
       setStreak(streakResult);
       if (prayerResult) {
         setPrayerData(prayerResult);
+        if (typeof window !== 'undefined' && (window as any).Android && typeof (window as any).Android.updatePrayerTimes === 'function') {
+          try {
+            (window as any).Android.updatePrayerTimes(JSON.stringify(prayerResult));
+          } catch (e) {
+            console.error("Failed to update native prayer times", e);
+          }
+        }
       }
       if (elesiumResult) {
         setEmailsSent(elesiumResult.emails_sent_today || elesiumResult.emails_sent_total || 0);

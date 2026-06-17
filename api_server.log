@@ -1,4 +1,4 @@
-/Users/syedchamansha/.gemini/antigravity/worktrees/Virtual-mind/explore-elesium-architecture-features/brain/memory.py:24: FutureWarning: 
+/Users/syedchamansha/Virtual-mind/brain/memory.py:24: FutureWarning: 
 
 All support for the `google.generativeai` package has ended. It will no longer be receiving 
 updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
@@ -7,7 +7,134 @@ See README for more details:
 https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
 
   import google.generativeai as genai
-INFO:     Started server process [22180]
+INFO:     Started server process [35364]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+Virtual Mind System Booting...
+[WARN] GEMINI_API_KEY not set.
+==================================================
+🔄 VIRTUAL MIND: FULL INGESTION PIPELINE
+==================================================
+
+📁 Phase 1: Core Ambitions & Decision Context
+Virtual Mind Global Scheduler Running in background...
+[INIT] Core systems online.
+⏭️  Already ingested (unchanged): decision_context.md
+⏭️  Already ingested (unchanged): phase0_action_plan.md
+⏭️  Already ingested (unchanged): minds_to_study.md
+📊 Ambitions: 0 chunks ingested
+
+📁 Phase 2: Worldview & Philosophy
+⏭️  Already ingested (unchanged): philosophical_core.md
+⏭️  Already ingested (unchanged): spirituality.md
+
+📊 Total chunks ingested: 0
+
+📁 Phase 3: Raw Thoughts & Journals
+⏭️  Already ingested (unchanged): journal_01.md
+
+📊 Total chunks ingested: 0
+
+📊 Memory Stats: {'total_points': 111, 'status': 'GREEN'}
+==================================================
+✅ Ingestion complete.
+INFO:     127.0.0.1:59640 - "GET /folder/deen HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59642 - "GET /folder/deen.txt HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DATABASE] Connected to MongoDB Atlas (Synchronous)
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59648 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59661 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59671 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59678 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59684 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59688 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59706 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59715 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59730 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59742 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+[SCHEDULER] Mid-time for Maghrib. Not prayed! Alerting Chaman...
+INFO:     127.0.0.1:59745 - "POST /api/push/send HTTP/1.1" 503 Service Unavailable
+[SCHEDULER] Push dispatched: 0 devices notified.
+INFO:     10.255.234.228:45698 - "OPTIONS /api/logs/logs?last=30 HTTP/1.1" 204 No Content
+INFO:     10.255.234.228:45708 - "OPTIONS /api/logs/streak HTTP/1.1" 204 No Content
+INFO:     10.255.234.228:45710 - "OPTIONS /api/elesium/metrics HTTP/1.1" 204 No Content
+INFO:     10.255.234.228:45724 - "OPTIONS /api/logs/log/2026-06-17 HTTP/1.1" 204 No Content
+INFO:     10.255.234.228:45724 - "GET /api/logs/logs?last=30 HTTP/1.1" 200 OK
+INFO:     10.255.234.228:45710 - "GET /api/logs/streak HTTP/1.1" 200 OK
+INFO:     10.255.234.228:45698 - "GET /api/logs/log/2026-06-17 HTTP/1.1" 200 OK
+INFO:     10.255.234.228:45708 - "GET /api/elesium/metrics HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59756 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59759 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59765 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59769 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+INFO:     10.255.234.228:33292 - "OPTIONS /api/workout/today HTTP/1.1" 204 No Content
+INFO:     10.255.234.228:33296 - "OPTIONS /api/workout/history?last=10 HTTP/1.1" 204 No Content
+INFO:     10.255.234.228:33302 - "OPTIONS /api/workout/heatmap?days=7 HTTP/1.1" 204 No Content
+INFO:     10.255.234.228:33312 - "OPTIONS /api/workout/home-protocol/today HTTP/1.1" 204 No Content
+INFO:     10.255.234.228:33296 - "GET /api/workout/today HTTP/1.1" 200 OK
+INFO:     10.255.234.228:33312 - "GET /api/workout/home-protocol/today HTTP/1.1" 200 OK
+INFO:     10.255.234.228:33292 - "GET /api/workout/history?last=10 HTTP/1.1" 200 OK
+INFO:     10.255.234.228:33302 - "GET /api/workout/heatmap?days=7 HTTP/1.1" 200 OK
+INFO:     10.255.234.228:33302 - "OPTIONS /api/workout/home-protocol/increment HTTP/1.1" 204 No Content
+INFO:     10.255.234.228:33302 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:33292 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:33292 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:33302 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:33292 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:33302 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:33302 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:33292 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:33318 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:33292 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:33292 - "GET /api/workout/heatmap?days=7 HTTP/1.1" 200 OK
+INFO:     10.255.234.228:38568 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:38570 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:38582 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:44936 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:38568 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:38570 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:38582 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:44936 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:38592 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:44920 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:38568 - "GET /api/workout/heatmap?days=7 HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59782 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+INFO:     10.255.234.228:52832 - "POST /api/workout/home-protocol/increment HTTP/1.1" 200 OK
+INFO:     10.255.234.228:52840 - "GET /api/workout/heatmap?days=7 HTTP/1.1" 200 OK
+[SCHEDULER] Cache miss for 2026-06-17. Fetching from API...
+[DEEN API] Serving cached prayer times for 2026-06-17
+INFO:     127.0.0.1:59789 - "GET /api/deen/prayer-times HTTP/1.1" 200 OK
+INFO:     10.255.234.228:46094 - "GET /api/logs/log/2026-06-17 HTTP/1.1" 200 OK
+INFO:     10.255.234.228:46076 - "GET /api/logs/logs?last=30 HTTP/1.1" 200 OK
+INFO:     10.255.234.228:46084 - "GET /api/logs/streak HTTP/1.1" 200 OK
+INFO:     10.255.234.228:46086 - "GET /api/elesium/metrics HTTP/1.1" 200 OK

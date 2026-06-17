@@ -218,6 +218,12 @@ class AndroidJSInterface(private val context: Context) {
         prefs.edit().putLong("sleep_unlock_time", unlockTime).apply()
         showNotification("Sleep Protocol Active", "$OPERATOR_NAME, phone locked for $hours hours. Do not disturb.")
     }
+
+    @JavascriptInterface
+    fun updatePrayerTimes(prayerTimesJson: String) {
+        android.util.Log.d("VirtualMindWebView", "Received updated prayer times from JS")
+        PrayerAlarmScheduler.saveAndScheduleAlarms(context, prayerTimesJson)
+    }
 }
 
 class MainActivity : ComponentActivity() {
