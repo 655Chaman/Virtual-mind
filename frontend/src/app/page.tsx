@@ -37,7 +37,7 @@ export default function WelcomeScreen() {
 
   return (
     <div 
-      className={`flex h-screen w-full flex-col items-center justify-center bg-black transition-opacity duration-700 cursor-pointer ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
+      className={`flex h-full flex-1 w-full flex-col items-center justify-center bg-black transition-opacity duration-700 cursor-pointer ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}
       onClick={enterSystem}
     >
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-900/40 via-black to-black"></div>
