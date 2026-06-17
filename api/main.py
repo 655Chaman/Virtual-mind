@@ -70,6 +70,27 @@ async def nextjs_rsc_middleware(request: Request, call_next):
             elif os.path.exists(txt_path2):
                 return FileResponse(txt_path2, media_type="text/x-component")
                 
+    # If it's a standard GET request for a path without an extension, serve the HTML directly
+    # This prevents Starlette's StaticFiles from issuing a 307 Redirect to add a trailing slash,
+    # which completely breaks older Android WebViews.
+    if request.method == "GET":
+        path = request.url.path
+        if not path.startswith("/api/") and not path.startswith("/_next/") and "." not in path.split("/")[-1]:
+            import os
+            from fastapi.responses import FileResponse
+            frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "out")
+            base_path = path.strip("/")
+            if not base_path:
+                base_path = "index"
+                
+            html_path1 = os.path.join(frontend_dir, f"{base_path}.html")
+            html_path2 = os.path.join(frontend_dir, base_path, "index.html")
+            
+            if os.path.exists(html_path1):
+                return FileResponse(html_path1, media_type="text/html")
+            elif os.path.exists(html_path2):
+                return FileResponse(html_path2, media_type="text/html")
+                
     return await call_next(request)
 
 @app.middleware("http")
