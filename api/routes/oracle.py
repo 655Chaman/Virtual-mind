@@ -120,7 +120,7 @@ async def estimate_tasks(request: EstimateTasksRequest):
         # Fallback if no AI
         return {
             "estimates": [
-                {"task_name": t, "estimated_minutes": 30, "xp_reward": 500} for t in request.tasks
+                {"task_name": t, "estimated_minutes": 30, "xp_reward": 500, "urgency_question": f"Are you currently working on {t}?"} for t in request.tasks
             ]
         }
         
@@ -134,11 +134,12 @@ async def estimate_tasks(request: EstimateTasksRequest):
         Your objective:
         1. Estimate the absolute minimum time required to complete each task in minutes to force deep work constraints (Parkinson's Law).
         2. Assign an immense amount of XP (between 500 and 2000) for completing it within that time limit to gamify the execution.
+        3. Generate an intense, demanding question summarizing the task to be used as a recurring notification (e.g. "Are you fixing the SEO meta tags right now?").
         
         Return a strict JSON object with this structure:
         {{
             "estimates": [
-                {{"task_name": "Task Name", "estimated_minutes": 45, "xp_reward": 1000}}
+                {{"task_name": "Task Name", "estimated_minutes": 45, "xp_reward": 1000, "urgency_question": "Are you fixing the SEO meta tags right now?"}}
             ]
         }}
         """
@@ -155,6 +156,6 @@ async def estimate_tasks(request: EstimateTasksRequest):
         # Fallback matrix
         return {
             "estimates": [
-                {"task_name": t, "estimated_minutes": 45, "xp_reward": 750} for t in request.tasks
+                {"task_name": t, "estimated_minutes": 45, "xp_reward": 750, "urgency_question": f"Are you working on {t}?"} for t in request.tasks
             ]
         }

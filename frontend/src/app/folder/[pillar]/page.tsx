@@ -132,9 +132,22 @@ function PrayerComplianceWithTimings({
         const newTasks = tasks.map(t => {
           if (t.status === 'running' && t.time_remaining !== null && t.time_remaining > 0) {
             changed = true;
-            return { ...t, time_remaining: t.time_remaining - 1 };
+            const nextTime = t.time_remaining - 1;
+            
+            if (nextTime > 0 && nextTime % 60 === 0) {
+              if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+                new Notification('URGENT TIMER WARNING', {
+                  body: t.urgency_question || `Are you currently working on ${t.name}?`,
+                });
+              }
+            }
+
+            return { ...t, time_remaining: nextTime };
           } else if (t.status === 'running' && t.time_remaining === 0) {
             changed = true;
+            if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+              new Notification('TIMER FAILED', { body: `You ran out of time for: ${t.name}` });
+            }
             return { ...t, status: 'failed' as const };
           }
           return t;
@@ -810,11 +823,11 @@ export default function PillarFolder() {
   const [longFormPosted, setLongFormPosted] = useState(0);
   const [isRapidLogging, setIsRapidLogging] = useState(false);
 
-  type AITask = { id: string; name: string; estimated_minutes: number | null; xp_reward: number | null; time_remaining: number | null; status: 'pending' | 'running' | 'completed' | 'failed' };
+  type AITask = { id: string; name: string; estimated_minutes: number | null; xp_reward: number | null; time_remaining: number | null; status: 'pending' | 'running' | 'completed' | 'failed'; urgency_question: string | null };
   const [focusTasks, setFocusTasks] = useState<AITask[]>([
-    { id: '1', name: '', estimated_minutes: null, xp_reward: null, time_remaining: null, status: 'pending' },
-    { id: '2', name: '', estimated_minutes: null, xp_reward: null, time_remaining: null, status: 'pending' },
-    { id: '3', name: '', estimated_minutes: null, xp_reward: null, time_remaining: null, status: 'pending' }
+    { id: '1', name: '', estimated_minutes: null, xp_reward: null, time_remaining: null, status: 'pending', urgency_question: null },
+    { id: '2', name: '', estimated_minutes: null, xp_reward: null, time_remaining: null, status: 'pending', urgency_question: null },
+    { id: '3', name: '', estimated_minutes: null, xp_reward: null, time_remaining: null, status: 'pending', urgency_question: null }
   ]);
   const [isEstimatingAI, setIsEstimatingAI] = useState(false);
   const [bottleneck, setBottleneck] = useState('');
@@ -1827,6 +1840,11 @@ export default function PillarFolder() {
                     <button
                       disabled={isEstimatingAI}
                       onClick={async () => {
+                        if (typeof window !== 'undefined' && 'Notification' in window) {
+                          if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                            await Notification.requestPermission();
+                          }
+                        }
                         setIsEstimatingAI(true);
                         triggerHaptic('light');
                         try {
@@ -1850,6 +1868,7 @@ export default function PillarFolder() {
                                     estimated_minutes: estimate.estimated_minutes,
                                     xp_reward: estimate.xp_reward,
                                     time_remaining: estimate.estimated_minutes * 60,
+                                    urgency_question: estimate.urgency_question || null,
                                     status: 'running' as const
                                   };
                                 }

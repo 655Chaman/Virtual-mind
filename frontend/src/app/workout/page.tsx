@@ -178,7 +178,7 @@ export default function WorkoutDashboard() {
             </div>
           ) : (
             <button
-              onClick={() => { triggerHaptic('heavy'); router.push('/workout/session'); }}
+              onClick={() => { triggerHaptic('heavy'); router.push('/workout/session?start=true'); }}
               className="group relative w-full max-w-[240px] aspect-square rounded-full border border-vm-scarlet/30 flex flex-col items-center justify-center gap-4 transition-all duration-500 hover:scale-105 hover:border-vm-scarlet hover:shadow-[0_0_50px_rgba(244,63,94,0.3)]"
               style={{ backgroundColor: 'var(--color-obsidian)' }}
             >
