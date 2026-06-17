@@ -1,26 +1,168 @@
 1:"$Sreact.fragment"
-2:I[3479,["177","static/chunks/app/layout-114b803fc6841a1c.js"],"ThemeProvider"]
-3:I[8743,["177","static/chunks/app/layout-114b803fc6841a1c.js"],"LockProvider"]
-4:I[9766,[],""]
-5:I[8924,[],""]
-6:I[1959,[],"ClientPageRoot"]
-7:I[9522,["700","static/chunks/700-b6e2a61df59995ba.js","644","static/chunks/app/folder/%5Bpillar%5D/page-d9461c01ee5b30e8.js"],"default"]
-a:I[4431,[],"OutletBoundary"]
-c:I[5278,[],"AsyncMetadataOutlet"]
-e:I[4431,[],"ViewportBoundary"]
-10:I[4431,[],"MetadataBoundary"]
-11:"$Sreact.suspense"
-13:I[4062,["219","static/chunks/app/global-error-b815ee44137a1b63.js"],"default"]
+a:I[4062,["219","static/chunks/app/global-error-68f8eb30a534255d.js"],"default"]
 :HL["/_next/static/media/03f2d74f5e7b171e-s.p.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/_next/static/media/7b89a4fd5e90ede0-s.p.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/_next/static/media/a273567b21a7c318-s.p.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/_next/static/css/064aa7ac97892c5e.css","style"]
-:HL["/_next/static/css/33d77d6132f92558.css","style"]
-0:{"P":null,"b":"tXdfzKa4M_MRJeKauyEJI","p":"","c":["","folder","elesium"],"i":false,"f":[[["",{"children":["folder",{"children":[["pillar","elesium","d"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],["",["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/064aa7ac97892c5e.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","link","1",{"rel":"stylesheet","href":"/_next/static/css/33d77d6132f92558.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","suppressHydrationWarning":true,"className":"__variable_a5db66 __variable_bb2e19 __variable_b6c3be h-full antialiased","children":[["$","head",null,{"children":[["$","link",null,{"rel":"icon","href":"/icon-192.png"}],["$","link",null,{"rel":"apple-touch-icon","href":"/icon-192.png"}],["$","meta",null,{"name":"theme-color","content":"#c9a84c"}]]}],["$","body",null,{"className":"min-h-full flex flex-col relative bg-background text-foreground transition-colors duration-200","children":["$","$L2",null,{"attribute":"class","defaultTheme":"dark","enableSystem":false,"children":["$","div",null,{"className":"flex-1 flex flex-col","children":["$","$L3",null,{"children":["$","$L4",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]}]}]}]]}]]}],{"children":["folder",["$","$1","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":[["pillar","elesium","d"],["$","$1","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L5",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}],{"children":["__PAGE__",["$","$1","c",{"children":[["$","$L6",null,{"Component":"$7","searchParams":{},"params":{"pillar":"elesium"},"promises":["$@8","$@9"]}],null,["$","$La",null,{"children":["$Lb",["$","$Lc",null,{"promise":"$@d"}]]}]]}],{},null,false]},null,false]},null,false]},null,false],["$","$1","h",{"children":[null,[["$","$Le",null,{"children":"$Lf"}],["$","meta",null,{"name":"next-size-adjust","content":""}]],["$","$L10",null,{"children":["$","div",null,{"hidden":true,"children":["$","$11",null,{"fallback":null,"children":"$L12"}]}]}]]}],false]],"m":"$undefined","G":["$13",[]],"s":false,"S":true}
-8:{}
-9:"$0:f:0:1:2:children:2:children:2:children:1:props:children:0:props:params"
-f:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no"}],["$","meta","2",{"name":"theme-color","content":"#c9a84c"}]]
-b:null
-14:I[622,[],"IconMark"]
-d:{"metadata":[["$","title","0",{"children":"Virtual Mind 2.0"}],["$","meta","1",{"name":"description","content":"Command Center for Elesium — Personal OS for Chaman Shah"}],["$","link","2",{"rel":"manifest","href":"/manifest.json","crossOrigin":"$undefined"}],["$","meta","3",{"name":"mobile-web-app-capable","content":"yes"}],["$","meta","4",{"name":"apple-mobile-web-app-capable","content":"yes"}],["$","meta","5",{"name":"application-name","content":"Virtual Mind 2.0"}],["$","meta","6",{"name":"msapplication-TileColor","content":"#060606"}],["$","meta","7",{"name":"mobile-web-app-capable","content":"yes"}],["$","meta","8",{"name":"apple-mobile-web-app-title","content":"Virtual Mind"}],["$","meta","9",{"name":"apple-mobile-web-app-status-bar-style","content":"black-translucent"}],["$","link","10",{"rel":"icon","href":"/favicon.ico","type":"image/x-icon","sizes":"16x16"}],["$","link","11",{"rel":"icon","href":"/icon.png?01721174c249e645","type":"image/png","sizes":"129x192"}],["$","$L14","12",{}]],"error":null,"digest":"$undefined"}
-12:"$d:metadata"
+:HL["/_next/static/css/21bb43761d253f8e.css","style"]
+2:Tcd4,
+          /* Failsafe: hard background regardless of CSS loading */
+          html, body {
+            background-color: #060606 !important;
+            color: #ededed !important;
+            min-height: 100vh !important;
+            width: 100% !important;
+            margin: 0;
+            padding: 0;
+          }
+
+          /*
+           * TAILWIND v4 WEBVIEW POLYFILL
+           * Tailwind v4 injects its CSS custom-property defaults inside:
+           *   @layer properties { @supports (...) { * { --tw-translate-x: 0; ... } } }
+           * Older Android WebViews (pre-Chrome 105) silently ignore the @supports
+           * selector, so every Tailwind utility that depends on these properties
+           * (flex, transform, overflow, snap, etc.) renders as if unstyled.
+           * This block sets them unconditionally so all Tailwind classes work.
+           */
+          *, ::before, ::after, ::backdrop {
+            --tw-translate-x: 0;
+            --tw-translate-y: 0;
+            --tw-translate-z: 0;
+            --tw-rotate-x: 0;
+            --tw-rotate-y: 0;
+            --tw-rotate-z: 0;
+            --tw-skew-x: 0;
+            --tw-skew-y: 0;
+            --tw-scale-x: 1;
+            --tw-scale-y: 1;
+            --tw-scale-z: 1;
+            --tw-scroll-snap-strictness: proximity;
+            --tw-border-style: solid;
+            --tw-gradient-position: initial;
+            --tw-gradient-from: #0000;
+            --tw-gradient-via: #0000;
+            --tw-gradient-to: #0000;
+            --tw-gradient-stops: initial;
+            --tw-gradient-via-stops: initial;
+            --tw-gradient-from-position: 0%;
+            --tw-gradient-via-position: 50%;
+            --tw-gradient-to-position: 100%;
+            --tw-ring-color: rgb(59 130 246 / 0.5);
+            --tw-ring-shadow: 0 0 #0000;
+            --tw-inset-ring-shadow: 0 0 #0000;
+            --tw-ring-inset: ;
+            --tw-ring-offset-width: 0px;
+            --tw-ring-offset-color: #fff;
+            --tw-ring-offset-shadow: 0 0 #0000;
+            --tw-shadow: 0 0 #0000;
+            --tw-shadow-color: initial;
+            --tw-shadow-alpha: 100%;
+            --tw-inset-shadow: 0 0 #0000;
+            --tw-inset-shadow-color: initial;
+            --tw-inset-shadow-alpha: 100%;
+            --tw-blur: ;
+            --tw-brightness: ;
+            --tw-contrast: ;
+            --tw-grayscale: ;
+            --tw-hue-rotate: ;
+            --tw-invert: ;
+            --tw-opacity: ;
+            --tw-saturate: ;
+            --tw-sepia: ;
+            --tw-drop-shadow: ;
+            --tw-drop-shadow-color: initial;
+            --tw-drop-shadow-alpha: 100%;
+            --tw-drop-shadow-size: ;
+            --tw-backdrop-blur: ;
+            --tw-backdrop-brightness: ;
+            --tw-backdrop-contrast: ;
+            --tw-backdrop-grayscale: ;
+            --tw-backdrop-hue-rotate: ;
+            --tw-backdrop-invert: ;
+            --tw-backdrop-opacity: ;
+            --tw-backdrop-saturate: ;
+            --tw-backdrop-sepia: ;
+            --tw-contain-size: ;
+            --tw-contain-layout: ;
+            --tw-contain-paint: ;
+            --tw-contain-style: ;
+            --tw-space-y-reverse: 0;
+            --tw-space-x-reverse: 0;
+            --tw-divide-y-reverse: 0;
+          }
+        0:{"P":null,"b":"F_AKrVQH0-Wn9qXGN9sJf","p":"","c":["","folder","elesium"],"i":false,"f":[[["",{"children":["folder",{"children":[["pillar","elesium","d"],{"children":["__PAGE__",{}]}]}]},"$undefined","$undefined",true],["",["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/css/064aa7ac97892c5e.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}],["$","link","1",{"rel":"stylesheet","href":"/_next/static/css/21bb43761d253f8e.css","precedence":"next","crossOrigin":"$undefined","nonce":"$undefined"}]],["$","html",null,{"lang":"en","className":"dark __variable_a5db66 __variable_bb2e19 __variable_b6c3be h-full antialiased","style":{"colorScheme":"dark","height":"100%"},"suppressHydrationWarning":true,"children":[["$","head",null,{"children":[["$","link",null,{"rel":"icon","href":"/icon-192.png"}],["$","link",null,{"rel":"apple-touch-icon","href":"/icon-192.png"}],["$","meta",null,{"name":"theme-color","content":"#c9a84c"}],["$","style",null,{"dangerouslySetInnerHTML":{"__html":"$2"}}],"$L3","$L4"]}],"$L5"]}]]}],{"children":["folder","$L6",{"children":[["pillar","elesium","d"],"$L7",{"children":["__PAGE__","$L8",{},null,false]},null,false]},null,false]},null,false],"$L9",false]],"m":"$undefined","G":["$a",[]],"s":false,"S":true}
+c:I[8169,["177","static/chunks/app/layout-243906b1d0884f7e.js"],"ThemeProvider"]
+d:I[8743,["177","static/chunks/app/layout-243906b1d0884f7e.js"],"LockProvider"]
+e:I[9766,[],""]
+f:I[8579,["39","static/chunks/app/error-a5b2a87fd9baae9c.js"],"default"]
+10:I[8924,[],""]
+11:I[1959,[],"ClientPageRoot"]
+12:I[2330,["721","static/chunks/721-d1c805edc53b5289.js","644","static/chunks/app/folder/%5Bpillar%5D/page-1d6da96043bb609f.js"],"default"]
+15:I[4431,[],"OutletBoundary"]
+17:I[5278,[],"AsyncMetadataOutlet"]
+19:I[4431,[],"ViewportBoundary"]
+1b:I[4431,[],"MetadataBoundary"]
+1c:"$Sreact.suspense"
+3:["$","script",null,{"dangerouslySetInnerHTML":{"__html":"\n          (function() {\n            try {\n              document.documentElement.classList.add('dark');\n              document.documentElement.style.backgroundColor = '#060606';\n              document.body && (document.body.style.backgroundColor = '#060606');\n            } catch(e) {}\n          })();\n        "}}]
+b:T9df,
+          const apiBase = window.location.protocol + '//' + window.location.hostname + ':8001';
+          function remoteLog(level, msg) {
+            fetch(apiBase + '/api/debug/log', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ level: level, message: String(msg) })
+            }).catch(() => {});
+          }
+
+          // Safe console.error override to catch React internal crashes
+          const _err = console.error;
+          console.error = function(...args) {
+            _err.apply(console, args);
+            const msg = args.join(' ');
+            if (msg.indexOf('debug/log') === -1 && msg.indexOf('8001') === -1) {
+              remoteLog('react_error', msg);
+            }
+          };
+
+          window.onerror = function(msg, url, line, col, error) {
+            var d = document.createElement('div');
+            d.style.position = 'fixed'; d.style.top = '0'; d.style.left = '0'; d.style.width = '100vw'; d.style.height = '100vh';
+            d.style.backgroundColor = 'yellow'; d.style.color = 'black'; d.style.zIndex = '9999999'; d.style.fontSize = '20px';
+            d.innerHTML = '<b>JS ERROR:</b> ' + msg + '<br>Line: ' + line;
+            document.documentElement.appendChild(d);
+          };
+          window.onunhandledrejection = function(event) {
+            const errStr = 'Unhandled Promise Rejection: ' + (event.reason ? event.reason.message || event.reason : 'Unknown') + '\n' + (event.reason && event.reason.stack ? event.reason.stack : '');
+            remoteLog('error_rejection', errStr);
+            var div = document.createElement('div');
+            div.style.position = 'fixed';
+            div.style.top = '0';
+            div.style.left = '0';
+            div.style.width = '100vw';
+            div.style.height = '100vh';
+            div.style.backgroundColor = 'black';
+            div.style.color = 'red';
+            div.style.padding = '20px';
+            div.style.zIndex = '99999';
+            div.style.overflow = 'scroll';
+            div.style.fontFamily = 'monospace';
+            div.style.fontSize = '12px';
+            div.innerHTML = '<h1>Client-side Unhandled Promise Rejection</h1>' +
+              '<p><b>Reason:</b> ' + (event.reason ? event.reason.message || event.reason : 'Unknown') + '</p>' +
+              '<pre>' + (event.reason && event.reason.stack ? event.reason.stack : 'No stack trace') + '</pre>';
+            document.body.appendChild(div);
+          };
+        4:["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$b"}}]
+5:["$","body",null,{"className":"h-full flex flex-col relative bg-background text-foreground transition-colors duration-200","style":{"backgroundColor":"#060606","color":"#ededed","minHeight":"100vh"},"children":["$","div",null,{"className":"h-full flex flex-col","children":["$","$Lc",null,{"attribute":"class","defaultTheme":"dark","forcedTheme":"dark","children":["$","$Ld",null,{"children":["$","$Le",null,{"parallelRouterKey":"children","error":"$f","errorStyles":[],"errorScripts":[],"template":["$","$L10",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]],"forbidden":"$undefined","unauthorized":"$undefined"}]}]}]}]}]
+6:["$","$1","c",{"children":[null,["$","$Le",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L10",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+7:["$","$1","c",{"children":[null,["$","$Le",null,{"parallelRouterKey":"children","error":"$undefined","errorStyles":"$undefined","errorScripts":"$undefined","template":["$","$L10",null,{}],"templateStyles":"$undefined","templateScripts":"$undefined","notFound":"$undefined","forbidden":"$undefined","unauthorized":"$undefined"}]]}]
+8:["$","$1","c",{"children":[["$","$L11",null,{"Component":"$12","searchParams":{},"params":{"pillar":"elesium"},"promises":["$@13","$@14"]}],null,["$","$L15",null,{"children":["$L16",["$","$L17",null,{"promise":"$@18"}]]}]]}]
+9:["$","$1","h",{"children":[null,[["$","$L19",null,{"children":"$L1a"}],["$","meta",null,{"name":"next-size-adjust","content":""}]],["$","$L1b",null,{"children":["$","div",null,{"hidden":true,"children":["$","$1c",null,{"fallback":null,"children":"$L1d"}]}]}]]}]
+13:{}
+14:"$8:props:children:0:props:params"
+1a:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no"}],["$","meta","2",{"name":"theme-color","content":"#c9a84c"}]]
+16:null
+1e:I[622,[],"IconMark"]
+18:{"metadata":[["$","title","0",{"children":"Virtual Mind 2.0"}],["$","meta","1",{"name":"description","content":"Command Center for Elesium — Personal OS for Chaman Shah"}],["$","link","2",{"rel":"manifest","href":"/manifest.json","crossOrigin":"$undefined"}],["$","meta","3",{"name":"mobile-web-app-capable","content":"yes"}],["$","meta","4",{"name":"apple-mobile-web-app-capable","content":"yes"}],["$","meta","5",{"name":"application-name","content":"Virtual Mind 2.0"}],["$","meta","6",{"name":"msapplication-TileColor","content":"#060606"}],["$","meta","7",{"name":"mobile-web-app-capable","content":"yes"}],["$","meta","8",{"name":"apple-mobile-web-app-title","content":"Virtual Mind"}],["$","meta","9",{"name":"apple-mobile-web-app-status-bar-style","content":"black-translucent"}],["$","link","10",{"rel":"icon","href":"/favicon.ico","type":"image/x-icon","sizes":"16x16"}],["$","link","11",{"rel":"icon","href":"/icon.png?01721174c249e645","type":"image/png","sizes":"129x192"}],["$","$L1e","12",{}]],"error":null,"digest":"$undefined"}
+1d:"$18:metadata"

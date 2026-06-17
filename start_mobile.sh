@@ -34,10 +34,46 @@ echo "╚═══════════════════════�
 echo ""
 
 # ── Write the dynamic .env.local for frontend ──
-cat > frontend/.env.local << EOF
+cat > frontend/.env.local <<EOF
 NEXT_PUBLIC_API_URL=http://${LOCAL_IP}:8001
 EOF
 echo "[BOOT] Frontend .env.local updated → API at http://${LOCAL_IP}:8001"
+
+# ── Dynamically update next.config.ts with current LAN IP ──
+# This fixes the "cross origin request" warning that breaks WebView rendering
+cat > frontend/next.config.ts <<EOF
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  transpilePackages: ['three', '@react-three/fiber', '@react-three/drei'],
+  images: {
+    unoptimized: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  // Allow Android WebView and LAN devices to access Next.js dev server
+  // resources without cross-origin blocking (fixes black screen in WebView)
+  allowedDevOrigins: [
+    '${LOCAL_IP}',
+    '*.local',
+    'localhost',
+  ],
+};
+
+export default nextConfig;
+EOF
+echo "[BOOT] next.config.ts updated → allowedDevOrigins includes ${LOCAL_IP}"
+
+# ── Update MainActivity.kt default URL to current IP ──
+MAIN_ACTIVITY="android-app/app/src/main/java/com/example/virtualmind/MainActivity.kt"
+if [ -f "\$MAIN_ACTIVITY" ]; then
+  sed -i '' "s|val defaultUrl = \"http://[^\"]*:3000\"|val defaultUrl = \"http://\${LOCAL_IP}:3000\"|g" "\$MAIN_ACTIVITY"
+  echo "[BOOT] MainActivity.kt defaultUrl updated → http://\${LOCAL_IP}:3000"
+fi
 
 # ── Start Backend (bound to 0.0.0.0 so phone can reach it) ──
 echo "[BOOT] Starting FastAPI backend on 0.0.0.0:8001..."
@@ -46,14 +82,16 @@ uvicorn api.main:app --host 0.0.0.0 --port 8001 --reload &
 API_PID=$!
 
 # ── Start Frontend (bound to 0.0.0.0) ──
-echo "[BOOT] Starting Next.js frontend on 0.0.0.0:3000..."
+echo "[BOOT] Building Next.js for production (this fixes WebView CSS/JS injection bugs)..."
 cd frontend
-HOST=0.0.0.0 npx next dev --hostname 0.0.0.0 --port 3000 &
+npm run build
+echo "[BOOT] Starting Next.js production server on 0.0.0.0:3000..."
+HOST=0.0.0.0 PORT=3000 npm run start &
 FRONTEND_PID=$!
 cd ..
 
 # ── Handle shutdown ──
-trap "echo ''; echo '[SHUTDOWN] Killing servers...'; kill $API_PID $FRONTEND_PID 2>/dev/null; exit 0" EXIT INT TERM
+trap "echo ''; echo '[SHUTDOWN] Killing servers...'; kill \$API_PID \$FRONTEND_PID 2>/dev/null; exit 0" EXIT INT TERM
 
 echo ""
 echo "[BOOT] Both servers running. Press Ctrl+C to stop."

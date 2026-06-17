@@ -1,13 +1,18 @@
 const getApiBase = () => {
+  // In the browser (including Android WebView), resolve against the current
+  // hostname so that API calls always reach the Mac server — not localhost
+  // on the phone. Falls back to build-time env var for SSR.
   if (typeof window !== 'undefined') {
     return `${window.location.protocol}//${window.location.hostname}:8001`;
   }
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 };
+// NOTE: This must be called as a function on every request, not cached at
+// module level, because window is not available during SSR.
 export const API_BASE = getApiBase();
 
 async function request(path: string, options: RequestInit = {}) {
-  const url = `${API_BASE}${path}`;
+  const url = `${getApiBase()}${path}`;
   const response = await fetch(url, {
     ...options,
     headers: {

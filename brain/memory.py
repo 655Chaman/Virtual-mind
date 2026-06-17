@@ -20,30 +20,34 @@ from qdrant_client.models import (
     Filter, FieldCondition, MatchValue,
 )
 
-# Use Gemini for embeddings to save RAM
-import google.generativeai as genai
-from dotenv import load_dotenv
-load_dotenv()
-
-class GeminiEncoder:
+class NvidiaEncoder:
     def __init__(self):
-        self.api_key = os.getenv("GEMINI_API_KEY")
-        if self.api_key and self.api_key != "your_gemini_api_key_here":
-            genai.configure(api_key=self.api_key)
+        self.api_key = os.getenv("NVIDIA_API_KEY")
+        if self.api_key and "your_gemini_api_key_here" not in self.api_key:
+            from openai import OpenAI
+            self.client = OpenAI(
+                base_url="https://integrate.api.nvidia.com/v1",
+                api_key=self.api_key
+            )
             
     def encode(self, text):
         import numpy as np
-        if not self.api_key or self.api_key == "your_gemini_api_key_here":
-            return np.zeros(768)
+        if not self.api_key or "your_gemini_api_key_here" in self.api_key:
+            return np.zeros(1024) # The Nvidia embedding model nv-embedqa-e5-v5 has 1024 dimensions
         try:
-            result = genai.embed_content(
-                model="models/text-embedding-004",
-                content=text
+            # NVIDIA uses openai compatible endpoints for embeddings too
+            # Ensure text is properly formatted for nv-embedqa-e5-v5
+            formatted_text = text if isinstance(text, str) else str(text)
+            response = self.client.embeddings.create(
+                input=[formatted_text],
+                model="nvidia/nv-embedqa-e5-v5",
+                encoding_format="float",
+                extra_body={"input_type": "query", "truncate": "NONE"}
             )
-            return np.array(result['embedding'])
+            return np.array(response.data[0].embedding)
         except Exception as e:
             print(f"[MEMORY] Embedding error: {e}")
-            return np.zeros(768)
+            return np.zeros(1024)
 
 
 # ─── VALID MEMORY TYPES ───────────────────────────────────────────────────────
@@ -72,7 +76,7 @@ class Memory:
 
         self.persistence_dir = persistence_dir
         self.collection_name = collection_name
-        self.encoder = GeminiEncoder()
+        self.encoder = NvidiaEncoder()
         self._client = None
         self._initialized = False
 
@@ -80,39 +84,47 @@ class Memory:
     def client(self):
         """Lazy client initialization to avoid concurrent access during import."""
         if self._client is None:
-            self._client = QdrantClient(path=self.persistence_dir)
+            cloud_url = os.getenv("QDRANT_CLOUD_URL")
+            api_key = os.getenv("QDRANT_API_KEY")
+            
+            if cloud_url and api_key and "paste_your" not in cloud_url:
+                print(f"[MEMORY] Connecting to Qdrant Cloud at {cloud_url[:20]}...")
+                self._client = QdrantClient(url=cloud_url, api_key=api_key)
+            else:
+                print("[MEMORY] Connecting to Local Qdrant Preview...")
+                self._client = QdrantClient(path=self.persistence_dir)
+                
             if not self._initialized:
                 self._ensure_collection()
                 self._initialized = True
         return self._client
 
     def _ensure_collection(self):
-        VECTOR_SIZE = 768
-        # Use our own client property from a thread-safe context if possible, 
-        # but here we are guaranteed to be in the first initialization.
+        VECTOR_SIZE = 1024
         client = self._client 
-        collections = client.get_collections()
-        existing = [c for c in collections.collections if c.name == self.collection_name]
-        
-        if existing:
-            # Check if existing collection has the right dimensions
-            try:
-                info = self.client.get_collection(self.collection_name)
+        try:
+            collections = client.get_collections()
+            existing = [c for c in collections.collections if c.name == self.collection_name]
+            
+            if existing:
+                # Check if existing collection has the right dimensions
+                info = client.get_collection(self.collection_name)
                 current_size = info.config.params.vectors.size
                 if current_size != VECTOR_SIZE:
                     print(f"[MEMORY] Migrating vector DB: {current_size}d → {VECTOR_SIZE}d (old data will be cleared)")
-                    self.client.delete_collection(self.collection_name)
-                    self.client.create_collection(
+                    client.delete_collection(self.collection_name)
+                    client.create_collection(
                         collection_name=self.collection_name,
                         vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
                     )
-            except Exception:
-                pass  # If we can't check, assume it's fine
-        else:
-            self.client.create_collection(
-                collection_name=self.collection_name,
-                vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
-            )
+            else:
+                client.create_collection(
+                    collection_name=self.collection_name,
+                    vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
+                )
+                print(f"[MEMORY] Created new Qdrant collection: {self.collection_name} with dim {VECTOR_SIZE}")
+        except Exception as e:
+            print(f"[MEMORY] Collection init error: {e}")
 
     # ─── DEDUPLICATION ─────────────────────────────────────────────────────
 
@@ -319,14 +331,19 @@ class Memory:
 
     def _llm_rerank(self, query: str, texts: list) -> list:
         """Use a lightweight LLM call to rerank retrieved memories by relevance."""
-        import google.generativeai as genai
+        import os
+        from openai import OpenAI
         from dotenv import load_dotenv
+        
         load_dotenv()
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key or api_key == "your_gemini_api_key_here":
+        api_key = os.getenv("NVIDIA_API_KEY")
+        if not api_key or "your_gemini_api_key_here" in api_key:
             return texts
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-2.0-flash")
+            
+        client = OpenAI(
+            base_url="https://integrate.api.nvidia.com/v1",
+            api_key=api_key
+        )
         
         numbered = "\n".join([f"{i+1}. {t[:200]}" for i, t in enumerate(texts)])
         prompt = (
@@ -334,14 +351,26 @@ class Memory:
             f"Rank these memories from most to least relevant. "
             f"Return ONLY the numbers in order, separated by commas.\n\n{numbered}"
         )
-        response = model.generate_content(prompt)
-        order = [int(x.strip()) - 1 for x in response.text.strip().split(",") if x.strip().isdigit()]
-        reranked = [texts[i] for i in order if 0 <= i < len(texts)]
-        # Add any missed items at the end
-        for t in texts:
-            if t not in reranked:
-                reranked.append(t)
-        return reranked
+        
+        try:
+            response = client.chat.completions.create(
+                model="meta/llama-3.1-70b-instruct",
+                messages=[
+                    {"role": "system", "content": "You are a ranking system. Return only comma separated numbers."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=50,
+            )
+            order = [int(x.strip()) - 1 for x in response.choices[0].message.content.strip().split(",") if x.strip().isdigit()]
+            reranked = [texts[i] for i in order if 0 <= i < len(texts)]
+            # Add any missed items at the end
+            for t in texts:
+                if t not in reranked:
+                    reranked.append(t)
+            return reranked
+        except Exception as e:
+            print(f"[MEMORY] Rerank failed: {e}")
+            return texts
 
     def get_collection_stats(self) -> dict:
         """Get stats about the memory collection."""

@@ -60,17 +60,19 @@ def get_pillar_history(days: int = Query(30, ge=1, le=90)):
     dates_list.reverse() # Chronological order
     
     logs_by_date = {}
-    if LOGS_DIR.exists():
-        for file_path in LOGS_DIR.glob("*.json"):
-            try:
-                with open(file_path, "r", encoding="utf-8") as f:
-                    log_data = json.load(f)
-                    log_date = log_data.get("date")
-                    if log_date:
-                        logs_by_date[log_date] = log_data.get("non_negotiables", {})
-            except Exception:
-                continue
-                
+    from api.db import get_sync_logs_collection
+    try:
+        col = get_sync_logs_collection()
+        # Query logs matching the date range
+        start_date = dates_list[0]
+        end_date = dates_list[-1]
+        cursor = col.find({"date": {"$gte": start_date, "$lte": end_date}})
+        for log_data in cursor:
+            log_date = log_data.get("date")
+            if log_date:
+                logs_by_date[log_date] = log_data.get("non_negotiables", {})
+    except Exception as e:
+        print(f"Error fetching logs from MongoDB: {e}")
     for d_str in dates_list:
         nns = logs_by_date.get(d_str, {})
         scores = get_pillar_completion(nns, d_str)

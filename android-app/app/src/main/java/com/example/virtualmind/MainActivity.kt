@@ -54,7 +54,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.virtualmind.theme.*
-
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 // Operator identity — used in notification personalization
 private const val OPERATOR_NAME = "Chaman"
 
@@ -361,7 +362,7 @@ class MainActivity : ComponentActivity() {
         val prefs = remember { context.getSharedPreferences("virtual_mind_prefs", Context.MODE_PRIVATE) }
         
         // Default to the detected Mac LAN IP
-        val defaultUrl = "http://10.140.137.237:3000"
+        val defaultUrl = "http://10.255.234.33:3000"
         var serverUrl by remember { mutableStateOf(prefs.getString("server_url", defaultUrl) ?: defaultUrl) }
         var tempUrlInput by remember { mutableStateOf(serverUrl) }
         
@@ -440,8 +441,10 @@ class MainActivity : ComponentActivity() {
                         // Disable overscroll bounce for native feel
                         overScrollMode = View.OVER_SCROLL_NEVER
 
-                        // Explicit background = BackgroundDeep (#060606) to avoid black-screen rendering bugs
-                        setBackgroundColor(android.graphics.Color.parseColor("#060606")) // = BackgroundDeep
+                        // Keep WebView background TRANSPARENT so the Compose
+                        // app background (#060606) shows through during React
+                        // hydration — avoids double-stacking black layers
+                        setBackgroundColor(android.graphics.Color.TRANSPARENT)
 
                         // Inject Native Vibration Bridge
                         @SuppressLint("JavascriptInterface")
@@ -528,10 +531,31 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
 
+                            @Suppress("DEPRECATION")
+                            override fun onReceivedError(
+                                view: WebView?,
+                                errorCode: Int,
+                                description: String?,
+                                failingUrl: String?
+                            ) {
+                                super.onReceivedError(view, errorCode, description, failingUrl)
+                                connectionError = description ?: "Connection failed"
+                                isLoading = false
+                            }
+
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 super.onPageFinished(view, url)
                                 if (connectionError == null) {
-                                    isLoading = false
+                                    // CRITICAL: onPageFinished fires when HTML loads but React
+                                    // hasn't hydrated/painted yet. Delay hiding the loading
+                                    // screen to give Next.js/React 3 seconds to paint.
+                                    // This eliminates the black screen + floating buttons window.
+                                    kotlinx.coroutines.MainScope().launch {
+                                        kotlinx.coroutines.delay(3000)
+                                        if (connectionError == null) {
+                                            isLoading = false
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -539,17 +563,76 @@ class MainActivity : ComponentActivity() {
                         loadUrl(serverUrl)
                     }
                 },
-                update = { webView ->
-                    // Handle reloading if URL changed
-                    if (webView.url != serverUrl) {
-                        webView.loadUrl(serverUrl)
-                    }
-                }
+                update = { _ -> }
             )
 
-            // Floating settings button removed as requested
+            // Reload WebView when serverUrl changes (e.g. from Settings override)
+            LaunchedEffect(serverUrl) {
+                webViewInstance?.loadUrl(serverUrl)
+            }
+
+            // ── Floating Refresh and Settings Buttons ──────────────────────────
+            // Visible whenever the WebView is loaded and no error overlay is showing
+            if (!showSettings && connectionError == null && !isLoading) {
+                // Refresh Button (Bottom-Right)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 32.dp, end = 20.dp),
+                    contentAlignment = Alignment.BottomEnd
+                ) {
+                    androidx.compose.material3.FloatingActionButton(
+                        onClick = {
+                            webViewInstance?.reload()
+                        },
+                        containerColor = android.graphics.Color.parseColor("#1A1A1A").let {
+                            Color(it)
+                        },
+                        contentColor = AccentGold,
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        modifier = Modifier.size(44.dp),
+                        elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(0.dp, 0.dp)
+                    ) {
+                        Text(
+                            text = "↻",
+                            color = AccentGold,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                // Settings Button (Bottom-Left)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 32.dp, start = 20.dp),
+                    contentAlignment = Alignment.BottomStart
+                ) {
+                    androidx.compose.material3.FloatingActionButton(
+                        onClick = {
+                            showSettings = true
+                        },
+                        containerColor = android.graphics.Color.parseColor("#1A1A1A").let {
+                            Color(it)
+                        },
+                        contentColor = AccentGold,
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        modifier = Modifier.size(44.dp),
+                        elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(0.dp, 0.dp)
+                    ) {
+                        Text(
+                            text = "⚙",
+                            color = AccentGold,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
 
             // Settings/Error configuration overlay
+
             if (showSettings || connectionError != null) {
                 Box(
                     modifier = Modifier

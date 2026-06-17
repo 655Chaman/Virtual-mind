@@ -8,9 +8,9 @@ Full context assembly with worldview, ambitions, philosophy, and Phase 0 status.
 """
 
 import os
-import google.generativeai as genai
-from dotenv import load_dotenv
 import json
+import requests
+from dotenv import load_dotenv
 from brain.core_alignment import (
     get_system_prompt,
     NafsFilter,
@@ -158,32 +158,43 @@ def detect_response_mode(user_input: str, nafs_analysis: dict) -> str:
     return _llm_classify_mode(user_input)
 
 
-# ─── GEMINI LLM ───────────────────────────────────────────────────────────────
+# ─── NVIDIA LLM ───────────────────────────────────────────────────────────────
 
-class GeminiLLM:
+from openai import OpenAI
+
+class NvidiaLLM:
     """
-    Real LLM integration using Google Gemini.
+    Real LLM integration using NVIDIA API via OpenAI SDK.
     Now with multi-modal response generation across 5 modes.
     """
 
-    def __init__(self, model_name: str = "gemini-2.0-flash"):
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key or api_key == "your_gemini_api_key_here":
+    def __init__(self, model_name: str = "meta/llama-3.1-70b-instruct"):
+        self.api_key = os.getenv("NVIDIA_API_KEY")
+        if not self.api_key or "your_gemini_api_key_here" in self.api_key:
             raise ValueError(
-                "GEMINI_API_KEY not set! Add your key to the .env file.\n"
-                "Get one free at: https://aistudio.google.com"
+                "NVIDIA_API_KEY not set! Add your key to the .env file."
             )
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel(model_name)
+        self.client = OpenAI(
+            base_url="https://integrate.api.nvidia.com/v1",
+            api_key=self.api_key
+        )
+        self.model_name = model_name
 
     def generate(self, system_prompt: str, user_input: str) -> str:
-        """Generates a response from Gemini with full context."""
-        full_prompt = f"{system_prompt}\n\n---\nUSER INPUT: {user_input}"
+        """Generates a response from Nvidia with full context."""
         try:
-            response = self.model.generate_content(full_prompt)
-            return response.text
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_input}
+                ],
+                max_tokens=2048,
+            )
+            return response.choices[0].message.content
         except Exception as e:
-            print(f"[LLM] Gemini generate failed: {e}. Trying OpenRouter fallback...")
+            print(f"[LLM] Nvidia generate failed: {e}. Trying OpenRouter fallback...")
+            full_prompt = f"{system_prompt}\n\n---\nUSER INPUT: {user_input}"
             or_resp = _call_openrouter(full_prompt)
             if or_resp:
                 return f"🌐 [OPENROUTER FALLBACK]\n\n{or_resp}"
@@ -198,8 +209,8 @@ class GeminiLLM:
         """
         Generates a response with full context and mode-specific instructions.
         """
-        # Build the enriched prompt
-        prompt_parts = [
+        # Build the enriched system prompt
+        sys_parts = [
             system_prompt,
             f"\n\n## RESPONSE MODE: {mode}",
             f"MODE INSTRUCTION: {mode_instruction}",
@@ -207,25 +218,30 @@ class GeminiLLM:
         ]
 
         if philosophical_ctx:
-            prompt_parts.append(f"\n## RELEVANT PHILOSOPHICAL CONTEXT (USER'S OWN WORDS)\n{philosophical_ctx}")
+            sys_parts.append(f"\n## RELEVANT PHILOSOPHICAL CONTEXT (USER'S OWN WORDS)\n{philosophical_ctx}")
 
         if nafs_analysis["is_ammorah"]:
             patterns_str = ", ".join(
                 f"{cat}: {', '.join(matches)}"
                 for cat, matches in nafs_analysis["patterns"].items()
             )
-            prompt_parts.append(
+            sys_parts.append(
                 f"\n## ⚠️ NAFS AL-AMMORAH DETECTED [Severity: {nafs_analysis['severity']}]\n"
                 f"Detected patterns: {patterns_str}\n"
                 f"DEPLOY ACCOUNTABILITY. Use the user's own words against their drift."
             )
 
-        prompt_parts.append(f"\n---\nUSER INPUT: {user_input}")
-
-        full_prompt = "\n".join(prompt_parts)
+        full_system_prompt = "\n".join(sys_parts)
 
         try:
-            response = self.model.generate_content(full_prompt)
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": full_system_prompt},
+                    {"role": "user", "content": user_input}
+                ],
+                max_tokens=2048,
+            )
             # Add mode indicator
             mode_icons = {
                 "STANDARD": "💬",
@@ -235,9 +251,10 @@ class GeminiLLM:
                 "SPIRITUAL": "🕌",
             }
             icon = mode_icons.get(mode, "💬")
-            return f"{icon} [{mode} MODE]\n\n{response.text}"
+            return f"{icon} [{mode} MODE]\n\n{response.choices[0].message.content}"
         except Exception as e:
-            print(f"[LLM] Gemini generate_with_mode failed: {e}. Trying OpenRouter fallback...")
+            print(f"[LLM] Nvidia generate_with_mode failed: {e}. Trying OpenRouter fallback...")
+            full_prompt = f"{full_system_prompt}\n\n---\nUSER INPUT: {user_input}"
             or_resp = _call_openrouter(full_prompt)
             if or_resp:
                 return f"🌐 [{mode} MODE - OPENROUTER FALLBACK]\n\n{or_resp}"
@@ -310,7 +327,7 @@ _llm_instance = None
 def _get_llm():
     global _llm_instance
     if _llm_instance is None:
-        _llm_instance = GeminiLLM()
+        _llm_instance = NvidiaLLM()
     return _llm_instance
 
 
@@ -467,16 +484,42 @@ async def process_input_streaming(user_input: str):
             f"Detected patterns: {patterns_str}\n"
             f"DEPLOY ACCOUNTABILITY. Use the user's own words against their drift."
         )
-    prompt_parts.append(f"\n---\nUSER INPUT: {user_input}")
-    prompt = "\n".join(prompt_parts)
+    prompt_parts.append(f"\n---\n")
+    
+    # 3.5 Fetch recent chat history to build conversation memory
+    from api.database import get_db
+    try:
+        db = get_db()
+        history_cursor = db.chat_history.find({}, {"_id": 0}).sort("timestamp", -1).limit(10)
+        chat_hist = list(history_cursor)[::-1]
+    except Exception:
+        chat_hist = []
 
-    # 4. Stream from Gemini
+    # 4. Stream from NVIDIA
     try:
         llm = _get_llm()
         full_text = header
-        stream = llm.model.generate_content(prompt, stream=True)
+        
+        system_instructions = "\n".join(prompt_parts)
+        
+        # Build message history
+        messages = [{"role": "system", "content": system_instructions}]
+        for h in chat_hist:
+            if h.get("user"):
+                messages.append({"role": "user", "content": h["user"]})
+            if h.get("assistant"):
+                messages.append({"role": "assistant", "content": h["assistant"]})
+        
+        messages.append({"role": "user", "content": user_input})
+
+        stream = llm.client.chat.completions.create(
+            model=llm.model_name,
+            messages=messages,
+            stream=True,
+            max_tokens=2048,
+        )
         for chunk in stream:
-            token = getattr(chunk, "text", "")
+            token = chunk.choices[0].delta.content or ""
             if token:
                 full_text += token
                 yield token

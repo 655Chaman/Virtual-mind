@@ -56,14 +56,10 @@ function SessionLoggerContent() {
   const [sessionStartTime, setSessionStartTime] = useState<number>(0);
 
   useEffect(() => {
-    // Only access localStorage on client side
-    const storageKey = `vm_workout_start_${targetDate}`;
-    let startTime = parseInt(localStorage.getItem(storageKey) || '0');
-    if (!startTime) {
-      startTime = Date.now();
-      localStorage.setItem(storageKey, startTime.toString());
+    // Rely solely on ephemeral memory (no localStorage) as mandated
+    if (!sessionStartTime) {
+      setSessionStartTime(Date.now());
     }
-    setSessionStartTime(startTime);
   }, [targetDate]);
 
   useEffect(() => {

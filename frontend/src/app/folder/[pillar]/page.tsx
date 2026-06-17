@@ -2349,17 +2349,16 @@ export default function PillarFolder() {
 
       {/* 🌿 Prayer History Tracker/Audit Modal */}
       {showPrayerHistoryModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
           <div 
-            className="absolute inset-0 bg-black/85 backdrop-blur-md transition-opacity" 
+            className="absolute inset-0 bg-black/95 transition-opacity" 
             onClick={() => setShowPrayerHistoryModal(false)} 
           />
           
           <div 
-            className="relative w-full max-w-lg bg-[#0a0a0a]/90 backdrop-blur-3xl border-t sm:border border-vm-green/20 sm:rounded-2xl rounded-t-[2rem] p-5 sm:p-6 flex flex-col max-h-[90vh] sm:max-h-[85vh] overflow-hidden"
+            className="relative w-full max-w-lg bg-surface border-t sm:border border-vm-green/20 sm:rounded-2xl rounded-[2rem] p-5 sm:p-6 max-h-[85vh] overflow-y-auto scrollbar-thin"
             style={{ 
-               animation: 'fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both',
                boxShadow: '0 -15px 40px -10px rgba(16,216,106,0.25)'
             }}
           >
@@ -2418,8 +2417,9 @@ export default function PillarFolder() {
               {[...prayerHistory].map((dayLog) => {
                 const isSelected = dayLog.date === selectedAuditDate;
                 const dateObj = new Date(dayLog.date);
-                const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
-                const dayOfMonth = dateObj.getDate();
+                const isValid = !isNaN(dateObj.getTime());
+                const dayName = isValid ? dateObj.toLocaleDateString('en-US', { weekday: 'short' }) : '---';
+                const dayOfMonth = isValid ? dateObj.getDate() : '-';
                 const count = dayLog.count || 0;
                 
                 const prayers = dayLog.prayers || {
@@ -2470,8 +2470,9 @@ export default function PillarFolder() {
                 if (!activeDayLog) return <p className="text-[10px] text-text-dim text-center py-4 font-mono">No logs available for selection.</p>;
 
                 const activeDateObj = new Date(activeDayLog.date);
-                const activeDayName = activeDateObj.toLocaleDateString('en-US', { weekday: 'long' });
-                const activeFormattedDate = activeDateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                const isValid = !isNaN(activeDateObj.getTime());
+                const activeDayName = isValid ? activeDateObj.toLocaleDateString('en-US', { weekday: 'long' }) : 'Unknown Day';
+                const activeFormattedDate = isValid ? activeDateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : activeDayLog.date;
                 
                 const activePrayers = activeDayLog.prayers || {
                   fajr: false,
@@ -2524,7 +2525,8 @@ export default function PillarFolder() {
                           try {
                             await api.deen.logPrayers(updatedPrayers);
                             await loadData();
-                            showToast(`Updated ${pName.toUpperCase()} for ${activeDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, "success");
+                            const dateStr = !isNaN(activeDateObj.getTime()) ? activeDateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : activeDayLog.date;
+                            showToast(`Updated ${pName.toUpperCase()} for ${dateStr}`, "success");
                           } catch (e) {
                             console.error("Failed to update historic prayer", e);
                             showToast("Failed to update log", "error");

@@ -1,10 +1,6 @@
 package com.example.virtualmind
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
@@ -20,7 +16,26 @@ fun MainNavigation() {
     entryProvider =
       entryProvider {
         entry<Main> {
-          MainScreen(onItemClick = { navKey -> backStack.add(navKey) }, modifier = Modifier.safeDrawingPadding().padding(16.dp))
+          MainScreen(onItemClick = { navKey -> backStack.add(navKey) })
+        }
+        entry<DeenPage> {
+          com.example.virtualmind.ui.deen.DeenScreen(onBack = { backStack.removeLastOrNull() })
+        }
+        entry<FitnessPage> {
+          com.example.virtualmind.ui.fitness.FitnessScreen(onBack = { backStack.removeLastOrNull() })
+        }
+        entry<RecoveryPage> {
+          com.example.virtualmind.ui.recovery.RecoveryScreen(onBack = { backStack.removeLastOrNull() })
+        }
+        entry<PhysicalityHubPage> {
+          com.example.virtualmind.ui.physicality.PhysicalityScreen(
+            onWorkoutClick = { backStack.add(FitnessPage) },
+            onRecoveryClick = { backStack.add(RecoveryPage) },
+            onBack = { backStack.removeLastOrNull() }
+          )
+        }
+        entry<SelfPage> {
+          com.example.virtualmind.ui.self.SelfScreen(onBack = { backStack.removeLastOrNull() })
         }
       },
   )
