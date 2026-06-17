@@ -8,7 +8,13 @@ export function SyncManager() {
     async function flushSyncQueue() {
       if (!navigator.onLine) return;
       
-      const queueStr = localStorage.getItem('offline_sync_queue');
+      let queueStr = null;
+      if (typeof window !== 'undefined' && window.Android) {
+        queueStr = window.Android.getOfflineData('offline_sync_queue');
+      } else {
+        queueStr = localStorage.getItem('offline_sync_queue');
+      }
+
       if (!queueStr) return;
       
       try {
@@ -24,17 +30,20 @@ export function SyncManager() {
         
         // If all succeeded, clear queue
         console.log('[SyncManager] Offline queue synced successfully.');
-        localStorage.removeItem('offline_sync_queue');
-        
-        // Show success notification if supported
-        if ('Notification' in window && navigator.serviceWorker) {
-           navigator.serviceWorker.ready.then(registration => {
-             registration.showNotification("⚡ Elesium: Sync Complete", {
-               body: `Successfully synced ${queue.length} offline workouts.`,
-               icon: '/icon-192.png',
-               tag: 'vm-sync-status'
+        if (typeof window !== 'undefined' && window.Android) {
+          window.Android.removeOfflineData('offline_sync_queue');
+          window.Android.showNotification("⚡ Elesium", `Successfully synced ${queue.length} offline workouts.`);
+        } else {
+          localStorage.removeItem('offline_sync_queue');
+          if ('Notification' in window && navigator.serviceWorker) {
+             navigator.serviceWorker.ready.then(registration => {
+               registration.showNotification("⚡ Elesium: Sync Complete", {
+                 body: `Successfully synced ${queue.length} offline workouts.`,
+                 icon: '/icon-192.png',
+                 tag: 'vm-sync-status'
+               });
              });
-           });
+          }
         }
       } catch (err) {
         console.warn('[SyncManager] Failed to flush offline queue. Will retry later.', err);

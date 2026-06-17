@@ -48,16 +48,24 @@ export default function SessionLoggerContent() {
   const [workoutHistoryCount, setWorkoutHistoryCount] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState<number>(0);
 
-  // Request notification permissions early
+  // Request notification permissions early (Fallback for web only)
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+    if (typeof window !== 'undefined' && !window.Android && 'Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
   }, []);
 
   const showActiveSessionNotification = () => {
-    if (typeof window !== 'undefined' && 'Notification' in window && navigator.serviceWorker) {
-      const startTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const startTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (typeof window !== 'undefined' && window.Android) {
+      // Native Android Sticky Notification
+      window.Android.showStickyNotification(
+        "⚡ Elesium: Live Session Active",
+        `Workout in progress (Started at ${startTimeStr})`,
+        "vm-workout-timer"
+      );
+    } else if (typeof window !== 'undefined' && 'Notification' in window && navigator.serviceWorker) {
+      // PWA Fallback
       navigator.serviceWorker.ready.then(registration => {
         registration.showNotification("⚡ Elesium: Live Session Active", {
           body: `Workout in progress (Started at ${startTimeStr})`,
@@ -72,7 +80,9 @@ export default function SessionLoggerContent() {
   };
 
   const clearSessionNotification = () => {
-    if (typeof window !== 'undefined' && navigator.serviceWorker) {
+    if (typeof window !== 'undefined' && window.Android) {
+      window.Android.clearNotification("vm-workout-timer");
+    } else if (typeof window !== 'undefined' && navigator.serviceWorker) {
       navigator.serviceWorker.ready.then(registration => {
         registration.getNotifications({ tag: 'vm-workout-timer' }).then(notifications => {
           notifications.forEach(n => n.close());
@@ -304,10 +314,22 @@ export default function SessionLoggerContent() {
         await api.workout.log(cleanWorkout);
       } catch (logErr) {
         console.warn("Offline sync queue engaged. Could not reach backend.");
-        const queue = JSON.parse(localStorage.getItem('offline_sync_queue') || '[]');
-        queue.push(cleanWorkout);
-        localStorage.setItem('offline_sync_queue', JSON.stringify(queue));
         isOffline = true;
+        if (typeof window !== 'undefined' && window.Android) {
+          // Native deep offline storage
+          const currentQueue = window.Android.getOfflineData('offline_sync_queue');
+          let queue = [];
+          if (currentQueue) {
+            try { queue = JSON.parse(currentQueue); } catch (e) {}
+          }
+          queue.push(cleanWorkout);
+          window.Android.saveOfflineData('offline_sync_queue', JSON.stringify(queue));
+        } else {
+          // Web fallback
+          const queue = JSON.parse(localStorage.getItem('offline_sync_queue') || '[]');
+          queue.push(cleanWorkout);
+          localStorage.setItem('offline_sync_queue', JSON.stringify(queue));
+        }
       }
 
       // Clear the sticky notification and session timer

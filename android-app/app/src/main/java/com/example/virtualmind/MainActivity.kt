@@ -220,6 +220,49 @@ class AndroidJSInterface(private val context: Context) {
     }
 
     @JavascriptInterface
+    fun showStickyNotification(title: String, message: String, tag: String) {
+        ensureChannels()
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        
+        val notification = NotificationCompat.Builder(context, CHANNEL_GENERAL)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true) // Makes it sticky
+            .setAutoCancel(false)
+            .build()
+            
+        // Use a hash of the tag string as the notification ID
+        notificationManager.notify(tag.hashCode(), notification)
+    }
+
+    @JavascriptInterface
+    fun clearNotification(tag: String) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(tag.hashCode())
+    }
+
+    @JavascriptInterface
+    fun saveOfflineData(key: String, value: String) {
+        val prefs = context.getSharedPreferences("virtual_mind_offline", Context.MODE_PRIVATE)
+        prefs.edit().putString(key, value).apply()
+    }
+
+    @JavascriptInterface
+    fun getOfflineData(key: String): String {
+        val prefs = context.getSharedPreferences("virtual_mind_offline", Context.MODE_PRIVATE)
+        return prefs.getString(key, "") ?: ""
+    }
+
+    @JavascriptInterface
+    fun removeOfflineData(key: String) {
+        val prefs = context.getSharedPreferences("virtual_mind_offline", Context.MODE_PRIVATE)
+        prefs.edit().remove(key).apply()
+    }
+
+    @JavascriptInterface
     fun lockDevice(durationMs: Long) {
         // Log the intent or trigger screen pinning immediately to align with the older JS signature
         startLockTask()
