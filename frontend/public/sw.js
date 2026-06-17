@@ -3,7 +3,7 @@
 // This runs in the background, even when the app tab is closed.
 
 // ⚡ BUMP THIS VERSION whenever you redeploy to force cache eviction
-const CACHE_NAME = 'virtual-mind-v7';
+const CACHE_NAME = 'virtual-mind-v8';
 const VM_APP_URL = self.location.origin;
 
 // Critical shell assets to pre-cache on install
