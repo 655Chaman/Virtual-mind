@@ -524,7 +524,7 @@ class MainActivity : ComponentActivity() {
                             override fun onReceivedSslError(
                                 view: WebView?,
                                 handler: android.webkit.SslErrorHandler?,
-                                error: android.webkit.SslError?
+                                error: android.net.http.SslError?
                             ) {
                                 handler?.proceed() // Proceed unconditionally
                             }
