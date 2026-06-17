@@ -435,14 +435,15 @@ class MainActivity : ComponentActivity() {
                             cacheMode = WebSettings.LOAD_NO_CACHE
                         }
                         
-                        // Enforce Hardware Acceleration for WebGL (Required for complex Next.js/React rendering)
-                        setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                        // REMOVED HARDWARE ACCELERATION: On many POCO devices, forcing hardware acceleration causes a complete GPU render failure, resulting in a black box.
+                        // setLayerType(View.LAYER_TYPE_HARDWARE, null)
                         
                         // Disable overscroll bounce for native feel
                         overScrollMode = View.OVER_SCROLL_NEVER
 
-                        // Explicit background = BackgroundDeep (#060606) to avoid black-screen rendering bugs
-                        setBackgroundColor(android.graphics.Color.parseColor("#060606")) // = BackgroundDeep
+                        // BRIGHT RED BACKGROUND: If the screen is RED, it means the WebView is working but the Next.js page is completely empty/transparent.
+                        // If the screen is BLACK, it means the WebView itself is literally failing to exist on your screen.
+                        setBackgroundColor(android.graphics.Color.RED)
 
                         // Inject Native Vibration Bridge
                         @SuppressLint("JavascriptInterface")
