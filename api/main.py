@@ -51,14 +51,23 @@ app = FastAPI(
 
 @app.middleware("http")
 async def nextjs_rsc_middleware(request: Request, call_next):
-    # If this is a Next.js client-side navigation (RSC request)
-    if request.method == "GET" and request.headers.get("RSC") == "1":
+    # If this is a Next.js client-side navigation (RSC request) or a direct fetch for a .txt payload
+    is_rsc_header = request.headers.get("RSC") == "1"
+    is_txt_fetch = request.url.path.endswith(".txt")
+    
+    if request.method == "GET" and (is_rsc_header or is_txt_fetch):
         path = request.url.path
         if not path.startswith("/api/"):
             import os
             from fastapi.responses import FileResponse
             frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "out")
-            base_path = path.strip("/")
+            
+            # If it's a .txt fetch, strip the .txt to get the base path
+            if is_txt_fetch:
+                base_path = path[:-4].strip("/")
+            else:
+                base_path = path.strip("/")
+                
             if not base_path:
                 base_path = "index"
                 
