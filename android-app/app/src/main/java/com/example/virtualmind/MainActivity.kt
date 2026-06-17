@@ -218,6 +218,36 @@ class AndroidJSInterface(private val context: Context) {
         prefs.edit().putLong("sleep_unlock_time", unlockTime).apply()
         showNotification("Sleep Protocol Active", "$OPERATOR_NAME, phone locked for $hours hours. Do not disturb.")
     }
+
+    @JavascriptInterface
+    fun lockDevice(durationMs: Long) {
+        // Log the intent or trigger screen pinning immediately to align with the older JS signature
+        startLockTask()
+    }
+
+    @JavascriptInterface
+    fun startLockTask() {
+        val activity = context as? android.app.Activity
+        activity?.runOnUiThread {
+            try {
+                activity.startLockTask()
+            } catch (e: Exception) {
+                android.util.Log.e("VirtualMindWebView", "Failed to start lock task", e)
+            }
+        }
+    }
+
+    @JavascriptInterface
+    fun stopLockTask() {
+        val activity = context as? android.app.Activity
+        activity?.runOnUiThread {
+            try {
+                activity.stopLockTask()
+            } catch (e: Exception) {
+                android.util.Log.e("VirtualMindWebView", "Failed to stop lock task", e)
+            }
+        }
+    }
 }
 
 class MainActivity : ComponentActivity() {
