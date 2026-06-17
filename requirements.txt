@@ -16,3 +16,4 @@ pymongo
 openai
 motor
 Pillow
+google-genai
