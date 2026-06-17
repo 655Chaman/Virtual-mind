@@ -152,13 +152,8 @@ async def boot_check():
 @app.get("/api/status")
 async def get_system_status():
     import datetime
-    from brain.xp_engine import compute_today_xp
     
-    try:
-        xp_data = compute_today_xp()
-        xp_balance = xp_data.get("total_xp", 0)
-    except Exception:
-        xp_balance = 0
+    xp_balance = 0
 
     today = datetime.date.today()
     phase_0_start = datetime.date(2026, 2, 22)

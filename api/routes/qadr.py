@@ -103,12 +103,7 @@ def _get_today_completion() -> dict:
     return result
 
 def _get_streak_data() -> dict:
-    try:
-        from brain.xp_engine import compute_today_xp
-        streak = compute_today_xp()
-        return {"overall_streak": streak.get("overall_streak", 0)}
-    except Exception:
-        return {"overall_streak": 0}
+    return {"overall_streak": 0}
 
 def _get_workout_status() -> dict:
     today = date.today()

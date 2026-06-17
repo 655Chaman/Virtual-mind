@@ -97,13 +97,11 @@ def log_workout(workout: WorkoutLog):
                 nns["physical_training"] = True
                 daily_log["non_negotiables"] = nns
                 
-                # Recompute daily log XP
+                # Update daily log protocol status
                 try:
-                    from brain.xp_engine import compute_xp_from_log
                     from brain.aos_protocols import get_all_protocol_statuses
                     
                     is_ramadan = nns.get("ramadan_mode_active", False)
-                    xp_result = compute_xp_from_log(daily_log, is_ramadan=is_ramadan)
                     
                     protocol_snapshot = get_all_protocol_statuses(
                         target_date=workout.date, is_ramadan=is_ramadan
@@ -114,14 +112,11 @@ def log_workout(workout: WorkoutLog):
                         {"date": workout.date}, 
                         {"$set": {
                             "non_negotiables.physical_training": True,
-                            "xp_earned": xp_result["total_xp"],
-                            "active_penalties": xp_result["penalties_active"],
-                            "perks_unlocked": [p["name"] for p in xp_result["perks_unlocked"]],
                             "protocol_status": protocol_snapshot.get("summary", {})
                         }}
                     )
                 except Exception as e:
-                    print(f"[WORKOUT DB] XP Engine recalculate failed: {e}")
+                    print(f"[WORKOUT DB] AOS Engine recalculate failed: {e}")
         except Exception as e:
             print(f"[WORKOUT DB] Failed to auto-update daily log: {e}")
             
