@@ -4,7 +4,19 @@ import { useRouter } from 'next/navigation';
 
 export default function WelcomeScreen() {
   useEffect(() => {
-    window.location.replace('/home');
+    // 1. Nuke Service Worker to ensure fresh fetches
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const reg of registrations) {
+          reg.unregister();
+        }
+      });
+    }
+
+    // 2. Hard redirect to /home/ with trailing slash to bypass 307 redirect
+    setTimeout(() => {
+      window.location.replace('/home/');
+    }, 500);
   }, []);
 
   return (
