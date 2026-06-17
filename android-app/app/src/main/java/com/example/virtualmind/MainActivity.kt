@@ -345,7 +345,8 @@ class MainActivity : ComponentActivity() {
         AndroidJSInterface(this)
 
         val prefs = getSharedPreferences("VirtualMindPrefs", Context.MODE_PRIVATE)
-        val defaultUrl = "https://virtual-mind.onrender.com/home"
+        // Default to the root page so the new Welcome Screen is shown
+        val defaultUrl = "https://virtual-mind.onrender.com/"
         val serverUrl = prefs.getString("server_url_v2", defaultUrl) ?: defaultUrl
 
         webView = WebView(this)
