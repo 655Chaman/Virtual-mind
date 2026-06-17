@@ -1,1 +1,0 @@
-self.__SSG_MANIFEST=new Set(["\u002Ffolder\u002F[pillar]"]);self.__SSG_MANIFEST_CB&&self.__SSG_MANIFEST_CB()
