@@ -43,7 +43,7 @@ function computeElapsedMs(startTimeISO: string | null | undefined): number {
 }
 
 // --- Sleep Lock Overlay Component ---
-function SleepLockOverlay({ startTime }: { startTime: string | null }) {
+function SleepLockOverlay({ startTime, onWake }: { startTime: string | null; onWake: () => void }) {
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [progress, setProgress] = useState(0);
   const lockDurationMinutes = 45;
@@ -99,9 +99,24 @@ function SleepLockOverlay({ startTime }: { startTime: string | null }) {
         </p>
 
         {progress >= 100 && (
-           <p className="text-[10px] text-vm-green font-mono tracking-widest mt-12 animate-pulse uppercase">
-             LOCK EXPIRED. REFRESH OR WAKE.
-           </p>
+           <div className="mt-12 flex flex-col items-center gap-4 animate-fade-up">
+             <p className="text-[10px] text-vm-green font-mono tracking-widest uppercase">
+               LOCK EXPIRED. SYSTEM OPTIMIZED.
+             </p>
+             <button
+               onClick={() => {
+                 try {
+                   if (typeof window !== 'undefined' && (window as any).Android && (window as any).Android.stopLockTask) {
+                     (window as any).Android.stopLockTask();
+                   }
+                 } catch(e) {}
+                 onWake();
+               }}
+               className="px-8 py-4 bg-vm-green/10 border border-vm-green text-vm-green font-bold tracking-[0.2em] rounded-full hover:bg-vm-green/20 transition-all shadow-[0_0_20px_rgba(16,216,106,0.3)] active:scale-95"
+             >
+               WAKE UP
+             </button>
+           </div>
         )}
       </div>
     </div>
@@ -269,7 +284,7 @@ export default function WellnessDashboard() {
 
   // Render sleep lock if sleeping
   if (isSleeping) {
-    return <SleepLockOverlay startTime={sleepStatus.sleep_start_time} />;
+    return <SleepLockOverlay startTime={sleepStatus.sleep_start_time} onWake={handleToggleSleep} />;
   }
 
   return (
