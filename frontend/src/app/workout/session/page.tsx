@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api, getLocalDateString } from '@/lib/api';
 import { RestTimer } from '@/components/ui/RestTimer';
@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { ScrubNumberInput } from '@/components/ui/ScrubNumberInput';
 
-function SessionLoggerContent() {
+export default function SessionLoggerContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const targetDate = searchParams.get('date') || getLocalDateString();
@@ -48,25 +48,79 @@ function SessionLoggerContent() {
   const [workoutHistoryCount, setWorkoutHistoryCount] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState<number>(0);
 
+  // Request notification permissions early (Fallback for web only)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !window.Android && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  const showActiveSessionNotification = () => {
+    const startTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (typeof window !== 'undefined' && window.Android) {
+      // Native Android Sticky Notification
+      window.Android.showStickyNotification(
+        "⚡ Elesium: Live Session Active",
+        `Workout in progress (Started at ${startTimeStr})`,
+        "vm-workout-timer"
+      );
+    } else if (typeof window !== 'undefined' && 'Notification' in window && navigator.serviceWorker) {
+      // PWA Fallback
+      navigator.serviceWorker.ready.then(registration => {
+        registration.showNotification("⚡ Elesium: Live Session Active", {
+          body: `Workout in progress (Started at ${startTimeStr})`,
+          icon: '/icon-192.png',
+          badge: '/icon-192.png',
+          tag: 'vm-workout-timer',
+          requireInteraction: true // Sticky
+        });
+      });
+    }
+  };
+
+  const clearSessionNotification = () => {
+    if (typeof window !== 'undefined' && window.Android) {
+      window.Android.clearNotification("vm-workout-timer");
+    } else if (typeof window !== 'undefined' && navigator.serviceWorker) {
+      navigator.serviceWorker.ready.then(registration => {
+        registration.getNotifications({ tag: 'vm-workout-timer' }).then(notifications => {
+          notifications.forEach(n => n.close());
+        });
+      });
+    }
+  };
+
   useEffect(() => {
     async function initSession() {
-      try {
-        const res = await api.workout.session.start(targetDate);
-        setSessionStartTime(res.start_time);
-      } catch (err) {
-        // Fallback to localStorage if completely offline during initiation
-        console.warn('Could not reach backend for session start, using local storage fallback');
-        const storageKey = `vm_workout_start_${targetDate}`;
-        let startTime = parseInt(localStorage.getItem(storageKey) || '0');
-        if (!startTime) {
-          startTime = Date.now();
-          localStorage.setItem(storageKey, startTime.toString());
+      const shouldStart = searchParams.get('start') === 'true';
+      const storageKey = `vm_workout_start_${targetDate}`;
+      
+      if (shouldStart) {
+        try {
+          const res = await api.workout.session.start(targetDate);
+          setSessionStartTime(res.start_time);
+          localStorage.setItem(storageKey, res.start_time.toString());
+          showActiveSessionNotification();
+        } catch (err) {
+          console.warn('Could not reach backend for session start, using local storage fallback');
+          let startTime = parseInt(localStorage.getItem(storageKey) || '0');
+          if (!startTime) {
+            startTime = Date.now();
+            localStorage.setItem(storageKey, startTime.toString());
+          }
+          setSessionStartTime(startTime);
+          showActiveSessionNotification();
         }
-        setSessionStartTime(startTime);
+      } else {
+        // Just try to resume an existing session from local storage without starting a new one
+        let startTime = parseInt(localStorage.getItem(storageKey) || '0');
+        if (startTime) {
+          setSessionStartTime(startTime);
+        }
       }
     }
     initSession();
-  }, [targetDate]);
+  }, [targetDate, searchParams]);
 
   useEffect(() => {
     if (!sessionStartTime) return;
@@ -253,7 +307,33 @@ function SessionLoggerContent() {
       }));
 
       const cleanWorkout = { ...workout, exercises: cleanExercises };
-      await api.workout.log(cleanWorkout);
+      
+      let isOffline = false;
+      try {
+        await api.workout.log(cleanWorkout);
+      } catch (logErr) {
+        console.warn("Offline sync queue engaged. Could not reach backend.");
+        isOffline = true;
+        if (typeof window !== 'undefined' && window.Android) {
+          // Native deep offline storage
+          const currentQueue = window.Android.getOfflineData('offline_sync_queue');
+          let queue = [];
+          if (currentQueue) {
+            try { queue = JSON.parse(currentQueue); } catch (e) {}
+          }
+          queue.push(cleanWorkout);
+          window.Android.saveOfflineData('offline_sync_queue', JSON.stringify(queue));
+        } else {
+          // Web fallback
+          const queue = JSON.parse(localStorage.getItem('offline_sync_queue') || '[]');
+          queue.push(cleanWorkout);
+          localStorage.setItem('offline_sync_queue', JSON.stringify(queue));
+        }
+      }
+
+      // Clear the sticky notification and session timer
+      clearSessionNotification();
+      localStorage.removeItem(`vm_workout_start_${targetDate}`);
       
       let totalVolume = 0; let totalSets = 0; let completedSets = 0;
       cleanExercises.forEach((ex: any) => {
@@ -278,6 +358,9 @@ function SessionLoggerContent() {
         completionRate: Math.round(completionRate)
       });
       setShowAnalysisModal(true);
+      if (isOffline) {
+        setStatusMessage('SAVED TO OFFLINE QUEUE');
+      }
     } catch (err: any) {
       setStatusMessage(`ERROR: ${err.message}`);
     } finally {
@@ -569,13 +652,5 @@ function SessionLoggerContent() {
       )}
 
     </div>
-  );
-}
-
-export default function Page() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-obsidian flex items-center justify-center text-text-dim text-xs tracking-widest uppercase">Initializing...</div>}>
-      <SessionLoggerContent />
-    </Suspense>
   );
 }

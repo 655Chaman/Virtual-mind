@@ -97,11 +97,13 @@ def log_workout(workout: WorkoutLog):
                 nns["physical_training"] = True
                 daily_log["non_negotiables"] = nns
                 
-                # Update daily log protocol status
+                # Recompute daily log XP
                 try:
+                    from brain.xp_engine import compute_xp_from_log
                     from brain.aos_protocols import get_all_protocol_statuses
                     
                     is_ramadan = nns.get("ramadan_mode_active", False)
+                    xp_result = compute_xp_from_log(daily_log, is_ramadan=is_ramadan)
                     
                     protocol_snapshot = get_all_protocol_statuses(
                         target_date=workout.date, is_ramadan=is_ramadan
@@ -112,11 +114,14 @@ def log_workout(workout: WorkoutLog):
                         {"date": workout.date}, 
                         {"$set": {
                             "non_negotiables.physical_training": True,
+                            "xp_earned": xp_result["total_xp"],
+                            "active_penalties": xp_result["penalties_active"],
+                            "perks_unlocked": [p["name"] for p in xp_result["perks_unlocked"]],
                             "protocol_status": protocol_snapshot.get("summary", {})
                         }}
                     )
                 except Exception as e:
-                    print(f"[WORKOUT DB] AOS Engine recalculate failed: {e}")
+                    print(f"[WORKOUT DB] XP Engine recalculate failed: {e}")
         except Exception as e:
             print(f"[WORKOUT DB] Failed to auto-update daily log: {e}")
             
@@ -185,6 +190,21 @@ class HomeProtocolIncrement(BaseModel):
     variant: str
     count: int = 1
 
+class HomeProtocolDelete(BaseModel):
+    variant: str
+
+class HomeProtocolRename(BaseModel):
+    old_variant: str
+    new_variant: str
+
+class HomeProtocolDecrement(BaseModel):
+    variant: str
+    count: int = 1
+
+class HomeProtocolReorder(BaseModel):
+    order: list[str]
+
+
 @router.get("/home-protocol/today")
 def get_home_protocol_today():
     db = get_db()
@@ -199,7 +219,6 @@ def increment_home_protocol(req: HomeProtocolIncrement):
     db = get_db()
     today_str = date.today().isoformat()
     
-    # We maintain pushups, pullups, squats, core
     variant_key = req.variant.lower()
     db.home_protocols.update_one(
         {"date": today_str},
@@ -211,11 +230,11 @@ def increment_home_protocol(req: HomeProtocolIncrement):
         doc.pop("_id", None)
     return doc or {}
 
-@router.delete("/home-protocol/{variant}")
-def delete_home_protocol(variant: str):
+@router.post("/home-protocol/delete")
+def delete_home_protocol(req: HomeProtocolDelete):
     db = get_db()
     today_str = date.today().isoformat()
-    variant_key = variant.lower()
+    variant_key = req.variant.lower()
     db.home_protocols.update_one(
         {"date": today_str},
         {"$unset": {variant_key: ""}}
@@ -224,6 +243,60 @@ def delete_home_protocol(variant: str):
     if doc:
         doc.pop("_id", None)
     return doc or {}
+
+@router.post("/home-protocol/rename")
+def rename_home_protocol(req: HomeProtocolRename):
+    db = get_db()
+    today_str = date.today().isoformat()
+    old_key = req.old_variant.lower()
+    new_key = req.new_variant.lower()
+    
+    db.home_protocols.update_one(
+        {"date": today_str},
+        {"$rename": {old_key: new_key}}
+    )
+    doc = db.home_protocols.find_one({"date": today_str}, {"_id": 0})
+    if doc:
+        doc.pop("_id", None)
+    return doc or {}
+
+@router.post("/home-protocol/decrement")
+def decrement_home_protocol(req: HomeProtocolDecrement):
+    db = get_db()
+    today_str = date.today().isoformat()
+    variant_key = req.variant.lower()
+    
+    # We shouldn't let it drop below 0 natively, but since we just store the number,
+    # let's fetch current and decrement
+    doc = db.home_protocols.find_one({"date": today_str})
+    if doc and doc.get(variant_key, 0) > 0:
+        new_val = max(0, doc.get(variant_key, 0) - req.count)
+        db.home_protocols.update_one(
+            {"date": today_str},
+            {"$set": {variant_key: new_val}}
+        )
+    
+    final_doc = db.home_protocols.find_one({"date": today_str}, {"_id": 0})
+    if final_doc:
+        final_doc.pop("_id", None)
+    return final_doc or {}
+
+@router.post("/home-protocol/reorder")
+def reorder_home_protocol(req: HomeProtocolReorder):
+    db = get_db()
+    today_str = date.today().isoformat()
+    
+    db.home_protocols.update_one(
+        {"date": today_str},
+        {"$set": {"_order": [x.lower() for x in req.order]}},
+        upsert=True
+    )
+    doc = db.home_protocols.find_one({"date": today_str}, {"_id": 0})
+    if doc:
+        doc.pop("_id", None)
+    return doc or {}
+
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MUSCLE HEATMAP ANALYTICS

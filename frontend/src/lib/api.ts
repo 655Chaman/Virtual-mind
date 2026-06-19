@@ -116,7 +116,14 @@ export const api = {
     }),
   },
 
-
+  // XP Engine
+  xp: {
+    today: (ramadan = false) => request(`/api/xp/today?ramadan=${ramadan}`),
+    history: (days = 30) => request(`/api/xp/history?days=${days}`),
+    leaderboard: () => request('/api/xp/leaderboard'),
+    penalties: () => request('/api/xp/penalties/active'),
+    perks: () => request('/api/xp/perks'),
+  },
   // History
   history: {
     pillars: (days = 30) => request(`/api/history/pillars?days=${days}`),
@@ -155,8 +162,21 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ variant, count }),
       }),
-      delete: (variant: string) => request(`/api/workout/home-protocol/${encodeURIComponent(variant)}`, {
-        method: 'DELETE'
+      delete: (variant: string) => request('/api/workout/home-protocol/delete', {
+        method: 'POST',
+        body: JSON.stringify({ variant }),
+      }),
+      rename: (oldVariant: string, newVariant: string) => request('/api/workout/home-protocol/rename', {
+        method: 'POST',
+        body: JSON.stringify({ old_variant: oldVariant, new_variant: newVariant }),
+      }),
+      decrement: (variant: string, count: number = 1) => request('/api/workout/home-protocol/decrement', {
+        method: 'POST',
+        body: JSON.stringify({ variant, count }),
+      }),
+      reorder: (order: string[]) => request('/api/workout/home-protocol/reorder', {
+        method: 'POST',
+        body: JSON.stringify({ order }),
       }),
     },
   },

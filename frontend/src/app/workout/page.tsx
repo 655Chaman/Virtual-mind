@@ -11,13 +11,88 @@ import {
   CheckCircle,
   Activity,
   X,
-  Target
+  Target,
+  Trash2,
+  Plus,
+  Minus,
+  GripVertical
 } from 'lucide-react';
+import { Reorder, useDragControls } from 'framer-motion';
 import { DecryptedText } from '@/components/ui/DecryptedText';
 import { triggerHaptic } from '@/lib/utils';
 import { BodyHeatmap } from '@/components/ui/BodyHeatmap';
 
 // Removed HOME_VARIANTS to support dynamic user protocols
+
+function ProtocolCard({ id, count, getColorForProtocol, onIncrement, onDecrement, onLongPress }: any) {
+  const controls = useDragControls();
+  const { text, bg, border, cardBg } = getColorForProtocol(id);
+  const progress = Math.min((count / 100) * 100, 100);
+
+  const pressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const startPress = () => {
+    pressTimerRef.current = setTimeout(() => {
+      onLongPress(id);
+    }, 500); // 500ms long press
+  };
+
+  const endPress = () => {
+    if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
+  };
+
+  return (
+    <Reorder.Item
+      value={id}
+      id={id}
+      dragListener={false}
+      dragControls={controls}
+      className={`relative overflow-hidden ${cardBg} border ${border} rounded-xl shadow-lg group backdrop-blur-sm flex items-stretch select-none`}
+    >
+      <div className={`absolute left-0 bottom-0 top-0 w-1 transition-all duration-300 ${bg}`} />
+
+      {/* Minus Button */}
+      <button 
+        onClick={() => onDecrement(id)}
+        className="w-16 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors border-r border-white/5 relative z-10"
+      >
+        <Minus className="w-5 h-5" />
+      </button>
+
+      {/* Center Label (Long Pressable) */}
+      <div 
+        onPointerDown={startPress}
+        onPointerUp={endPress}
+        onPointerLeave={endPress}
+        onContextMenu={(e) => e.preventDefault()} // Prevent native context menu
+        className="flex-1 flex flex-col justify-center items-center py-4 cursor-pointer relative z-10 touch-none"
+      >
+        <span className={`text-3xl font-black ${count > 0 ? 'text-white' : 'text-white/40'} tracking-tighter drop-shadow-md`}>
+          {count}
+        </span>
+        <span className={`text-[10px] font-bold tracking-[0.25em] ${text} uppercase leading-tight mt-1`}>
+          {id.replace(/_/g, ' ')}
+        </span>
+      </div>
+
+      {/* Plus Button */}
+      <button 
+        onClick={() => onIncrement(id)}
+        className="w-16 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 active:bg-white/10 transition-colors border-l border-white/5 relative z-10"
+      >
+        <Plus className="w-5 h-5" />
+      </button>
+
+      {/* Drag Handle */}
+      <div 
+        onPointerDown={(e) => controls.start(e)}
+        className="w-12 flex items-center justify-center text-white/20 hover:text-white cursor-grab active:cursor-grabbing bg-black/20 relative z-10 touch-none"
+      >
+        <GripVertical className="w-4 h-4" />
+      </div>
+    </Reorder.Item>
+  );
+}
 
 export default function WorkoutDashboard() {
   const router = useRouter();
@@ -28,6 +103,7 @@ export default function WorkoutDashboard() {
 
   // Home Counters
   const [homeCounters, setHomeCounters] = useState<Record<string, number>>({});
+  const [protocolOrder, setProtocolOrder] = useState<string[]>([]);
   const [newProtocolName, setNewProtocolName] = useState('');
 
   // Function to hash a string to pick a dynamic premium color
@@ -60,8 +136,56 @@ export default function WorkoutDashboard() {
       if (prev[protocolId] !== undefined) return prev;
       return { ...prev, [protocolId]: 0 };
     });
+    setProtocolOrder(prev => {
+      if (prev.includes(protocolId)) return prev;
+      return [...prev, protocolId];
+    });
     setNewProtocolName('');
     triggerHaptic();
+  };
+
+  const [renameProtocolModal, setRenameProtocolModal] = useState<{open: boolean; oldName: string; newName: string}>({open: false, oldName: '', newName: ''});
+
+  const handleDeleteProtocol = async (id: string) => {
+    triggerHaptic('heavy');
+    setHomeCounters(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setProtocolOrder(prev => prev.filter(p => p !== id));
+    setRenameProtocolModal({open: false, oldName: '', newName: ''});
+    try {
+      await api.workout.homeProtocol.delete(id);
+    } catch (e) {
+      console.error("Failed to delete protocol", e);
+    }
+  };
+
+  const submitRenameProtocol = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!renameProtocolModal.newName.trim() || renameProtocolModal.newName.trim() === renameProtocolModal.oldName) {
+      setRenameProtocolModal({open: false, oldName: '', newName: ''});
+      return;
+    }
+    const oldId = renameProtocolModal.oldName;
+    const newId = renameProtocolModal.newName.trim().toLowerCase();
+    
+    setHomeCounters(prev => {
+      const next = { ...prev };
+      next[newId] = next[oldId];
+      delete next[oldId];
+      return next;
+    });
+    setProtocolOrder(prev => prev.map(p => p === oldId ? newId : p));
+    
+    setRenameProtocolModal({open: false, oldName: '', newName: ''});
+    triggerHaptic();
+    try {
+      await api.workout.homeProtocol.rename(oldId, newId);
+    } catch (err) {
+      console.error("Failed to rename protocol", err);
+    }
   };
 
   // Modal states for the 3D pop-ups
@@ -84,12 +208,22 @@ export default function WorkoutDashboard() {
       const cleanedHome = { ...homeToday };
       delete cleanedHome.date;
       delete cleanedHome._id;
+      const serverOrder = cleanedHome._order;
+      delete cleanedHome._order;
       
       // If user has literally never used it, give them some defaults
       if (Object.keys(cleanedHome).length === 0) {
         setHomeCounters({ pushups: 0, pullups: 0, squats: 0, core: 0 });
+        setProtocolOrder(['pushups', 'pullups', 'squats', 'core']);
       } else {
         setHomeCounters(cleanedHome);
+        if (serverOrder && Array.isArray(serverOrder)) {
+          const keys = Object.keys(cleanedHome);
+          const newOrder = [...serverOrder.filter(k => keys.includes(k)), ...keys.filter(k => !serverOrder.includes(k))];
+          setProtocolOrder(newOrder);
+        } else {
+          setProtocolOrder(Object.keys(cleanedHome));
+        }
       }
     } catch (err: any) {
       console.error(err);
@@ -104,27 +238,32 @@ export default function WorkoutDashboard() {
 
   const handleTapVariant = (id: string) => {
     triggerHaptic('medium');
-    // Optimistic update
     setHomeCounters(prev => ({ ...prev, [id]: prev[id] + 1 }));
-    // Fire and forget background log
     api.workout.homeProtocol.increment(id, 1).catch(e => console.error("Failed to log protocol:", e));
 
-    // Debounce heatmap refresh so it updates the telemetry UI after tapping
     if (heatmapTimeoutRef.current) clearTimeout(heatmapTimeoutRef.current);
     heatmapTimeoutRef.current = setTimeout(() => {
       api.workout.heatmap(7).then(setHeatmapData).catch(console.error);
     }, 1000);
   };
 
-  const handleDeleteProtocol = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    triggerHaptic('heavy');
-    setHomeCounters(prev => {
-      const copy = { ...prev };
-      delete copy[id];
-      return copy;
-    });
-    api.workout.homeProtocol.delete(id).catch(e => console.error("Failed to delete protocol:", e));
+  const handleDecrementProtocol = (id: string) => {
+    if (homeCounters[id] > 0) {
+      triggerHaptic('light');
+      setHomeCounters(prev => ({ ...prev, [id]: prev[id] - 1 }));
+      api.workout.homeProtocol.decrement(id, 1).catch(e => console.error("Failed to decrement protocol:", e));
+
+      if (heatmapTimeoutRef.current) clearTimeout(heatmapTimeoutRef.current);
+      heatmapTimeoutRef.current = setTimeout(() => {
+        api.workout.heatmap(7).then(setHeatmapData).catch(console.error);
+      }, 1000);
+    }
+  };
+
+  const handleReorder = (newOrder: string[]) => {
+    setProtocolOrder(newOrder);
+    triggerHaptic('light');
+    api.workout.homeProtocol.reorder(newOrder).catch(console.error);
   };
 
   if (loading) {
@@ -189,7 +328,7 @@ export default function WorkoutDashboard() {
             </div>
           ) : (
             <button
-              onClick={() => { triggerHaptic('heavy'); router.push('/workout/session'); }}
+              onClick={() => { triggerHaptic('heavy'); router.push('/workout/session?start=true'); }}
               className="group relative w-full max-w-[240px] aspect-square rounded-full border border-vm-scarlet/30 flex flex-col items-center justify-center gap-4 transition-all duration-500 hover:scale-105 hover:border-vm-scarlet hover:shadow-[0_0_50px_rgba(244,63,94,0.3)]"
               style={{ backgroundColor: 'var(--color-obsidian)' }}
             >
@@ -217,45 +356,34 @@ export default function WorkoutDashboard() {
             </h3>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            {Object.entries(homeCounters).map(([id, count]) => {
-              const { text, bg, border, cardBg } = getColorForProtocol(id);
-              const progress = Math.min((count / 100) * 100, 100);
+          <Reorder.Group 
+            axis="y" 
+            values={protocolOrder} 
+            onReorder={handleReorder}
+            className="flex flex-col gap-3"
+          >
+            {protocolOrder.map((id) => {
+              const count = homeCounters[id] || 0;
               return (
-                <button
+                <ProtocolCard 
                   key={id}
-                  onClick={() => handleTapVariant(id)}
-                  className={`relative overflow-hidden ${cardBg} border ${border} hover:border-white/40 p-5 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all active:scale-95 shadow-lg group backdrop-blur-sm`}
-                >
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                    <div 
-                      onClick={(e) => handleDeleteProtocol(e, id)}
-                      className="text-white/30 hover:text-red-500 p-1 rounded-full bg-black/20 hover:bg-black/40 cursor-pointer"
-                    >
-                      <X className="w-3 h-3" />
-                    </div>
-                  </div>
-
-                  <div className="absolute left-0 bottom-0 top-0 w-1.5 bg-black/40" />
-                  <div className={`absolute left-0 bottom-0 w-1.5 transition-all duration-300 ${bg}`} style={{ height: `${progress}%` }} />
-                  
-                  <div className="absolute right-0 top-0 w-24 h-24 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10" />
-
-                  <span className={`text-4xl font-black ${count > 0 ? 'text-white' : 'text-white/40'} tracking-tighter drop-shadow-md relative z-10 group-active:scale-110 transition-transform`}>
-                    {count}
-                  </span>
-                  <div className="flex flex-col items-center relative z-10 text-center w-full">
-                    <span className={`text-[10px] font-bold tracking-[0.25em] ${text} uppercase leading-tight`}>
-                      {id.replace(/_/g, ' ')}
-                    </span>
-                    {count === 0 && (
-                      <span className="text-[8px] text-white/30 tracking-widest uppercase mt-1">TAP TO LOG</span>
-                    )}
-                  </div>
-                </button>
+                  id={id}
+                  count={count}
+                  getColorForProtocol={getColorForProtocol}
+                  onIncrement={handleTapVariant}
+                  onDecrement={handleDecrementProtocol}
+                  onLongPress={(targetId: string) => {
+                    triggerHaptic('heavy');
+                    setRenameProtocolModal({
+                      open: true, 
+                      oldName: targetId, 
+                      newName: targetId.replace(/_/g, ' ')
+                    });
+                  }}
+                />
               );
             })}
-          </div>
+          </Reorder.Group>
 
           <form onSubmit={handleAddProtocol} className="mt-6 flex gap-2 w-full relative z-20">
             <input 
@@ -435,6 +563,46 @@ export default function WorkoutDashboard() {
             </div>
         </div>
       )}
+
+      {/* Rename Protocol Modal */}
+      {renameProtocolModal.open && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+          <div className="w-full max-w-sm flex flex-col items-center text-center">
+            <h2 className="text-[10px] text-white tracking-[0.4em] uppercase mb-8">RENAME PROTOCOL</h2>
+            <form onSubmit={submitRenameProtocol} className="w-full relative">
+              <input 
+                type="text" 
+                className="w-full h-16 bg-surface border-2 border-surface2 rounded-2xl text-center text-white text-xl tracking-[0.2em] font-heading focus:outline-none focus:border-vm-scarlet/50 shadow-[0_0_30px_rgba(0,0,0,0.5)]"
+                autoFocus
+                value={renameProtocolModal.newName}
+                onChange={e => setRenameProtocolModal(prev => ({ ...prev, newName: e.target.value }))}
+                placeholder="NEW NAME..."
+              />
+              <button 
+                type="submit"
+                className="absolute right-2 top-2 bottom-2 aspect-square bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 rounded-xl flex items-center justify-center transition-colors"
+              >
+                <CheckCircle className="w-6 h-6" />
+              </button>
+            </form>
+            <div className="flex w-full mt-6 justify-between items-center px-4">
+              <button 
+                onClick={() => handleDeleteProtocol(renameProtocolModal.oldName)}
+                className="w-12 h-12 bg-vm-scarlet/10 hover:bg-vm-scarlet/20 text-vm-scarlet rounded-xl flex items-center justify-center transition-colors"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={() => setRenameProtocolModal({open: false, oldName: '', newName: ''})}
+                className="text-[10px] tracking-[0.3em] text-white/30 hover:text-white uppercase font-bold"
+              >
+                CANCEL
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

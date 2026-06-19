@@ -8,6 +8,11 @@ declare global {
       vibrate: (duration: number) => void;
       showNotification: (title: string, message: string) => void;
       triggerAlarmNotification: (title: string, message: string) => void;
+      showStickyNotification: (title: string, message: string, tag: string) => void;
+      clearNotification: (tag: string) => void;
+      getOfflineData: (key: string) => string | null;
+      saveOfflineData: (key: string, value: string) => void;
+      removeOfflineData: (key: string) => void;
     };
   }
 }
