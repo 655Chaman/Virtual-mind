@@ -11,6 +11,7 @@ import {
   CheckCircle,
   Activity,
   X,
+  Target,
   Trash2,
   Plus,
   Minus,
@@ -484,24 +485,17 @@ export default function WorkoutDashboard() {
             <div className="flex-1 overflow-hidden relative p-4 sm:p-6 flex flex-col">
               {activeModal === 'activation' && (
                 <div className="w-full h-full flex flex-col">
-                  <BodyHeatmap 
-                    data={heatmapData?.activation || {}} 
-                    onClose={() => setActiveModal(null)} 
-                    title="ACTIVATION METRICS"
-                    subtitle="7-DAY ROLLING AVERAGE"
-                  />
+                  <div className="flex-1 min-h-0 relative">
+                    <BodyHeatmap data={heatmapData?.activation || {}} mode="activation" />
+                  </div>
                 </div>
               )}
 
               {activeModal === 'armor' && (
                 <div className="w-full h-full flex flex-col">
-                  <BodyHeatmap 
-                    data={heatmapData?.armor || {}} 
-                    onClose={() => setActiveModal(null)} 
-                    title="ARMOR SYSTEM"
-                    subtitle="STRUCTURAL LOAD BALANCE"
-                    isArmor={true}
-                  />
+                  <div className="flex-1 min-h-0 relative">
+                    <BodyHeatmap data={heatmapData?.armor || {}} mode="armor" />
+                  </div>
                 </div>
               )}
 

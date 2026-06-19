@@ -165,6 +165,41 @@ function PrayerComplianceWithTimings({
   useEffect(() => {
     if (!data || !data.timings) return;
 
+    // --- NATIVE ANDROID EXACT ALARM SCHEDULING ---
+    try {
+      if (typeof window !== 'undefined' && (window as any).Android) {
+        if ((window as any).Android.cancelAllPrayerAlarms) {
+          (window as any).Android.cancelAllPrayerAlarms();
+        }
+        
+        const timings = data.timings;
+        const now = new Date();
+        const prayers = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+        
+        prayers.forEach(name => {
+          const timeStr = timings[name];
+          if (timeStr) {
+            const [hours, minutes] = (timeStr as string).split(':').map(Number);
+            const date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0);
+            
+            // Only schedule if time is in the future today
+            if (date.getTime() > now.getTime()) {
+               if ((window as any).Android.schedulePrayerAlarm) {
+                 const msg = name === 'Fajr' ? 'Rise before the world rises. Your prayer is the foundation of the day.' : 
+                            name === 'Dhuhr' ? 'Pause your work, face the Qibla, and reconnect with Allah.' : 
+                            name === 'Asr' ? 'The Prophet (SAWS) was most consistent with Asr. Don\'t miss it.' : 
+                            name === 'Maghrib' ? 'The sun is setting. Drop everything and pray.' : 
+                            'Complete your day with prayer. Then rest — you\'ve earned it.';
+                            
+                 (window as any).Android.schedulePrayerAlarm(name, date.getTime(), msg);
+               }
+            }
+          }
+        });
+      }
+    } catch (e) { console.error('Failed to schedule native Android alarms', e); }
+    // ---------------------------------------------
+
     const updateTimer = () => {
       const timings = data.timings;
       const now = new Date();
@@ -203,12 +238,7 @@ function PrayerComplianceWithTimings({
         prevActivePrayerRef.current = currentActive;
         try {
           if (typeof window !== 'undefined' && (window as any).Android) {
-            if ((window as any).Android.showNotification) {
-              (window as any).Android.showNotification("Prayer Time Started", "Okay, your private time has started right now.");
-            }
-            if ((window as any).Android.vibrate) {
-              (window as any).Android.vibrate(500);
-            }
+            // Let the native Android AlarmManager handle notifications to avoid duplicates
           } else if (typeof window !== 'undefined' && 'Notification' in window) {
             if (Notification.permission === 'granted') {
               new Notification("Prayer Time Started", { body: "Okay, your private time has started right now." });
@@ -781,8 +811,24 @@ export default function PillarFolder() {
   // Today's log for non-negotiables checks
   const [todayLog, setTodayLog] = useState<any>(null);
   const [nns, setNns] = useState<Record<string, boolean>>({});
-  const [operatingMode, setOperatingMode] = useState<'optimal' | 'deload' | 'black_swan'>('optimal');
-  const [lensCaptured, setLensCaptured] = useState(false);
+
+  // Self Pillar: Reading Tracker & Editable Triggers
+  const [readingBooks, setReadingBooks] = useState<{id: string, title: string, page: number}[]>([]);
+  const [customTriggers, setCustomTriggers] = useState<{key: string, label: string, desc: string}[]>([]);
+  const [isEditingTriggers, setIsEditingTriggers] = useState(false);
+  const [newTriggerLabel, setNewTriggerLabel] = useState('');
+  const [newTriggerDesc, setNewTriggerDesc] = useState('');
+
+  // Load local data on mount
+  useEffect(() => {
+    try {
+      const savedBooks = localStorage.getItem('vm_reading_books');
+      if (savedBooks) setReadingBooks(JSON.parse(savedBooks));
+      
+      const savedTriggers = localStorage.getItem('vm_custom_triggers');
+      if (savedTriggers) setCustomTriggers(JSON.parse(savedTriggers));
+    } catch(e) {}
+  }, []);
 
   // Deen states
   const [tasbihCount, setTasbihCount] = useState(0);
@@ -920,32 +966,7 @@ export default function PillarFolder() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  // Structural Fortification: Auto-Deload & Tiering
-  const [currentTier, setCurrentTier] = useState<1 | 2>(1);
-  const [hasRunFortification, setHasRunFortification] = useState(false);
-
-  useEffect(() => {
-    if (pillar === 'self' && logs.length > 0 && !hasRunFortification) {
-      setHasRunFortification(true);
-      const selfLogs = logs.filter(l => l.pillar?.toLowerCase() === 'self');
-      
-      // 1. Fatigue Detection
-      const selfLogsWithScore = selfLogs.filter(l => l.score !== undefined && l.score !== null);
-      if (selfLogsWithScore.length >= 3) {
-        const last3 = selfLogsWithScore.slice(0, 3);
-        const allBelow5 = last3.every(l => l.score < 5);
-        if (allBelow5 && operatingMode !== 'deload') {
-          setOperatingMode('deload');
-          showToast("SYSTEM DETECTS FATIGUE. FORCING DELOAD PROTOCOL.", "info");
-        }
-      }
-
-      // 2. Streak Tier Escalation
-      if (streak && streak.current_streak >= 7) {
-        setCurrentTier(2);
-      }
-    }
-  }, [pillar, logs, operatingMode, streak, hasRunFortification]);
+  // Removed Structural Fortification: Auto-Deload & Tiering
 
   // Set default audit date when history modal opens
   useEffect(() => {
@@ -1044,7 +1065,6 @@ export default function PillarFolder() {
     try {
       const res = await api.media.upload(file);
       setUploadedImageUrl(res.url);
-      if (pillar === 'self') setLensCaptured(true);
       setShowEntryModal(true);
     } catch (err) {
       console.error('Camera upload failed:', err);
@@ -1095,24 +1115,6 @@ export default function PillarFolder() {
     }
   };
 
-  const handleLogLearning = async () => {
-    if (!learningText.trim()) return;
-    try {
-      triggerHaptic('medium');
-      const tag = operatingMode === 'black_swan' ? 'BLACK_SWAN_AUTOPSY' : operatingMode === 'deload' ? 'DELOAD_LOG' : 'LEARNING/CONCEPT';
-      await api.logs.addEntry({
-        timestamp: new Date().toISOString(),
-        pillar: meta.label,
-        text: `[${tag}] ${learningText}`,
-      });
-      setLearningText('');
-      await loadData();
-      triggerHaptic('success');
-      showToast("Entry logged successfully", "success");
-    } catch(err) {
-      showToast("Save failed", "error");
-    }
-  };
 
   const handleOpenMaterials = async () => {
     triggerHaptic('medium');
@@ -1758,7 +1760,7 @@ export default function PillarFolder() {
                     </label>
                     <div className="flex items-center gap-2">
                       <button 
-                        onClick={() => setFocusTasks([...focusTasks, { id: Math.random().toString(), name: '', estimated_minutes: null, xp_reward: null, time_remaining: null, status: 'pending' }])}
+                        onClick={() => setFocusTasks([...focusTasks, { id: Math.random().toString(), name: '', estimated_minutes: null, xp_reward: null, time_remaining: null, status: 'pending', urgency_question: null }])}
                         className="w-6 h-6 rounded flex items-center justify-center bg-amber-500/10 text-amber-500 hover:bg-amber-500/30 transition-all"
                       >
                         +
@@ -2197,24 +2199,13 @@ Focus Tasks: ${activeTasks.length > 0 ? activeTasks.join(', ') : 'None specified
         {/*  SELF discipline control */}
         {/*  SELF PROTOCOL INTERFACE */}
         {pillar === 'self' && (() => {
-          // Dynamic Mode Logic
-          const isBlackSwan = operatingMode === 'black_swan';
-          const isDeload = operatingMode === 'deload';
-          const isOptimal = operatingMode === 'optimal';
-
-          // Colors
-          const themeColor = isBlackSwan ? 'text-amber-500' : isDeload ? 'text-cyan-400' : 'text-vm-amethyst';
-          const themeBorder = isBlackSwan ? 'border-amber-500/30' : isDeload ? 'border-cyan-400/30' : 'border-vm-amethyst/30';
-          const themeBorderFull = isBlackSwan ? 'border-amber-500' : isDeload ? 'border-cyan-400' : 'border-vm-amethyst';
-          const themeBg = isBlackSwan ? 'bg-amber-500' : isDeload ? 'bg-cyan-400' : 'bg-vm-amethyst';
-          const themeBgLight = isBlackSwan ? 'bg-amber-500/20' : isDeload ? 'bg-cyan-400/20' : 'bg-vm-amethyst/20';
-          const themeHover = isBlackSwan ? 'hover:bg-amber-500/20' : isDeload ? 'hover:bg-cyan-400/20' : 'hover:bg-vm-amethyst/20';
-          const themeGlow = isBlackSwan ? 'rgba(245,158,11,0.08)' : isDeload ? 'rgba(34,211,238,0.08)' : 'rgba(168,85,247,0.08)';
-          const shadowColor = isBlackSwan ? 'rgba(245,158,11,0.5)' : isDeload ? 'rgba(34,211,238,0.5)' : 'rgba(168,85,247,0.5)';
+          const themeColor = 'text-vm-amethyst';
+          const themeBorder = 'border-vm-amethyst/30';
+          const themeBg = 'bg-vm-amethyst';
+          const shadowColor = 'rgba(168,85,247,0.5)';
           const dropShadow = `drop-shadow-[0_0_20px_${shadowColor.replace(/ /g,'')}]`;
 
-          // Triggers
-          const triggersOptimal = [
+          const defaultTriggers = [
             { key: 'no_sugar', label: 'No Sugar Today', desc: 'Maintain metabolic purity' },
             { key: 'sleep_on_floor', label: 'Slept on Floor', desc: 'Comfort lock engaged' },
             { key: 'cold_shower', label: 'Cold Shower', desc: 'Neuro reset protocol' },
@@ -2222,137 +2213,10 @@ Focus Tasks: ${activeTasks.length > 0 ? activeTasks.join(', ') : 'None specified
             { key: 'learned_concept', label: 'Deep Study', desc: 'Absorbed new concept' },
           ];
 
-          const triggersDeload = [
-            { key: 'sleep_8hr', label: '8hr Sleep Locked', desc: 'Mandatory deep recovery' },
-            { key: 'no_media', label: 'Zero High-Dopamine Media', desc: 'Neural cooling' },
-            { key: 'deep_stretch', label: 'Deep Tissue Stretch', desc: 'Physical restoration' },
-            { key: 'nature_walk', label: 'Nature Walk', desc: 'Parasympathetic shift' },
-          ];
-
-          const triggersBlackSwan = [
-            { key: 'hydrate_3l', label: 'Hydrate 3L', desc: 'Biological baseline survival' },
-            { key: 'zero_sugar_spill', label: 'Zero Sugar Spillover', desc: 'Limit metabolic damage' },
-            { key: 'mobility_10m', label: '10-Min Mobility', desc: 'Joint maintenance' },
-            { key: 'box_breath', label: 'Box Breathing', desc: 'Stress modulation' },
-          ];
-
-        {/*  SELF PROTOCOL INTERFACE */}
-        {pillar === 'self' && (() => {
-          // Dynamic Mode Logic
-          const isBlackSwan = operatingMode === 'black_swan';
-          const isDeload = operatingMode === 'deload';
-          const isOptimal = operatingMode === 'optimal';
-
-          // Colors
-          const themeColor = isBlackSwan ? 'text-amber-500' : isDeload ? 'text-cyan-400' : 'text-vm-amethyst';
-          const themeBorder = isBlackSwan ? 'border-amber-500/30' : isDeload ? 'border-cyan-400/30' : 'border-vm-amethyst/30';
-          const themeBorderFull = isBlackSwan ? 'border-amber-500' : isDeload ? 'border-cyan-400' : 'border-vm-amethyst';
-          const themeBg = isBlackSwan ? 'bg-amber-500' : isDeload ? 'bg-cyan-400' : 'bg-vm-amethyst';
-          const themeBgLight = isBlackSwan ? 'bg-amber-500/20' : isDeload ? 'bg-cyan-400/20' : 'bg-vm-amethyst/20';
-          const themeHover = isBlackSwan ? 'hover:bg-amber-500/20' : isDeload ? 'hover:bg-cyan-400/20' : 'hover:bg-vm-amethyst/20';
-          const themeGlow = isBlackSwan ? 'rgba(245,158,11,0.08)' : isDeload ? 'rgba(34,211,238,0.08)' : 'rgba(168,85,247,0.08)';
-          const shadowColor = isBlackSwan ? 'rgba(245,158,11,0.5)' : isDeload ? 'rgba(34,211,238,0.5)' : 'rgba(168,85,247,0.5)';
-          const dropShadow = `drop-shadow-[0_0_20px_${shadowColor.replace(/ /g,'')}]`;
-
-          // Triggers
-          const triggersOptimalT2 = [
-            { key: 'fast_24hr', label: '24hr Fasting Window', desc: 'Absolute metabolic control' },
-            { key: 'ice_bath', label: 'Ice Bath / Extreme Cold', desc: 'Maximal neuro reset' },
-            { key: 'sleep_on_floor_full', label: 'Complete Floor Sleep', desc: 'Comfort lock engaged' },
-            { key: 'combat_training', label: 'Combat Training', desc: 'Physical aggression outlet' },
-            { key: 'deep_study_2hr', label: 'Deep Study (2hrs)', desc: 'Extended cognitive load' },
-          ];
-
-          const triggersOptimalT1 = [
-            { key: 'no_sugar', label: 'No Sugar Today', desc: 'Maintain metabolic purity' },
-            { key: 'sleep_on_floor', label: 'Slept on Floor', desc: 'Comfort lock engaged' },
-            { key: 'cold_shower', label: 'Cold Shower', desc: 'Neuro reset protocol' },
-            { key: 'combat_training', label: 'Combat Training', desc: 'Physical aggression outlet' },
-            { key: 'learned_concept', label: 'Deep Study', desc: 'Absorbed new concept' },
-          ];
-
-          const triggersOptimal = currentTier === 2 ? triggersOptimalT2 : triggersOptimalT1;
-
-          const triggersDeload = [
-            { key: 'sleep_8hr', label: '8hr Sleep Locked', desc: 'Mandatory deep recovery' },
-            { key: 'no_media', label: 'Zero High-Dopamine Media', desc: 'Neural cooling' },
-            { key: 'deep_stretch', label: 'Deep Tissue Stretch', desc: 'Physical restoration' },
-            { key: 'nature_walk', label: 'Nature Walk', desc: 'Parasympathetic shift' },
-          ];
-
-          const triggersBlackSwan = [
-            { key: 'hydrate_3l', label: 'Hydrate 3L', desc: 'Biological baseline survival' },
-            { key: 'zero_sugar_spill', label: 'Zero Sugar Spillover', desc: 'Limit metabolic damage' },
-            { key: 'mobility_10m', label: '10-Min Mobility', desc: 'Joint maintenance' },
-            { key: 'box_breath', label: 'Box Breathing', desc: 'Stress modulation' },
-          ];
-
-          const currentTriggers = isBlackSwan ? triggersBlackSwan : isDeload ? triggersDeload : triggersOptimal;
+          const currentTriggers = customTriggers.length > 0 ? customTriggers : defaultTriggers;
           
           return (
           <div className="w-full space-y-8 pb-4 animate-fade-up">
-
-            {/* Operating Mode Toggle */}
-            <div className="w-full flex justify-center pt-2 z-20 relative">
-              <div className="flex bg-surface border border-surface2 rounded-xl overflow-hidden shadow-sm">
-                <button 
-                  onClick={() => { triggerHaptic('light'); setOperatingMode('optimal'); }}
-                  className={`px-4 py-2 text-[10px] tracking-widest font-bold uppercase transition-colors ${isOptimal ? 'bg-vm-amethyst/10 text-vm-amethyst border-b-2 border-vm-amethyst' : 'text-text-dim hover:bg-surface2 border-b-2 border-transparent'}`}
-                >
-                  OPTIMAL
-                </button>
-                <button 
-                  onClick={() => { triggerHaptic('light'); setOperatingMode('deload'); }}
-                  className={`px-4 py-2 text-[10px] tracking-widest font-bold uppercase transition-colors ${isDeload ? 'bg-cyan-400/10 text-cyan-400 border-b-2 border-cyan-400' : 'text-text-dim hover:bg-surface2 border-b-2 border-transparent'}`}
-                >
-                  DELOAD
-                </button>
-                <button 
-                  onClick={() => { triggerHaptic('light'); setOperatingMode('black_swan'); }}
-                  className={`px-4 py-2 text-[10px] tracking-widest font-bold uppercase transition-colors ${isBlackSwan ? 'bg-amber-500/10 text-amber-500 border-b-2 border-amber-500' : 'text-text-dim hover:bg-surface2 border-b-2 border-transparent'}`}
-                >
-                  BLACK SWAN
-                </button>
-              </div>
-            </div>
-            
-            {/* HUD Header & Major Action (Accountability Lens) */}
-            <div className="w-full flex flex-col items-center justify-center relative pt-4 pb-10">
-              <div className="absolute inset-0 pointer-events-none transition-all duration-1000" style={{ background: `radial-gradient(circle at center, ${themeGlow} 0%, transparent 60%)` }} />
-              <div className="z-10 flex flex-col items-center gap-8 w-full max-w-sm">
-                <button
-                  onClick={() => {
-                    if (!isUploading && fileInputRef.current) {
-                      fileInputRef.current.value = '';
-                      fileInputRef.current.click();
-                    }
-                  }}
-                  disabled={isUploading}
-                  className="group relative w-full max-w-[260px] aspect-square rounded-full flex flex-col items-center justify-center gap-4 transition-all duration-500 hover:scale-105 active:scale-95"
-                  style={{ 
-                    backgroundColor: 'var(--color-obsidian)',
-                    borderColor: lensCaptured ? themeBg : shadowColor,
-                    borderWidth: '1px',
-                    borderStyle: 'solid',
-                    boxShadow: lensCaptured ? `0 0 40px ${shadowColor}` : `0 0 30px ${shadowColor.replace('0.5', '0.15')}`
-                  }}
-                >
-                  <div className={`absolute inset-2 rounded-full border ${lensCaptured ? themeBorderFull : themeBorder}`} />
-                  <Camera className={`w-20 h-20 transition-transform duration-500 group-hover:scale-110 ${themeColor} ${isUploading ? 'animate-pulse' : ''}`} style={{ filter: `drop-shadow(0 0 10px ${shadowColor})` }} />
-                  <div className="flex flex-col items-center text-center">
-                    <span className="font-heading text-xl tracking-[0.3em] text-white">
-                      {isUploading ? 'SYNCING' : lensCaptured ? 'VERIFIED' : 'CAPTURE'}
-                    </span>
-                    <p className={`text-[12px] tracking-widest font-bold mt-2 ${themeColor}`}>
-                      {lensCaptured ? 'LENS SYNCED' : 'LENS ACTIVE'}
-                    </p>
-                  </div>
-                  <p className="text-[9px] text-text-dim tracking-widest absolute bottom-8 font-bold uppercase">
-                    ACCOUNTABILITY PROOF
-                  </p>
-                </button>
-              </div>
-            </div>
 
             {/* Minimalist Stack Layout */}
             <div className="flex flex-col gap-2 relative z-10 font-mono max-w-md mx-auto w-full px-6 md:px-0">
@@ -2361,46 +2225,96 @@ Focus Tasks: ${activeTasks.length > 0 ? activeTasks.join(', ') : 'None specified
               <div className="mb-6 w-full">
                 <div className="flex items-center justify-between mb-2 pl-1">
                   <h3 className="text-[10px] tracking-[0.3em] text-text-dim uppercase font-bold">
-                    {isBlackSwan ? 'MINIMAL SURVIVAL PROTOCOL' : isDeload ? 'DEEP RECOVERY PROTOCOL' : 'TRIGGER AVOIDANCE PROTOCOL'}
+                    TRIGGER AVOIDANCE PROTOCOL
                   </h3>
-                  {isOptimal && currentTier === 2 && (
-                    <span className="text-[9px] text-vm-amethyst font-bold tracking-widest uppercase px-2 py-0.5 border border-vm-amethyst/30 rounded">TIER 2</span>
-                  )}
+                  <button 
+                    onClick={() => setIsEditingTriggers(!isEditingTriggers)}
+                    className="text-[9px] tracking-widest font-bold uppercase transition-colors text-vm-amethyst hover:text-white"
+                  >
+                    {isEditingTriggers ? 'DONE [X]' : 'EDIT [+]'}
+                  </button>
                 </div>
+                
+                {isEditingTriggers && (
+                  <div className="bg-surface2/30 border border-surface2 p-3 rounded-xl mb-4 flex flex-col gap-2">
+                    <input
+                      type="text"
+                      placeholder="Trigger Label (e.g., 'Zero Sugar')"
+                      value={newTriggerLabel}
+                      onChange={(e) => setNewTriggerLabel(e.target.value)}
+                      className="bg-transparent border-b border-surface2 text-xs font-mono text-white outline-none pb-1"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Description (e.g., 'Maintain metabolic purity')"
+                      value={newTriggerDesc}
+                      onChange={(e) => setNewTriggerDesc(e.target.value)}
+                      className="bg-transparent border-b border-surface2 text-xs font-mono text-white outline-none pb-1"
+                    />
+                    <button 
+                      onClick={() => {
+                        if (!newTriggerLabel) return;
+                        const newT = { key: `custom_${Date.now()}`, label: newTriggerLabel, desc: newTriggerDesc };
+                        const updated = [...currentTriggers, newT];
+                        setCustomTriggers(updated);
+                        localStorage.setItem('vm_custom_triggers', JSON.stringify(updated));
+                        setNewTriggerLabel('');
+                        setNewTriggerDesc('');
+                      }}
+                      className="mt-2 py-2 bg-vm-amethyst/20 text-vm-amethyst text-[10px] font-bold rounded tracking-widest uppercase"
+                    >
+                      ADD TRIGGER
+                    </button>
+                  </div>
+                )}
+
                 <div className="flex flex-col gap-2 w-full">
                   {currentTriggers.map(item => {
                     const isSecured = nns[item.key];
-                    const borderClass = isSecured ? (isBlackSwan ? 'border-amber-500/20 bg-amber-500/5' : isDeload ? 'border-cyan-400/20 bg-cyan-400/5' : 'border-vm-amethyst/20 bg-vm-amethyst/5') : 'border-surface2 bg-surface/50 hover:text-white hover:border-surface2';
+                    const borderClass = isSecured ? 'border-vm-amethyst/20 bg-vm-amethyst/5' : 'border-surface2 bg-surface/50 hover:text-white hover:border-surface2';
                     
                     return (
-                      <button
-                        key={item.key}
-                        onClick={() => handleNNToggle(item.key, !nns[item.key])}
-                        className={`py-4 px-6 flex items-center justify-between w-full transition-all active:scale-[0.98] relative border rounded-xl ${borderClass}`}
-                      >
-                        {isSecured && (
-                          <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-3/4 rounded-r-full ${themeBg}`} style={{ boxShadow: `0 0 15px ${shadowColor}` }} />
-                        )}
-                        
-                        <div className="flex flex-col text-left">
-                          <span className={`text-[12px] tracking-widest uppercase font-bold ${
-                            isSecured ? themeColor : 'text-white'
-                          }`}>
-                            {item.label}
-                          </span>
-                          <span className="text-[8px] text-text-dim tracking-[0.2em] uppercase mt-1">
-                            {item.desc}
-                          </span>
-                        </div>
+                      <div key={item.key} className="relative flex items-center gap-2">
+                        <button
+                          onClick={() => handleNNToggle(item.key, !nns[item.key])}
+                          className={`py-4 px-6 flex items-center justify-between flex-1 transition-all active:scale-[0.98] relative border rounded-xl ${borderClass}`}
+                        >
+                          {isSecured && (
+                            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-3/4 rounded-r-full ${themeBg}`} style={{ boxShadow: `0 0 15px ${shadowColor}` }} />
+                          )}
+                          
+                          <div className="flex flex-col text-left">
+                            <span className={`text-[12px] tracking-widest uppercase font-bold ${
+                              isSecured ? themeColor : 'text-white'
+                            }`}>
+                              {item.label}
+                            </span>
+                            <span className="text-[8px] text-text-dim tracking-[0.2em] uppercase mt-1">
+                              {item.desc}
+                            </span>
+                          </div>
 
-                        <div className="flex flex-col items-end">
-                          <span className={`text-[8px] font-bold tracking-widest uppercase mb-1 ${
-                            isSecured ? themeColor : 'text-text-dim/40'
-                          }`}>
-                            {isSecured ? 'AVOIDED ' : 'UNSECURED'}
-                          </span>
-                        </div>
-                      </button>
+                          <div className="flex flex-col items-end">
+                            <span className={`text-[8px] font-bold tracking-widest uppercase mb-1 ${
+                              isSecured ? themeColor : 'text-text-dim/40'
+                            }`}>
+                              {isSecured ? 'AVOIDED ' : 'UNSECURED'}
+                            </span>
+                          </div>
+                        </button>
+                        {isEditingTriggers && (
+                          <button
+                            onClick={() => {
+                              const updated = currentTriggers.filter(t => t.key !== item.key);
+                              setCustomTriggers(updated);
+                              localStorage.setItem('vm_custom_triggers', JSON.stringify(updated));
+                            }}
+                            className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 transition-all shrink-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
@@ -2409,7 +2323,7 @@ Focus Tasks: ${activeTasks.length > 0 ? activeTasks.join(', ') : 'None specified
                {/* Discipline Score Widget */}
               <div className="w-full mb-6 flex flex-col gap-2 relative z-10 font-mono">
                 <h3 className="text-[10px] tracking-[0.3em] text-text-dim uppercase font-bold mb-1 pl-1">
-                  {isBlackSwan ? 'ADAPTIVE RESILIENCE SCORE' : 'ACCOUNTABILITY SCORE'}
+                  ACCOUNTABILITY SCORE
                 </h3>
                 
                 {todayLog?.score !== undefined && todayLog?.score !== null ? (
@@ -2419,7 +2333,7 @@ Focus Tasks: ${activeTasks.length > 0 ? activeTasks.join(', ') : 'None specified
                       <CheckCircle className={`w-6 h-6 ${themeColor}`} />
                       <div className="flex flex-col text-left">
                         <span className="text-[11px] font-bold text-white tracking-[0.15em] uppercase">
-                          {isBlackSwan ? 'RESILIENCE RATING' : 'DISCIPLINE RATING'}
+                          DISCIPLINE RATING
                         </span>
                         <span className="text-[9px] text-text-dim tracking-widest uppercase font-mono">
                           LOCKED UNTIL MIDNIGHT
@@ -2455,152 +2369,117 @@ Focus Tasks: ${activeTasks.length > 0 ? activeTasks.join(', ') : 'None specified
                         value={disciplineScore}
                         onChange={e => setDisciplineScore(parseInt(e.target.value))}
                         className="flex-1 h-1 bg-surface2 rounded-lg appearance-none cursor-pointer"
-                        style={{ accentColor: isBlackSwan ? '#f59e0b' : isDeload ? '#22d3ee' : '#a855f7' }}
+                        style={{ accentColor: '#a855f7' }}
                       />
                     </div>
                     
                     <button
                       onClick={handleDisciplineScoreSubmit}
-                      disabled={!lensCaptured}
-                      className={`w-full py-3 border font-bold text-[10px] tracking-[0.2em] transition-all rounded-lg disabled:opacity-40 disabled:cursor-not-allowed ${!lensCaptured ? 'bg-surface2 text-text-dim border-surface2' : isBlackSwan ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 hover:bg-amber-500/20' : isDeload ? 'bg-cyan-400/10 border-cyan-400/30 text-cyan-400 hover:bg-cyan-400/20' : 'bg-vm-amethyst/10 border-vm-amethyst/30 text-vm-amethyst hover:bg-vm-amethyst/20'}`}
+                      className={`w-full py-3 border font-bold text-[10px] tracking-[0.2em] transition-all rounded-lg bg-vm-amethyst/10 border-vm-amethyst/30 text-vm-amethyst hover:bg-vm-amethyst/20`}
                     >
-                      {!lensCaptured ? '[ REQUIRES LENS SYNC ]' : 'SECURE SCORE'}
+                      SECURE SCORE
                     </button>
                   </div>
                 )}
               </div>
 
-              {/* Neural Auditor Widget */}
-              {(() => {
-                const selfLogs = logs.filter(l => l.pillar?.toLowerCase() === 'self');
-                const autopsies = selfLogs.filter(l => l.text && l.text.includes('[BLACK_SWAN_AUTOPSY]'));
-                if (autopsies.length === 0) return null;
-                
-                // Extremely basic keyword extraction for mock insight
-                const texts = autopsies.map(a => a.text.toLowerCase());
-                let keyword = 'fatigue';
-                if (texts.some(t => t.includes('sleep') || t.includes('tired'))) keyword = 'sleep deprivation';
-                else if (texts.some(t => t.includes('work') || t.includes('busy'))) keyword = 'workload saturation';
-                else if (texts.some(t => t.includes('sugar') || t.includes('eat'))) keyword = 'dietary slippage';
-
-                const percent = Math.min(100, Math.round((texts.filter(t => t.includes(keyword.split(' ')[0])).length / texts.length) * 100) + 40);
-
-                return (
-                  <div className="w-full mb-6 flex flex-col gap-2 relative z-10 font-mono">
-                    <div className="flex items-center gap-2 mb-1 pl-1">
-                      <Activity className={`w-3 h-3 ${themeColor}`} />
-                      <h3 className="text-[10px] tracking-[0.3em] text-text-dim uppercase font-bold">
-                        NEURAL AUDITOR
-                      </h3>
-                    </div>
-                    <div className={`bg-surface border border-surface2 p-4 rounded-xl flex items-start gap-3`}>
-                      <AlertTriangle className={`w-4 h-4 mt-0.5 shrink-0 ${themeColor}`} />
-                      <p className="text-[10px] leading-relaxed text-gray-300 font-mono uppercase tracking-widest">
-                        <span className={`font-bold ${themeColor}`}>PATTERN DETECTED:</span> '{keyword.toUpperCase()}' IS THE ROOT CAUSE IN ~{percent}% OF RECENT BLACK SWAN FAILURES. ARMOR THIS VULNERABILITY.
-                      </p>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Knowledge Bank Widget */}
-              <div className="w-full flex flex-col gap-2 relative z-10 font-mono">
+              {/* CURRENT READING WIDGET */}
+              <div className="w-full flex flex-col gap-2 relative z-10 font-mono mb-6">
                 <div className="flex justify-between items-end mb-1 pl-1">
                   <h3 className="text-[10px] tracking-[0.3em] text-text-dim uppercase font-bold">
-                    {isBlackSwan ? 'INCIDENT AUTOPSY' : 'KNOWLEDGE BANK'}
+                    CURRENT READING
                   </h3>
                   <button
-                    onClick={handleOpenMaterials}
+                    onClick={() => {
+                      const newBooks = [...readingBooks, { id: `b_${Date.now()}`, title: '', page: 1 }];
+                      setReadingBooks(newBooks);
+                      localStorage.setItem('vm_reading_books', JSON.stringify(newBooks));
+                    }}
                     className={`text-[9px] tracking-widest font-bold uppercase transition-colors ${themeColor}`}
                   >
-                    READINGS [&gt;&gt;]
+                    ADD BOOK [+]
                   </button>
                 </div>
-                
-                <div className={`bg-surface border border-surface2 p-5 rounded-xl flex flex-col relative overflow-hidden group transition-colors hover:border-surface2`}>
-                  <div className="absolute inset-0 pointer-events-none opacity-10">
-                    <div className={`absolute bottom-0 left-0 right-0 transition-all duration-1000 ease-in-out h-[20%] ${themeBg}`} />
-                  </div>
-                  
-                  <div className={`relative flex-1 min-h-[80px] rounded-lg border bg-obsidian/60 overflow-hidden mb-3 transition-all duration-300 border-surface2 hover:${themeBorder}`}>
-                    <textarea
-                      value={learningText}
-                      onChange={(e) => setLearningText(e.target.value)}
-                      placeholder={isBlackSwan ? "What broke the routine? How are you adapting?" : isDeload ? "Log rest protocols and recovery notes..." : "Log new concepts, frameworks, or deep studies..."}
-                      className="w-full h-full bg-transparent p-3 text-[12px] resize-none outline-none text-gray-200 placeholder:text-gray-600 font-mono leading-relaxed"
-                    />
-                  </div>
-                  
-                  <button
-                    onClick={handleLogLearning}
-                    disabled={!learningText.trim()}
-                    className={`w-full py-3 text-obsidian font-bold text-[10px] tracking-[0.2em] transition-all rounded-lg disabled:opacity-40 disabled:bg-surface2 disabled:text-text-dim ${themeBg} hover:opacity-90`}
-                  >
-                    {isBlackSwan ? 'LOG ADAPTATION' : 'UPLOAD TO BRAIN'}
-                  </button>
 
-                  {/* Today's topics studied list */}
-                  {(() => {
-                    const todayStr = getLocalDateString();
-                    const tagFilter = isBlackSwan ? '[BLACK_SWAN_AUTOPSY]' : isDeload ? '[DELOAD_LOG]' : '[LEARNING/CONCEPT]';
-                    const todaySelfEntries = pillarEntries.filter(e => {
-                      const entryDate = e.timestamp.split('T')[0];
-                      return entryDate === todayStr && e.text.startsWith(tagFilter);
-                    });
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {readingBooks.map((book, idx) => (
+                    <div key={book.id} className="bg-surface border border-surface2 p-4 rounded-xl flex flex-col relative group transition-colors hover:border-vm-amethyst/30">
+                      <button 
+                        onClick={() => {
+                          const updated = readingBooks.filter(b => b.id !== book.id);
+                          setReadingBooks(updated);
+                          localStorage.setItem('vm_reading_books', JSON.stringify(updated));
+                        }}
+                        className="absolute top-3 right-3 text-white/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
 
-                    if (todaySelfEntries.length === 0) return null;
-
-                    return (
-                      <div className="mt-4 pt-4 border-t border-surface2 space-y-2 relative z-10">
-                        <p className="text-[9px] text-text-dim tracking-widest font-bold uppercase">TODAY&apos;S INGESTION:</p>
-                        <div className="space-y-2 max-h-[160px] overflow-y-auto scrollbar-thin pr-1">
-                          {todaySelfEntries.map((e, idx) => {
-                            const cleanText = e.text.replace(`${tagFilter} `, '');
-                            return (
-                              <div key={idx} className="p-3 bg-surface/80 border border-surface2 rounded-lg text-xs font-mono text-white flex items-start justify-between">
-                                <span className="leading-relaxed text-gray-300">{cleanText}</span>
-                                <span className="text-[8px] text-text-dim shrink-0 ml-3 font-mono mt-0.5">
-                                  {new Date(e.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
+                      <div className="mb-3">
+                        <label className="text-[8px] text-text-dim tracking-widest uppercase block mb-1">BOOK TITLE</label>
+                        <input
+                          type="text"
+                          value={book.title}
+                          onChange={(e) => {
+                            const updated = [...readingBooks];
+                            updated[idx].title = e.target.value;
+                            setReadingBooks(updated);
+                            localStorage.setItem('vm_reading_books', JSON.stringify(updated));
+                          }}
+                          placeholder="E.g. Meditations"
+                          className="w-full bg-transparent border-b border-surface2 text-[12px] text-white outline-none pb-1 focus:border-vm-amethyst"
+                        />
                       </div>
-                    );
-                  })()}
+                      
+                      <div className="mb-4">
+                        <label className="text-[8px] text-text-dim tracking-widest uppercase block mb-1">PAGE NUMBER</label>
+                        <ScrubNumberInput 
+                          value={book.page}
+                          onChangeValue={(val) => {
+                            const updated = [...readingBooks];
+                            updated[idx].page = typeof val === 'number' ? val : (parseInt(val) || 0);
+                            setReadingBooks(updated);
+                            localStorage.setItem('vm_reading_books', JSON.stringify(updated));
+                          }}
+                          className="w-24 bg-obsidian border border-surface2 text-center p-1 rounded text-[12px] text-white outline-none"
+                        />
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          if (!book.title.trim()) return;
+                          try {
+                            if (typeof window !== 'undefined' && (window as any).Android?.scheduleReadingReminder) {
+                              (window as any).Android.scheduleReadingReminder(book.title, 60);
+                              showToast(`Native reminder set for ${book.title}`, "success");
+                            } else {
+                              showToast(`Logged reading. (Native Android Bridge not detected)`, "info");
+                            }
+                          } catch(e) {
+                            showToast(`Failed to set reminder`, "error");
+                          }
+                        }}
+                        disabled={!book.title.trim()}
+                        className="w-full py-2 bg-vm-amethyst/10 border border-vm-amethyst/30 text-vm-amethyst text-[9px] font-bold tracking-widest rounded hover:bg-vm-amethyst/20 transition-all disabled:opacity-30 disabled:grayscale"
+                      >
+                        LOG & SET REMINDER
+                      </button>
+                    </div>
+                  ))}
+                  {readingBooks.length === 0 && (
+                    <div className="col-span-full py-8 text-center border border-dashed border-surface2 rounded-xl text-[10px] text-text-dim tracking-widest">
+                      NO ACTIVE READINGS
+                    </div>
+                  )}
                 </div>
               </div>
-
             </div>
           </div>
           );
         })()}
 
         {/* ─── FEED & GRAPHS SECTION (Standard for all) ─────────────────────── */}
-
-        {/* Volume Graph */}
-        <div className="bg-surface border border-surface2 p-4">
-          <h2 className={`text-xs font-bold tracking-widest mb-4 ${meta.color}`}>14-DAY UPLOAD VOLUME</h2>
-          <div className="flex items-end justify-between h-24 gap-1">
-            {barData.map((d, i) => {
-              const heightPct = maxEntries > 0 ? (d.count / maxEntries) * 100 : 0;
-              return (
-                <div key={i} className="flex flex-col items-center flex-1 gap-1">
-                  <div className="w-full bg-surface2 h-full flex items-end rounded-sm overflow-hidden relative">
-                    <div 
-                      className={`w-full transition-all duration-500 ${d.count > 0 ? 'bg-vm-green' : 'bg-transparent'}`} 
-                      style={{ height: `${heightPct}%`, backgroundColor: meta.color.replace('text-', '#') }}
-                    />
-                  </div>
-                  <div className="text-[8px] text-text-dim/60">{d.dayLabel}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 30-day grid */}
+{/* 30-day grid */}
         <div>
           <h2 className={`text-xs font-bold tracking-widest mb-3 ${meta.color}`}>SYSTEM DISCIPLINE (30D)</h2>
           <div className="flex gap-1 flex-wrap">

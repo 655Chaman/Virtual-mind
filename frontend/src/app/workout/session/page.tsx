@@ -72,7 +72,6 @@ export default function SessionLoggerContent() {
           icon: '/icon-192.png',
           badge: '/icon-192.png',
           tag: 'vm-workout-timer',
-          renotify: true,
           requireInteraction: true // Sticky
         });
       });
