@@ -190,6 +190,13 @@ class HomeProtocolIncrement(BaseModel):
     variant: str
     count: int = 1
 
+class HomeProtocolDelete(BaseModel):
+    variant: str
+
+class HomeProtocolRename(BaseModel):
+    old_variant: str
+    new_variant: str
+
 @router.get("/home-protocol/today")
 def get_home_protocol_today():
     db = get_db()
@@ -204,12 +211,41 @@ def increment_home_protocol(req: HomeProtocolIncrement):
     db = get_db()
     today_str = date.today().isoformat()
     
-    # We maintain pushups, pullups, squats, core
     variant_key = req.variant.lower()
     db.home_protocols.update_one(
         {"date": today_str},
         {"$inc": {variant_key: req.count}},
         upsert=True
+    )
+    doc = db.home_protocols.find_one({"date": today_str}, {"_id": 0})
+    if doc:
+        doc.pop("_id", None)
+    return doc or {}
+
+@router.post("/home-protocol/delete")
+def delete_home_protocol(req: HomeProtocolDelete):
+    db = get_db()
+    today_str = date.today().isoformat()
+    variant_key = req.variant.lower()
+    db.home_protocols.update_one(
+        {"date": today_str},
+        {"$unset": {variant_key: ""}}
+    )
+    doc = db.home_protocols.find_one({"date": today_str}, {"_id": 0})
+    if doc:
+        doc.pop("_id", None)
+    return doc or {}
+
+@router.post("/home-protocol/rename")
+def rename_home_protocol(req: HomeProtocolRename):
+    db = get_db()
+    today_str = date.today().isoformat()
+    old_key = req.old_variant.lower()
+    new_key = req.new_variant.lower()
+    
+    db.home_protocols.update_one(
+        {"date": today_str},
+        {"$rename": {old_key: new_key}}
     )
     doc = db.home_protocols.find_one({"date": today_str}, {"_id": 0})
     if doc:

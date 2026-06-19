@@ -162,6 +162,14 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ variant, count }),
       }),
+      delete: (variant: string) => request('/api/workout/home-protocol/delete', {
+        method: 'POST',
+        body: JSON.stringify({ variant }),
+      }),
+      rename: (oldVariant: string, newVariant: string) => request('/api/workout/home-protocol/rename', {
+        method: 'POST',
+        body: JSON.stringify({ old_variant: oldVariant, new_variant: newVariant }),
+      }),
     },
   },
   // Wellness

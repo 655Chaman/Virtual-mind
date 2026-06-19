@@ -11,7 +11,9 @@ import {
   CheckCircle,
   Activity,
   X,
-  Target
+  Target,
+  Edit2,
+  Trash2
 } from 'lucide-react';
 import { DecryptedText } from '@/components/ui/DecryptedText';
 import { triggerHaptic } from '@/lib/utils';
@@ -62,6 +64,47 @@ export default function WorkoutDashboard() {
     });
     setNewProtocolName('');
     triggerHaptic();
+  };
+
+  const [renameProtocolModal, setRenameProtocolModal] = useState<{open: boolean; oldName: string; newName: string}>({open: false, oldName: '', newName: ''});
+
+  const handleDeleteProtocol = async (id: string) => {
+    triggerHaptic('heavy');
+    setHomeCounters(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    try {
+      await api.workout.homeProtocol.delete(id);
+    } catch (e) {
+      console.error("Failed to delete protocol", e);
+    }
+  };
+
+  const submitRenameProtocol = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!renameProtocolModal.newName.trim() || renameProtocolModal.newName.trim() === renameProtocolModal.oldName) {
+      setRenameProtocolModal({open: false, oldName: '', newName: ''});
+      return;
+    }
+    const oldId = renameProtocolModal.oldName;
+    const newId = renameProtocolModal.newName.trim().toLowerCase();
+    
+    setHomeCounters(prev => {
+      const next = { ...prev };
+      next[newId] = next[oldId];
+      delete next[oldId];
+      return next;
+    });
+    
+    setRenameProtocolModal({open: false, oldName: '', newName: ''});
+    triggerHaptic();
+    try {
+      await api.workout.homeProtocol.rename(oldId, newId);
+    } catch (err) {
+      console.error("Failed to rename protocol", err);
+    }
   };
 
   // Modal states for the 3D pop-ups
@@ -221,6 +264,21 @@ export default function WorkoutDashboard() {
                   
                   <div className="absolute right-0 top-0 w-24 h-24 bg-white/5 rounded-full blur-2xl -mr-10 -mt-10" />
 
+                  <div className="absolute top-2 right-2 flex flex-col gap-1 z-20">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setRenameProtocolModal({open: true, oldName: id, newName: id.replace(/_/g, ' ')}); }}
+                      className="w-8 h-8 rounded-full bg-transparent text-white/20 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all"
+                    >
+                      <Edit2 className="w-3 h-3" />
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleDeleteProtocol(id); }}
+                      className="w-8 h-8 rounded-full bg-transparent text-white/20 hover:text-vm-scarlet hover:bg-vm-scarlet/10 flex items-center justify-center transition-all"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+
                   <span className={`text-4xl font-black ${count > 0 ? 'text-white' : 'text-white/40'} tracking-tighter drop-shadow-md relative z-10 group-active:scale-110 transition-transform`}>
                     {count}
                   </span>
@@ -337,17 +395,24 @@ export default function WorkoutDashboard() {
             <div className="flex-1 overflow-hidden relative p-4 sm:p-6 flex flex-col">
               {activeModal === 'activation' && (
                 <div className="w-full h-full flex flex-col">
-                  <div className="flex-1 min-h-0 relative">
-                    <BodyHeatmap data={heatmapData?.activation || {}} mode="activation" />
-                  </div>
+                  <BodyHeatmap 
+                    data={heatmapData?.activation || {}} 
+                    onClose={() => setActiveModal(null)} 
+                    title="ACTIVATION METRICS"
+                    subtitle="7-DAY ROLLING AVERAGE"
+                  />
                 </div>
               )}
 
               {activeModal === 'armor' && (
                 <div className="w-full h-full flex flex-col">
-                  <div className="flex-1 min-h-0 relative">
-                    <BodyHeatmap data={heatmapData?.armor || {}} mode="armor" />
-                  </div>
+                  <BodyHeatmap 
+                    data={heatmapData?.armor || {}} 
+                    onClose={() => setActiveModal(null)} 
+                    title="ARMOR SYSTEM"
+                    subtitle="STRUCTURAL LOAD BALANCE"
+                    isArmor={true}
+                  />
                 </div>
               )}
 
@@ -415,6 +480,38 @@ export default function WorkoutDashboard() {
             </div>
         </div>
       )}
+
+      {/* Rename Protocol Modal */}
+      {renameProtocolModal.open && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+          <div className="w-full max-w-sm flex flex-col items-center text-center">
+            <h2 className="text-[10px] text-white tracking-[0.4em] uppercase mb-8">RENAME PROTOCOL</h2>
+            <form onSubmit={submitRenameProtocol} className="w-full relative">
+              <input 
+                type="text" 
+                className="w-full h-16 bg-surface border-2 border-surface2 rounded-2xl text-center text-white text-xl tracking-[0.2em] font-heading focus:outline-none focus:border-vm-scarlet/50 shadow-[0_0_30px_rgba(0,0,0,0.5)]"
+                autoFocus
+                value={renameProtocolModal.newName}
+                onChange={e => setRenameProtocolModal(prev => ({ ...prev, newName: e.target.value }))}
+                placeholder="NEW NAME..."
+              />
+              <button 
+                type="submit"
+                className="absolute right-2 top-2 bottom-2 aspect-square bg-vm-scarlet/10 hover:bg-vm-scarlet/20 text-vm-scarlet rounded-xl flex items-center justify-center transition-colors"
+              >
+                <CheckCircle className="w-6 h-6" />
+              </button>
+            </form>
+            <button 
+              onClick={() => setRenameProtocolModal({open: false, oldName: '', newName: ''})}
+              className="mt-6 text-[10px] tracking-[0.3em] text-white/30 hover:text-white uppercase font-bold"
+            >
+              CANCEL
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
