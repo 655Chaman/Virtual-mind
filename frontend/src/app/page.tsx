@@ -49,7 +49,8 @@ export default function WelcomeScreen() {
             System Online
           </h2>
           <h1 className="text-white text-5xl sm:text-6xl md:text-7xl font-black tracking-widest uppercase drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] text-center leading-tight">
-            Welcome Back
+            Welcome Back<br />
+            <span className="text-emerald-500 drop-shadow-[0_0_20px_rgba(16,185,129,0.3)]">Chaman</span>
           </h1>
           <div className="h-[2px] w-24 bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent mt-2"></div>
         </div>
