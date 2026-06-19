@@ -140,7 +140,7 @@ function DashboardSwipeInner() {
               <div className="w-full flex flex-col gap-4 mb-20">
                 <Link
                   href={p.route}
-                  prefetch={false}
+                  prefetch={true}
                   className="w-full rounded-2xl flex items-center justify-center px-6 py-5 active:scale-[0.98] transition-all duration-200 border bg-white/5"
                   style={{ borderColor: p.color }}
                 >
