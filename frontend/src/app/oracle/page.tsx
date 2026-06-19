@@ -53,7 +53,7 @@ export default function NightlyOracle() {
   };
 
   return (
-    <div className="min-h-[100dvh] w-full bg-black text-white font-mono p-6 flex flex-col relative overflow-hidden">
+    <div className="min-h-[100dvh] w-full bg-black text-white font-mono p-6 pt-14 flex flex-col relative overflow-hidden">
       
       {/* Background Matrix/Terminal Effect */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,0,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
