@@ -62,6 +62,14 @@ class DailyLog(BaseModel):
     prayers_logged: Optional[Dict[str, bool]] = None # Prevent stripping of logged prayers
 
 
+# Cache for streak endpoint
+_streak_cache = {"data": None, "timestamp": 0}
+
+def invalidate_streak_cache():
+    global _streak_cache
+    _streak_cache["data"] = None
+    _streak_cache["timestamp"] = 0
+
 @router.post("/log")
 def create_log(log: DailyLog):
     from brain.xp_engine import compute_xp_from_log, get_active_penalties
@@ -150,6 +158,7 @@ def ingest_sheet(data: Dict[str, Any]):
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(log_entry, f, indent=2)
         
+    invalidate_streak_cache()
     return {"success": True, "data": log_entry}
 
 @router.post("/entry")
@@ -190,29 +199,28 @@ def add_folder_entry(entry: FolderEntry):
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(log_data, f, indent=2)
         
+    invalidate_streak_cache()
     return {"success": True, "entry": entry.model_dump()}
 
 @router.get("/logs")
 def get_logs(pillar: Optional[str] = None, last: Optional[int] = None):
     logs = []
     if LOGS_DIR.exists():
-        for file_path in LOGS_DIR.glob("*.json"):
+        # Sort files by name descending (since name is YYYY-MM-DD.json, this is chronologically newest first)
+        files = sorted(LOGS_DIR.glob("*.json"), key=lambda p: p.name, reverse=True)
+        for file_path in files:
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
+                    if pillar and pillar not in data.get("pillars", []):
+                        continue
                     logs.append(data)
+                    # Stop parsing once we hit the requested limit
+                    if last is not None and last > 0 and len(logs) >= last:
+                        break
             except Exception:
                 continue
                 
-    # Sort by date descending
-    logs.sort(key=lambda x: x.get("date", ""), reverse=True)
-    
-    if pillar:
-        logs = [log for log in logs if pillar in log.get("pillars", [])]
-        
-    if last is not None and last > 0:
-        logs = logs[:last]
-        
     return logs
 
 @router.get("/log/{target_date}")
@@ -266,6 +274,11 @@ def calc_longest_streak(dates_set):
 
 @router.get("/streak")
 def get_streak():
+    import time
+    global _streak_cache
+    if _streak_cache["data"] and time.time() - _streak_cache["timestamp"] < 3600:
+        return _streak_cache["data"]
+
     logs = []
     if LOGS_DIR.exists():
         for file_path in LOGS_DIR.glob("*.json"):
@@ -306,7 +319,7 @@ def get_streak():
     phase_0_start = date(2026, 2, 22)
     checkpoint_date = date(2026, 5, 22)
     
-    return {
+    result = {
         "overall_streak": calc_streak(logged_dates),
         "pillar_streaks": {
             k: calc_streak(v) for k, v in pillar_dates.items()
@@ -316,6 +329,10 @@ def get_streak():
         "phase_0_day": max(0, (today - phase_0_start).days),
         "days_to_checkpoint": max(0, (checkpoint_date - today).days)
     }
+    
+    _streak_cache["data"] = result
+    _streak_cache["timestamp"] = time.time()
+    return result
 
 @router.get("/non-negotiables/summary")
 def get_nn_summary():
