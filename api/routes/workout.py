@@ -197,6 +197,14 @@ class HomeProtocolRename(BaseModel):
     old_variant: str
     new_variant: str
 
+class HomeProtocolDecrement(BaseModel):
+    variant: str
+    count: int = 1
+
+class HomeProtocolReorder(BaseModel):
+    order: list[str]
+
+
 @router.get("/home-protocol/today")
 def get_home_protocol_today():
     db = get_db()
@@ -251,6 +259,43 @@ def rename_home_protocol(req: HomeProtocolRename):
     if doc:
         doc.pop("_id", None)
     return doc or {}
+
+@router.post("/home-protocol/decrement")
+def decrement_home_protocol(req: HomeProtocolDecrement):
+    db = get_db()
+    today_str = date.today().isoformat()
+    variant_key = req.variant.lower()
+    
+    # We shouldn't let it drop below 0 natively, but since we just store the number,
+    # let's fetch current and decrement
+    doc = db.home_protocols.find_one({"date": today_str})
+    if doc and doc.get(variant_key, 0) > 0:
+        new_val = max(0, doc.get(variant_key, 0) - req.count)
+        db.home_protocols.update_one(
+            {"date": today_str},
+            {"$set": {variant_key: new_val}}
+        )
+    
+    final_doc = db.home_protocols.find_one({"date": today_str}, {"_id": 0})
+    if final_doc:
+        final_doc.pop("_id", None)
+    return final_doc or {}
+
+@router.post("/home-protocol/reorder")
+def reorder_home_protocol(req: HomeProtocolReorder):
+    db = get_db()
+    today_str = date.today().isoformat()
+    
+    db.home_protocols.update_one(
+        {"date": today_str},
+        {"$set": {"_order": [x.lower() for x in req.order]}},
+        upsert=True
+    )
+    doc = db.home_protocols.find_one({"date": today_str}, {"_id": 0})
+    if doc:
+        doc.pop("_id", None)
+    return doc or {}
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────

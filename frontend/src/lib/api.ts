@@ -170,6 +170,14 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ old_variant: oldVariant, new_variant: newVariant }),
       }),
+      decrement: (variant: string, count: number = 1) => request('/api/workout/home-protocol/decrement', {
+        method: 'POST',
+        body: JSON.stringify({ variant, count }),
+      }),
+      reorder: (order: string[]) => request('/api/workout/home-protocol/reorder', {
+        method: 'POST',
+        body: JSON.stringify({ order }),
+      }),
     },
   },
   // Wellness
