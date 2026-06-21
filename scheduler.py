@@ -305,10 +305,22 @@ def send_sleep_window_alert():
     )
 
 
+def midnight_rollover():
+    """Wipes daily transient state precisely at midnight."""
+    print(f"[SCHEDULER] 00:00 MIDNIGHT ROLLOVER INITIATED FOR {OPERATOR_NAME}")
+    global notified_prayers, last_notified_date
+    notified_prayers.clear()
+    last_notified_date = ""
+    # Ensure fresh cache fetch next time it's asked
+    check_salah_times()
+
 # ─── Core Schedule ──────────────────────────────────────────────────────────────
 
 # 14-day operator log generation
 schedule.every(14).days.do(auto_generate_operator_entry)
+
+# Midnight System Reset
+schedule.every().day.at("00:00").do(midnight_rollover)
 
 # Evening reflection alerts
 schedule.every().day.at("21:30").do(check_daily_log_completion)

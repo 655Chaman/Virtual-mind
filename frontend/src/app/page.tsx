@@ -7,13 +7,18 @@ export default function WelcomeScreen() {
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
-    // Nuke Service Worker to ensure fresh fetches
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then((registrations) => {
-        for (const reg of registrations) {
-          reg.unregister();
-        }
-      });
+    // Keep Service Worker intact so push notifications stay active
+    console.log("[Welcome] System Online");
+
+    // Check if we crossed midnight since the last launch
+    const today = new Date().toISOString().split('T')[0];
+    const lastOpened = localStorage.getItem('vm_last_opened_date');
+    if (lastOpened && lastOpened !== today) {
+      console.log("[Welcome] Midnight crossed. Forcing hard reload to wipe stale state.");
+      localStorage.setItem('vm_last_opened_date', today);
+      window.location.reload();
+    } else if (!lastOpened) {
+      localStorage.setItem('vm_last_opened_date', today);
     }
   }, []);
 

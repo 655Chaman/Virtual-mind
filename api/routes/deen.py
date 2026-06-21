@@ -86,7 +86,25 @@ async def get_prayer_times(latitude: float = None, longitude: float = None):
             fallback = last_cache["data"].copy()
             fallback["warning"] = "Offline Mode"
             return fallback
-        raise HTTPException(status_code=503, detail=f"Failed: {str(e)}")
+            
+        # Hardcoded fallback to ensure the UI and graph still render
+        print(f"[DEEN API] Critical fallback needed. Aladhan failed: {e}")
+        return {
+            "date": date_str,
+            "timings": {
+                "Fajr": "05:15",
+                "Sunrise": "06:30",
+                "Dhuhr": "12:30",
+                "Asr": "15:45",
+                "Maghrib": "18:30",
+                "Isha": "19:45"
+            },
+            "hijri": "Unknown",
+            "hijri_readable": "Offline Mode",
+            "gregorian": date_str,
+            "location_name": "Fallback (Offline)",
+            "warning": "Critical Offline Mode"
+        }
 
 @router.post("/prayers/log")
 def log_prayers(req: PrayerLogRequest):

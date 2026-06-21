@@ -340,7 +340,7 @@ def classify_exercise_muscles(exercise_name: str) -> dict:
                 
             result = json.loads(content)
             
-            # Save to MongoDB only if it actually got valid keys
+            # Save to MongoDB
             if result and len(result.keys()) > 0:
                 db.ai_muscle_cache.update_one(
                     {"exercise_name": exercise_name}, 
@@ -354,7 +354,12 @@ def classify_exercise_muscles(exercise_name: str) -> dict:
             print(f"[AI RETRY {attempt+1}/3] Error classifying muscles for {exercise_name}: {e}")
             time.sleep(2 ** attempt)
             
-    print(f"Failed all retries classifying muscles for {exercise_name}")
+    print(f"Failed all retries classifying muscles for {exercise_name}. Caching empty dict to prevent blocking.")
+    db.ai_muscle_cache.update_one(
+        {"exercise_name": exercise_name}, 
+        {"$set": {"muscles": {}}}, 
+        upsert=True
+    )
     return {}
 
 @router.get("/heatmap")

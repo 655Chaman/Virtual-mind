@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { ScrubNumberInput } from '@/components/ui/ScrubNumberInput';
 
-export default function SessionLoggerContent() {
+function SessionLoggerContentInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const targetDate = searchParams.get('date') || getLocalDateString();
@@ -652,5 +652,18 @@ export default function SessionLoggerContent() {
       )}
 
     </div>
+  );
+}
+
+export default function SessionLoggerContent() {
+  return (
+    <React.Suspense fallback={
+      <div className="min-h-screen bg-obsidian flex flex-col items-center justify-center font-mono gap-6">
+        <div className="w-10 h-10 border border-white/20 border-t-white/80 rounded-full animate-spin" />
+        <p className="text-text-dim text-[10px] tracking-[0.4em] animate-pulse uppercase">Booting HUD...</p>
+      </div>
+    }>
+      <SessionLoggerContentInner />
+    </React.Suspense>
   );
 }
