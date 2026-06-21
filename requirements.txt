@@ -18,3 +18,4 @@ motor
 Pillow
 google-genai
 pywebpush
+schedule

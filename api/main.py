@@ -8,16 +8,7 @@ from fastapi.responses import JSONResponse
 import traceback
 import threading
 import time
-try:
-    import schedule
-except ImportError:
-    class MockSchedule:
-        def run_pending(self): pass
-        def every(self, *args, **kwargs): return self
-        def day(self, *args, **kwargs): return self
-        def at(self, *args, **kwargs): return self
-        def do(self, *args, **kwargs): return self
-    schedule = MockSchedule()
+import schedule
 
 from api.routes.logs import router as logs_router
 from api.routes.analysis import router as analysis_router
