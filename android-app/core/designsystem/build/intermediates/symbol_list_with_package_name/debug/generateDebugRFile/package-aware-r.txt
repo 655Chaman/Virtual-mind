@@ -1,0 +1,4 @@
+com.virtualmind.core.designsystem
+font cinzel
+font cormorant_garamond_regular
+font share_tech_mono

@@ -1,0 +1,165 @@
+<mxGraphModel dx="1600" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    
+    <!-- User/Clients -->
+    <mxCell id="user" value="User" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+      <mxGeometry x="560" y="20" width="30" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="client_group" value="Client Applications" style="swimlane;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontStyle=1;startSize=23;" vertex="1" parent="1">
+      <mxGeometry x="300" y="120" width="560" height="120" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="frontend" value="Next.js Web Frontend&amp;#10;(React, UI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="client_group">
+      <mxGeometry x="20" y="40" width="160" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="mobile" value="Android App&amp;#10;(Mobile Client)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="client_group">
+      <mxGeometry x="200" y="40" width="160" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="vmos" value="Virtual Mind OS UI&amp;#10;(Vite, Web App)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="client_group">
+      <mxGeometry x="380" y="40" width="160" height="60" as="geometry"/>
+    </mxCell>
+
+    <!-- API Layer -->
+    <mxCell id="api_group" value="Backend API (Python/Flask or FastAPI)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#fff2cc;fontStyle=1;startSize=23;" vertex="1" parent="1">
+      <mxGeometry x="100" y="300" width="500" height="240" as="geometry"/>
+    </mxCell>
+    
+    <mxCell id="api_gateway" value="API Main Entry&amp;#10;(main.py / app.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="api_group">
+      <mxGeometry x="180" y="40" width="140" height="40" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="route1" value="Life / Progress&amp;#10;(qadr.py, deen.py)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="api_group">
+      <mxGeometry x="20" y="110" width="140" height="40" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="route2" value="Health &amp;amp; Workout&amp;#10;(health.py, workout.py)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="api_group">
+      <mxGeometry x="180" y="110" width="140" height="40" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="route3" value="Logs &amp;amp; History&amp;#10;(logs.py, history.py)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="api_group">
+      <mxGeometry x="340" y="110" width="140" height="40" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="route4" value="System &amp;amp; Chat&amp;#10;(oracle.py, chat.py)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="api_group">
+      <mxGeometry x="180" y="170" width="140" height="40" as="geometry"/>
+    </mxCell>
+
+    <!-- Brain Engine -->
+    <mxCell id="brain_group" value="The Brain (Core Intelligence)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#e1d5e7;fontStyle=1;startSize=23;" vertex="1" parent="1">
+      <mxGeometry x="640" y="300" width="460" height="240" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="llm" value="LLM Integration&amp;#10;(llm.py)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="brain_group">
+      <mxGeometry x="20" y="40" width="130" height="50" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="memory" value="Memory &amp;amp; Embeddings&amp;#10;(memory.py, ingest.py)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="brain_group">
+      <mxGeometry x="170" y="40" width="140" height="50" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="core_align" value="Core Alignment&amp;#10;(core_alignment.py)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="brain_group">
+      <mxGeometry x="20" y="110" width="130" height="50" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="elesium" value="Elesium Bridge&amp;#10;(elesium_bridge.py)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="brain_group">
+      <mxGeometry x="170" y="110" width="140" height="50" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="aos" value="AOS Protocols&amp;#10;(aos_protocols.py)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="brain_group">
+      <mxGeometry x="330" y="40" width="110" height="120" as="geometry"/>
+    </mxCell>
+
+    <!-- Services & Scheduler -->
+    <mxCell id="scheduler" value="Background Scheduler&amp;#10;(scheduler.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+      <mxGeometry x="100" y="580" width="160" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="sync_services" value="External Sync Services&amp;#10;(Notion, Google Sheets)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="940" y="580" width="160" height="60" as="geometry"/>
+    </mxCell>
+
+    <!-- Databases -->
+    <mxCell id="db_group" value="Data Layer" style="swimlane;whiteSpace=wrap;html=1;fillColor=#d5e8d4;fontStyle=1;startSize=23;" vertex="1" parent="1">
+      <mxGeometry x="340" y="580" width="460" height="160" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="mongo" value="MongoDB&amp;#10;(Structured Data)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="db_group">
+      <mxGeometry x="80" y="40" width="100" height="100" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="qdrant" value="Qdrant DB&amp;#10;(Vector Store)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="db_group">
+      <mxGeometry x="280" y="40" width="100" height="100" as="geometry"/>
+    </mxCell>
+
+    <!-- Connectors -->
+    <!-- User to Clients -->
+    <mxCell id="e_u1" edge="1" parent="1" source="user" target="frontend" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_u2" edge="1" parent="1" source="user" target="mobile" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_u3" edge="1" parent="1" source="user" target="vmos" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- Clients to API Gateway -->
+    <mxCell id="e_c1" edge="1" parent="1" source="frontend" target="api_gateway" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_c2" edge="1" parent="1" source="mobile" target="api_gateway" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_c3" edge="1" parent="1" source="vmos" target="api_gateway" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- API Gateway to Routes -->
+    <mxCell id="e_gw1" edge="1" parent="api_group" source="api_gateway" target="route1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_gw2" edge="1" parent="api_group" source="api_gateway" target="route2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_gw3" edge="1" parent="api_group" source="api_gateway" target="route3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_gw4" edge="1" parent="api_group" source="api_gateway" target="route4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- API to Brain -->
+    <mxCell id="e_api_brain" edge="1" parent="1" source="api_group" target="brain_group" style="edgeStyle=orthogonalEdgeStyle;rounded=1;startArrow=classic;startFill=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- API to Databases -->
+    <mxCell id="e_api_mongo" edge="1" parent="1" source="api_group" target="mongo" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- Brain to Databases -->
+    <mxCell id="e_brain_mongo" edge="1" parent="1" source="brain_group" target="mongo" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e_brain_qdrant" edge="1" parent="1" source="brain_group" target="qdrant" style="edgeStyle=orthogonalEdgeStyle;rounded=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- Scheduler to API/DB -->
+    <mxCell id="e_sched_api" edge="1" parent="1" source="scheduler" target="api_group" style="edgeStyle=orthogonalEdgeStyle;rounded=1;dashed=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <!-- Sync to Brain/DB -->
+    <mxCell id="e_sync_brain" edge="1" parent="1" source="sync_services" target="brain_group" style="edgeStyle=orthogonalEdgeStyle;rounded=1;dashed=1;">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+  </root>
+</mxGraphModel>

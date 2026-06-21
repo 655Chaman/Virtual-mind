@@ -16,3 +16,6 @@ Pillow
 google-genai
 pywebpush
 schedule
+redis
+fastapi-cache2
+apscheduler

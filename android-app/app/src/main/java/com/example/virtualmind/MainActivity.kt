@@ -2,6 +2,7 @@ package com.example.virtualmind
 
 import android.annotation.SuppressLint
 import android.content.Context
+import dagger.hilt.android.AndroidEntryPoint
 import android.os.Bundle
 import android.view.WindowManager
 import android.os.Build
@@ -39,6 +40,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -54,6 +56,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.virtualmind.theme.*
+import com.airbnb.lottie.compose.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
 
 // Operator identity — used in notification personalization
 private const val OPERATOR_NAME = "Chaman"
@@ -224,9 +234,20 @@ class AndroidJSInterface(private val context: Context) {
         android.util.Log.d("VirtualMindWebView", "Received updated prayer times from JS")
         PrayerAlarmScheduler.saveAndScheduleAlarms(context, prayerTimesJson)
     }
+    @JavascriptInterface
+    fun playSuccessAnimation() {
+        (context as? MainActivity)?.triggerSuccessAnimation()
+    }
 }
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    var showSuccessAnimation = mutableStateOf(false)
+
+    fun triggerSuccessAnimation() {
+        showSuccessAnimation.value = true
+    }
 
     private var geoCallback: GeolocationPermissions.Callback? = null
     private var geoOrigin: String? = null
@@ -459,8 +480,149 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        setContentView(webView)
-        webView.loadUrl(serverUrl)
+        setContent {
+            com.example.virtualmind.core.designsystem.theme.VirtualMindTheme {
+                val navController = rememberNavController()
+                NavHost(navController = navController, startDestination = "welcome") {
+                    composable("welcome") {
+                        com.example.virtualmind.feature.dashboard.WelcomeScreen(
+                            onNavigateToDashboard = {
+                                navController.navigate("dashboard") {
+                                    popUpTo("welcome") { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+                    composable("dashboard") {
+                        @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+                        com.example.virtualmind.feature.dashboard.DashboardSwipeScreen(
+                            onNavigateToPillar = { route ->
+                                if (route == "terminal_route") {
+                                    navController.navigate("native_terminal")
+                                } else if (route == "oracle_route") {
+                                    navController.navigate("native_oracle")
+                                } else if (route == "elesium_route") {
+                                    navController.navigate("native_elesium")
+                                } else if (route == "fitness_route") {
+                                    navController.navigate("native_fitness")
+                                } else if (route == "deen_route") {
+                                    navController.navigate("native_deen")
+                                } else if (route == "self_route") {
+                                    navController.navigate("native_self")
+                                } else if (route == "wellness_route") {
+                                    navController.navigate("native_wellness")
+                                } else {
+                                    // Map native route to web route for now to preserve anti-fragile legacy structure
+                                    val webRoute = when (route) {
+                                        "global_command" -> "command"
+                                        else -> ""
+                                    }
+                                    navController.navigate("webview?path=$webRoute")
+                                }
+                            }
+                        )
+                    }
+                    composable("native_terminal") {
+                        com.example.virtualmind.feature.dashboard.TerminalScreen(
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
+                    composable("native_oracle") {
+                        com.example.virtualmind.feature.dashboard.OracleScreen(
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
+                    composable("native_elesium") {
+                        com.example.virtualmind.feature.dashboard.ElesiumScreen(
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
+                    composable("native_fitness") {
+                        com.example.virtualmind.feature.dashboard.FitnessScreen(
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
+                    composable("native_deen") {
+                        com.example.virtualmind.feature.dashboard.DeenScreen(
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
+                    composable("native_self") {
+                        com.example.virtualmind.feature.dashboard.SelfScreen(
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
+                    composable("native_wellness") {
+                        Box(modifier = Modifier.fillMaxSize().background(Color(0xFF020813)), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("RECOVERY (WELLNESS)", color = com.example.virtualmind.core.designsystem.theme.PillarWellness, fontFamily = com.example.virtualmind.core.designsystem.theme.ShareTechMono, fontWeight = FontWeight.Bold, fontSize = 24.sp)
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text("COMING IN PHASE 11", color = Color.Gray, fontFamily = com.example.virtualmind.core.designsystem.theme.ShareTechMono, fontSize = 14.sp)
+                                Spacer(modifier = Modifier.height(32.dp))
+                                Text("[ GO BACK ]", color = Color.White, fontFamily = com.example.virtualmind.core.designsystem.theme.ShareTechMono, modifier = Modifier.clickable { navController.popBackStack() })
+                            }
+                        }
+                    }
+                    composable(
+                        route = "webview?path={path}",
+                        arguments = listOf(navArgument("path") { 
+                            type = NavType.StringType 
+                            defaultValue = ""
+                        })
+                    ) { backStackEntry ->
+                        val path = backStackEntry.arguments?.getString("path") ?: ""
+                        val targetUrl = if (path.isEmpty()) serverUrl else "$serverUrl$path"
+
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            AndroidView(
+                                factory = { webView.apply { loadUrl(targetUrl) } },
+                                modifier = Modifier.fillMaxSize(),
+                                update = { view -> 
+                                    if (view.url != targetUrl && view.url?.endsWith(targetUrl) != true) {
+                                        view.loadUrl(targetUrl)
+                                    }
+                                }
+                            )
+
+                            if (showSuccessAnimation.value) {
+                                val composition by rememberLottieComposition(LottieCompositionSpec.Url("https://assets3.lottiefiles.com/packages/lf20_U10842.json"))
+                                val progress by animateLottieCompositionAsState(
+                                    composition,
+                                    isPlaying = true,
+                                    iterations = 1
+                                )
+                                
+                                LaunchedEffect(progress) {
+                                    if (progress == 1f) {
+                                        showSuccessAnimation.value = false
+                                    }
+                                }
+
+                                LottieAnimation(
+                                    composition = composition,
+                                    progress = { progress },
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .size(250.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     override fun onBackPressed() {

@@ -2,14 +2,17 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import traceback
 import threading
 import time
 import schedule
-
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend
+from fastapi_cache.backends.redis import RedisBackend
+import redis.asyncio as aioredis
 from api.routes.logs import router as logs_router
 from api.routes.analysis import router as analysis_router
 from api.routes.milestones import router as milestones_router
@@ -51,58 +54,6 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal Server Error", "message": str(exc)}
     )
 
-@app.middleware("http")
-async def nextjs_rsc_middleware(request: Request, call_next):
-    # If this is a Next.js client-side navigation (RSC request) or a direct fetch for a .txt payload
-    is_rsc_header = request.headers.get("RSC") == "1"
-    is_txt_fetch = request.url.path.endswith(".txt")
-    
-    if request.method == "GET" and (is_rsc_header or is_txt_fetch):
-        path = request.url.path
-        if not path.startswith("/api/"):
-            import os
-            from fastapi.responses import FileResponse
-            frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "out")
-            
-            # If it's a .txt fetch, strip the .txt to get the base path
-            if is_txt_fetch:
-                base_path = path[:-4].strip("/")
-            else:
-                base_path = path.strip("/")
-                
-            if not base_path:
-                base_path = "index"
-                
-            txt_path1 = os.path.join(frontend_dir, f"{base_path}.txt")
-            txt_path2 = os.path.join(frontend_dir, base_path, "index.txt")
-            
-            if os.path.exists(txt_path1):
-                return FileResponse(txt_path1, media_type="text/x-component")
-            elif os.path.exists(txt_path2):
-                return FileResponse(txt_path2, media_type="text/x-component")
-                
-    # If it's a standard GET request for a path without an extension, serve the HTML directly
-    # This prevents Starlette's StaticFiles from issuing a 307 Redirect to add a trailing slash,
-    # which completely breaks older Android WebViews.
-    if request.method == "GET":
-        path = request.url.path
-        if not path.startswith("/api/") and not path.startswith("/_next/") and "." not in path.split("/")[-1]:
-            import os
-            from fastapi.responses import FileResponse
-            frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "out")
-            base_path = path.strip("/")
-            if not base_path:
-                base_path = "index"
-                
-            html_path1 = os.path.join(frontend_dir, f"{base_path}.html")
-            html_path2 = os.path.join(frontend_dir, base_path, "index.html")
-            
-            if os.path.exists(html_path1):
-                return FileResponse(html_path1, media_type="text/html")
-            elif os.path.exists(html_path2):
-                return FileResponse(html_path2, media_type="text/html")
-                
-    return await call_next(request)
 
 @app.middleware("http")
 async def dynamic_cors_middleware(request: Request, call_next):
@@ -150,6 +101,18 @@ app.include_router(verification_router, tags=["Verification"])
 app.include_router(evolution_router, tags=["Evolution"])
 app.include_router(oracle_router, tags=["Oracle"])
 
+from api.websockets import manager
+
+@app.websocket("/ws/{client_id}")
+async def websocket_endpoint(websocket: WebSocket, client_id: str):
+    await manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+
+
 from fastapi.staticfiles import StaticFiles
 MEDIA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "media")
 os.makedirs(MEDIA_DIR, exist_ok=True)
@@ -165,6 +128,17 @@ def run_scheduler_bg():
 async def startup_event():
     import os
     print("Virtual Mind System Booting...")
+    
+    # Initialize caching
+    redis_url = os.getenv("REDIS_URL")
+    if redis_url:
+        r = aioredis.from_url(redis_url, encoding="utf8", decode_responses=True)
+        FastAPICache.init(RedisBackend(r), prefix="virtualmind-cache")
+        print("[INIT] Redis caching enabled.")
+    else:
+        FastAPICache.init(InMemoryBackend(), prefix="virtualmind-cache")
+        print("[INIT] In-memory caching enabled (Set REDIS_URL to use Redis).")
+
     gemini_key = os.getenv("GEMINI_API_KEY", "")
     if not gemini_key or gemini_key == "your_gemini_api_key_here":
         print("[WARN] GEMINI_API_KEY not set.")
@@ -221,13 +195,6 @@ async def get_system_status():
         "xp_balance": xp_balance
     }
 
-FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "out")
-if os.path.exists(FRONTEND_DIR):
-    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
-else:
-    @app.get("/")
-    async def fallback_root():
-        return {"detail": "Frontend not built. Please run npm run build in the frontend directory."}
 
 if __name__ == "__main__":
     import uvicorn

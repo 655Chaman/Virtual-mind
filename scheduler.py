@@ -318,48 +318,41 @@ def midnight_rollover():
     # Ensure fresh cache fetch next time it's asked
     check_salah_times()
 
-# ─── Native Polling Scheduler ────────────────────────────────────────────────────────
+# ─── APScheduler Implementation ────────────────────────────────────────────────────────
+from apscheduler.schedulers.blocking import BlockingScheduler
 
 def run_scheduler_loop():
-    print(f"Virtual Mind Global Scheduler Running for {OPERATOR_NAME}...")
+    print(f"Virtual Mind Global Scheduler (APScheduler) Running for {OPERATOR_NAME}...")
+    
+    # Start up: run immediate check once
     check_salah_times()
     
-    last_run = {}
+    scheduler = BlockingScheduler(timezone=BANGALORE_TZ)
     
-    def should_run(job_name, check_condition):
-        today_str = date.today().isoformat()
-        last = last_run.get(job_name)
-        if check_condition() and last != today_str:
-            last_run[job_name] = today_str
-            return True
-        return False
-
-    while True:
-        now = datetime.now()
-        h, m = now.hour, now.minute
+    # Every minute tasks
+    scheduler.add_job(check_salah_times, 'cron', minute='*')
+    
+    # Hourly tasks
+    scheduler.add_job(check_fasting_notification, 'cron', minute=0)
+    
+    # Daily specific times
+    scheduler.add_job(midnight_rollover, 'cron', hour=0, minute=0)
+    scheduler.add_job(send_morning_intention, 'cron', hour=5, minute=0)
+    
+    for h in [10, 14, 18]:
+        scheduler.add_job(check_hydration_reminder, 'cron', hour=h, minute=0)
         
-        # Every minute tasks
-        check_salah_times()
+    scheduler.add_job(check_workout_reminder, 'cron', hour=18, minute=30)
+    
+    for h in [21, 22]:
+        scheduler.add_job(check_daily_log_completion, 'cron', hour=h, minute=30)
         
-        # Hourly tasks
-        if m == 0:
-            check_fasting_notification()
-            
-        # Daily specific times
-        if h == 0 and m == 0 and should_run("midnight", lambda: True):
-            midnight_rollover()
-        if h == 5 and m == 0 and should_run("morning_intent", lambda: True):
-            send_morning_intention()
-        if h in (10, 14, 18) and m == 0 and should_run(f"hydration_{h}", lambda: True):
-            check_hydration_reminder()
-        if h == 18 and m == 30 and should_run("workout", lambda: True):
-            check_workout_reminder()
-        if h in (21, 22) and m == 30 and should_run(f"daily_log_{h}", lambda: True):
-            check_daily_log_completion()
-        if h == 22 and m == 30 and should_run("sleep_window", lambda: True):
-            send_sleep_window_alert()
-            
-        time.sleep(60)
+    scheduler.add_job(send_sleep_window_alert, 'cron', hour=22, minute=30)
+    
+    try:
+        scheduler.start()
+    except (KeyboardInterrupt, SystemExit):
+        pass
 
 if __name__ == "__main__":
     run_scheduler_loop()

@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useRef, Component, ErrorInfo, ReactNode, useEffect } from 'react';
+import { motion } from 'framer-motion';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Error Boundary to catch sneaky mobile crashes
@@ -48,6 +49,7 @@ function DashboardSwipeInner() {
   const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(0);
   const [sortedPillars, setSortedPillars] = useState(PILLARS);
+  const [isNavigatingTo, setIsNavigatingTo] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -118,48 +120,71 @@ function DashboardSwipeInner() {
           const isActive = i === activeIndex;
           
           return (
-            <div 
+            <motion.div 
               key={p.id} 
-              className="h-full w-full min-w-full shrink-0 snap-center flex flex-col justify-center px-6 transition-opacity duration-300"
-              style={{ opacity: isActive ? 1 : 0.3 }}
+              className="h-full w-full min-w-full shrink-0 snap-center flex flex-col justify-center px-6"
+              initial={false}
+              animate={{ 
+                opacity: isActive ? 1 : 0.2,
+                scale: isActive ? 1 : 0.92,
+                filter: isActive ? 'blur(0px)' : 'blur(4px)'
+              }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             >
-              <div className="flex-1 flex flex-col justify-center transition-transform duration-500"
-                   style={{ transform: isActive ? 'translateX(0px)' : 'translateX(20px)' }}>
-                <p className="text-[12px] font-bold tracking-[0.3em] uppercase opacity-60 mb-3" style={{ color: p.color }}>
+              <motion.div 
+                className="flex-1 flex flex-col justify-center"
+                initial={false}
+                animate={{ 
+                  x: isActive ? 0 : 20,
+                }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <p className="text-[12px] font-bold tracking-[0.3em] uppercase opacity-80 mb-3" style={{ color: p.color, textShadow: `0 0 12px ${p.color}80` }}>
                   {p.tag}
                 </p>
-                <h1 className="text-5xl sm:text-6xl font-black tracking-widest text-white mb-6">
+                <h1 className="text-5xl sm:text-6xl font-black tracking-widest text-white mb-6 drop-shadow-2xl">
                   {p.label}
                 </h1>
-                <div className="h-1 w-20 mb-8 rounded-full" style={{ backgroundColor: p.color }} />
-                <p className="text-sm text-gray-300 opacity-90 tracking-[0.1em] leading-relaxed">
+                <div className="h-1 w-20 mb-8 rounded-full shadow-[0_0_15px_currentColor]" style={{ backgroundColor: p.color, color: p.color }} />
+                <p className="text-sm text-zinc-300 opacity-90 tracking-[0.1em] leading-relaxed">
                   {p.subtitle}
                 </p>
-              </div>
+              </motion.div>
 
-              <div className="w-full flex flex-col gap-4 mb-20">
+              <div className="w-full flex flex-col gap-4 mb-20 relative z-10">
                 <Link
                   href={p.route}
                   prefetch={true}
-                  className="w-full rounded-2xl flex items-center justify-center px-6 py-5 active:scale-[0.98] transition-all duration-200 border bg-white/5"
-                  style={{ borderColor: p.color }}
+                  onClick={() => setIsNavigatingTo(p.route)}
+                  className="w-full rounded-2xl flex items-center justify-center px-6 py-5 transition-all duration-200 border border-white/10 bg-white/5 backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_32px_rgba(0,0,0,0.4)] active:scale-95 overflow-hidden relative"
                 >
-                  <span className="text-[12px] font-bold tracking-[0.2em] text-white uppercase">
-                    ENTER {p.label}
+                  <div className="absolute inset-0 opacity-10 transition-opacity group-hover:opacity-20" style={{ background: `linear-gradient(135deg, transparent, ${p.color}, transparent)` }} />
+                  <span className="text-[12px] font-bold tracking-[0.2em] text-white uppercase flex items-center gap-2 relative z-10">
+                    {isNavigatingTo === p.route ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        ENTERING...
+                      </>
+                    ) : (
+                      `ENTER ${p.label}`
+                    )}
                   </span>
                 </Link>
 
                 <Link
                   href="/command"
                   prefetch={false}
-                  className="w-full rounded-2xl flex items-center justify-center px-6 py-5 active:scale-[0.98] transition-all duration-200 border border-white/10 bg-black/60"
+                  className="w-full rounded-2xl flex items-center justify-center px-6 py-5 active:scale-95 transition-all duration-200 border border-white/5 bg-black/60 backdrop-blur-md"
                 >
-                  <span className="text-[10px] font-bold tracking-[0.2em] text-gray-400 uppercase">
+                  <span className="text-[10px] font-bold tracking-[0.2em] text-zinc-500 uppercase">
                     GLOBAL COMMAND
                   </span>
                 </Link>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>

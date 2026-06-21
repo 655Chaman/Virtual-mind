@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Cinzel, Share_Tech_Mono, Cormorant_Garamond } from "next/font/google";
 import { LockProvider } from "@/components/LockProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { WebSocketProvider } from "@/components/WebSocketProvider";
 import "./globals.css";
 
 const cinzel = Cinzel({
@@ -89,7 +90,9 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <div className="flex-1 flex flex-col">
             <LockProvider>
-              {children}
+              <WebSocketProvider>
+                {children}
+              </WebSocketProvider>
             </LockProvider>
           </div>
         </ThemeProvider>

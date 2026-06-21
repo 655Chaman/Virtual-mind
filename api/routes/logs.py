@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, BackgroundTasks
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date, timedelta
 import json
 from pathlib import Path
+from fastapi_cache.decorator import cache
 
 router = APIRouter()
 
@@ -60,8 +61,9 @@ class DailyLog(BaseModel):
 
 
 @router.post("/log")
-def create_log(log: DailyLog):
+async def create_log(log: DailyLog):
     from brain.aos_protocols import get_all_protocol_statuses
+    from api.websockets import manager
 
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
     file_path = LOGS_DIR / f"{log.date}.json"
@@ -98,6 +100,12 @@ def create_log(log: DailyLog):
 
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(log_dict, f, indent=2)
+
+    await manager.broadcast({
+        "event": "LOG_CREATED",
+        "date": log.date,
+        "aos_health": log_dict["protocol_status"].get("aos_health_score", 0)
+    })
 
     return {
         "success": True,
@@ -184,6 +192,7 @@ def add_folder_entry(entry: FolderEntry):
     return {"success": True, "entry": entry.model_dump()}
 
 @router.get("/logs")
+@cache(expire=60)
 def get_logs(pillar: Optional[str] = None, last: Optional[int] = None):
     logs = []
     if LOGS_DIR.exists():
@@ -260,6 +269,7 @@ def calc_longest_streak(dates_set):
     return longest
 
 @router.get("/streak")
+@cache(expire=120)
 def get_streak():
     logs = []
     if LOGS_DIR.exists():
