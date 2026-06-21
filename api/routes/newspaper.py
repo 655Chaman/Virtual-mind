@@ -32,6 +32,8 @@ Format beautifully in Markdown. Make it punchy. No generic self-help fluff."""
         with open(get_today_file(), "w") as f:
             f.write(content)
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"Failed to generate newspaper: {e}")
 
 @router.get("/")

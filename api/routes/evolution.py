@@ -66,4 +66,6 @@ async def run_shadow_analysis():
             "preemptive_warning": response.text.strip()
         }
     except Exception as e:
-         return {"error": str(e)}
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e)}

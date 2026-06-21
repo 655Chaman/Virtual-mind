@@ -75,7 +75,9 @@ def create_log(log: DailyLog):
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 existing_data = json.load(f)
-        except Exception:
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
             pass
 
     # Preserve prayers_logged if not supplied in incoming log_dict
@@ -153,7 +155,9 @@ def add_folder_entry(entry: FolderEntry):
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 log_data = json.load(f)
-        except Exception:
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
             pass
             
     if not log_data:
@@ -188,7 +192,9 @@ def get_logs(pillar: Optional[str] = None, last: Optional[int] = None):
                 with open(file_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     logs.append(data)
-            except Exception:
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
                 continue
                 
     # Sort by date descending
@@ -209,7 +215,9 @@ def get_log(target_date: str):
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except Exception:
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
             return {"logged": False, "date": target_date}
     return {"logged": False, "date": target_date}
 
@@ -259,7 +267,9 @@ def get_streak():
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     logs.append(json.load(f))
-            except Exception:
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
                 continue
                 
     logged_dates = {log.get("date") for log in logs if log.get("date")}
@@ -319,7 +329,9 @@ def get_nn_summary():
                     log_date = date.fromisoformat(data.get("date", "1970-01-01"))
                     if log_date > last_30:
                         logs.append((log_date, data.get("non_negotiables", {})))
-            except Exception:
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
                 continue
                 
     keys = [

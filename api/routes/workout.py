@@ -121,8 +121,12 @@ def log_workout(workout: WorkoutLog):
                         }}
                     )
                 except Exception as e:
+                    import traceback
+                    traceback.print_exc()
                     print(f"[WORKOUT DB] XP Engine recalculate failed: {e}")
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             print(f"[WORKOUT DB] Failed to auto-update daily log: {e}")
             
     return {"success": True, "date": workout.date}
@@ -351,6 +355,8 @@ def classify_exercise_muscles(exercise_name: str) -> dict:
             else:
                 raise ValueError("Empty dictionary returned from AI")
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             print(f"[AI RETRY {attempt+1}/3] Error classifying muscles for {exercise_name}: {e}")
             time.sleep(2 ** attempt)
             

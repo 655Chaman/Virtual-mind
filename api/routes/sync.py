@@ -31,6 +31,8 @@ def trigger_full_sync():
         status["records_synced"] += 1
         return {"status": "success", "message": "Notion synchronization completed."}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"Notion Sync Failed: {e}")
         # Return 202 Accepted instead of 500 so the frontend doesn't crash
         # Data is already saved locally in JSON/MongoDB.

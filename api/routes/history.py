@@ -68,7 +68,9 @@ def get_pillar_history(days: int = Query(30, ge=1, le=90)):
                     log_date = log_data.get("date")
                     if log_date:
                         logs_by_date[log_date] = log_data.get("non_negotiables", {})
-            except Exception:
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
                 continue
                 
     for d_str in dates_list:

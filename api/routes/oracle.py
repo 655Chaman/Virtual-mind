@@ -10,6 +10,8 @@ client = None
 try:
     client = genai.Client()
 except Exception as e:
+    import traceback
+    traceback.print_exc()
     print(f"Warning: Could not initialize Gemini Client: {e}")
 
 class SyncRequest(BaseModel):
@@ -40,6 +42,8 @@ async def generate_questions():
         questions = json.loads(text)
         return {"questions": questions}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return {"questions": ["What is happening tomorrow?", "Any exceptions (travel, fasting)?"]}
 
 @oracle_router.post("/api/oracle/process-sync")
@@ -96,6 +100,8 @@ async def process_sync(request: SyncRequest):
         
         return result
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         # FAILSAFE MATRIX: If Gemini is down or errors out, fall back to the absolute baseline
         return {
             "tomorrow_theme": "OFFLINE BASELINE",
@@ -152,6 +158,8 @@ async def estimate_tasks(request: EstimateTasksRequest):
         result = json.loads(text)
         return result
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         # Fallback matrix
         return {
             "estimates": [

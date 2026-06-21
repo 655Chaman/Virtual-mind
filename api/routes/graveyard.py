@@ -19,7 +19,9 @@ def get_projects():
             days_idle = (now - last_touched).days
             p["days_idle"] = days_idle
             p["flagged_for_graveyard"] = (days_idle >= 7 and p.get("status") == "active")
-        except Exception:
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
             p["days_idle"] = 0
             p["flagged_for_graveyard"] = False
     return {"projects": projects}

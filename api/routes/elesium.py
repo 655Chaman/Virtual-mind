@@ -117,6 +117,8 @@ def get_elesium_summary():
             "live": live_metrics
         }
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return {
             "outreach_7d": None,
             "reply_rate": None,

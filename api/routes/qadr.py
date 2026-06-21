@@ -40,7 +40,9 @@ def _fetch_prayer_times_for_date(target_date: str) -> dict:
         cache = db.prayer_cache.find_one({"_id": target_date})
         if cache:
             return cache.get("data", {}).get("timings", {})
-    except Exception:
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         pass
     
     try:
@@ -67,6 +69,8 @@ def _fetch_prayer_times_for_date(target_date: str) -> dict:
                 "Isha": raw.get("Isha", "19:45"),
             }
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"[QADR] Prayer fetch failed: {e}")
     
     return {
@@ -120,7 +124,9 @@ def _get_workout_status() -> dict:
                 "last_workout": row["date"],
                 "days_since_workout": days_since
             }
-    except Exception:
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         pass
     
     return {"is_rest_day": False, "last_workout": None, "days_since_workout": 0}

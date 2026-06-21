@@ -31,7 +31,9 @@ def load_subscriptions() -> list:
     if SUBSCRIPTIONS_FILE.exists():
         try:
             return json.loads(SUBSCRIPTIONS_FILE.read_text())
-        except Exception:
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
             return []
     return []
 
@@ -180,6 +182,8 @@ async def send_push(payload: PushPayload):
             print(f"[PUSH] WebPush failed for endpoint: {e}")
             failed += 1
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             print(f"[PUSH] Unexpected error: {e}")
             failed += 1
 

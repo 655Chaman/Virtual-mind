@@ -17,4 +17,6 @@ async def get_chat_history(last: int = 20):
         exchanges = [json.loads(line) for line in lines if line.strip()]
         return {"history": exchanges[-last:]}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return {"history": [], "error": str(e)}

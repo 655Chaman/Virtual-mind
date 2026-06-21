@@ -12,6 +12,8 @@ client = None
 try:
     client = genai.Client()
 except Exception as e:
+    import traceback
+    traceback.print_exc()
     print(f"Warning: Could not initialize Gemini Client: {e}")
 
 @verification_router.post("/api/verify-work")
@@ -62,6 +64,8 @@ async def verify_proof_of_work(
                             "reason": f"Photo taken at {photo_time}, but wager started at {wager_time}."
                         }
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             # If EXIF extraction fails, we might still proceed and rely on the AI gesture
             print(f"EXIF Extraction Warning: {e}")
 
@@ -119,6 +123,8 @@ async def verify_proof_of_work(
             }
             
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         await photo.close()

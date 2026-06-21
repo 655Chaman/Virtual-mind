@@ -32,9 +32,13 @@ async def send_chat(msg: ChatMessage):
                     yield f"data: {json.dumps({'text': chunk})}\n\n"
                     await asyncio.sleep(0.02)
             except Exception as e:
+                import traceback
+                traceback.print_exc()
                 yield f"data: {json.dumps({'error': str(e)})}\n\n"
                 return
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
             return
 
@@ -46,7 +50,9 @@ async def send_chat(msg: ChatMessage):
                     "user": msg.message,
                     "assistant": full_response,
                 })
-            except Exception:
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
                 pass
 
     return StreamingResponse(
@@ -61,5 +67,7 @@ async def get_chat_history(limit: int = 20):
         db = get_db()
         cursor = db.chat_history.find({}, {"_id": 0}).sort("timestamp", 1).limit(limit)
         return list(cursor)
-    except Exception:
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         return []

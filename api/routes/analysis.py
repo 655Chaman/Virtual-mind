@@ -24,4 +24,6 @@ def trigger_analysis(req: AnalyzeRequest):
         save_analysis(analysis)
         return analysis
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

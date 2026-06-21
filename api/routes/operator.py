@@ -34,7 +34,9 @@ def generate_entry():
                 if log_date >= fourteen_days_ago:
                     with open(os.path.join(logs_dir, filename), "r") as f:
                         recent_logs.append(json.load(f))
-            except Exception:
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
                 pass
                 
     entry = generate_operator_entry(recent_logs)
