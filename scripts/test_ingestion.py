@@ -1,4 +1,4 @@
-import requests
+import urllib.request
 import json
 
 def test_ingestion():
@@ -25,9 +25,10 @@ def test_ingestion():
         # Assuming the backend is running on 8000
         # Wait, the logs route prefix is usually /api/logs/ or /api/log/
         # Check api/routes/__init__.py or main.py if possible
-        response = requests.post("http://localhost:8000/api/log/ingest-sheet", json=payload)
-        print(f"Status: {response.status_code}")
-        print(f"Response: {response.json()}")
+        req = urllib.request.Request("http://localhost:8000/api/log/ingest-sheet", data=json.dumps(payload).encode('utf-8'), headers={'Content-Type': 'application/json'})
+        with urllib.request.urlopen(req) as response:
+            print(f"Status: {response.status}")
+            print(f"Response: {json.loads(response.read().decode())}")
     except Exception as e:
         print(f"Error: {e}")
 

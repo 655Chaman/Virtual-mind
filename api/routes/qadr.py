@@ -5,7 +5,8 @@ from datetime import datetime, date, timedelta, timezone
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-import requests
+import urllib.request
+import urllib.parse
 from api.database import get_db
 
 router = APIRouter()
@@ -56,10 +57,13 @@ def _fetch_prayer_times_for_date(target_date: str) -> dict:
             "date": dt.strftime("%d-%m-%Y"),
             "tune": "0,-2,-6,0,-1,5,0,0,0"
         }
-        resp = requests.get(url, params=params, timeout=10)
-        if resp.status_code == 200:
-            data = resp.json().get("data", {})
-            raw = data.get("timings", {})
+        query_string = urllib.parse.urlencode(params)
+        full_url = f"{url}?{query_string}"
+        req = urllib.request.Request(full_url, headers={'User-Agent': 'VirtualMind/1.0'})
+        with urllib.request.urlopen(req, timeout=10) as response:
+            if response.status == 200:
+                data = json.loads(response.read().decode()).get("data", {})
+                raw = data.get("timings", {})
             return {
                 "Fajr": raw.get("Fajr", "05:00"),
                 "Sunrise": raw.get("Sunrise", "06:00"),

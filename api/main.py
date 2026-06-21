@@ -156,10 +156,10 @@ os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
 def run_scheduler_bg():
-    print("Virtual Mind Global Scheduler Running in background...")
-    while True:
-        schedule.run_pending()
-        time.sleep(60)
+    try:
+        scheduler.run_scheduler_loop()
+    except Exception as e:
+        print(f"Scheduler loop crashed: {e}")
 
 @app.on_event("startup")
 async def startup_event():
@@ -231,4 +231,6 @@ else:
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("api.main:app", host="0.0.0.0", port=8000, reload=True)
+    import os
+    port = int(os.getenv("API_PORT", 8000))
+    uvicorn.run("api.main:app", host="0.0.0.0", port=port, reload=True)

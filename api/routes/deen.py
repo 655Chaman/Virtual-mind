@@ -1,6 +1,9 @@
 from pathlib import Path
 from datetime import datetime, timezone, timedelta, date
-import requests
+import urllib.request
+import urllib.parse
+import urllib.error
+import json
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from api.database import get_db
@@ -49,9 +52,11 @@ async def get_prayer_times(latitude: float = None, longitude: float = None):
         }
     
     try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        res_json = response.json()
+        query_string = urllib.parse.urlencode(params)
+        full_url = f"{url}?{query_string}"
+        req = urllib.request.Request(full_url, headers={'User-Agent': 'VirtualMind/1.0'})
+        with urllib.request.urlopen(req, timeout=10) as response:
+            res_json = json.loads(response.read().decode())
         
         data = res_json["data"]
         raw_timings = data["timings"]
@@ -80,7 +85,7 @@ async def get_prayer_times(latitude: float = None, longitude: float = None):
         db.prayer_cache.update_one({"_id": cache_key}, {"$set": {"data": payload}}, upsert=True)
         return payload
         
-    except requests.RequestException as e:
+    except urllib.error.URLError as e:
         last_cache = db.prayer_cache.find_one({}, sort=[("_id", -1)])
         if last_cache:
             fallback = last_cache["data"].copy()

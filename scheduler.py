@@ -1,6 +1,6 @@
-import schedule
 import time
-import requests
+import urllib.request
+import urllib.error
 import json
 from datetime import date, datetime, timezone, timedelta
 from pathlib import Path
@@ -9,7 +9,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 LOGS_DIR = PROJECT_ROOT / "data" / "logs"
 # The API runs on port 8001 when started via start_mobile.sh (uvicorn on 0.0.0.0:8001)
 # Fall back to 8000 for local dev with the simple start script
-API_BASE = "http://localhost:8001"
+import os
+API_PORT = os.getenv("API_PORT", "8000")
+API_BASE = f"http://localhost:{API_PORT}"
 
 BANGALORE_TZ = timezone(timedelta(hours=5, minutes=30))
 notified_prayers = set()
@@ -22,8 +24,9 @@ OPERATOR_NAME = "Chaman"
 def auto_generate_operator_entry():
     print("Triggering 14-day operator log generation...")
     try:
-        response = requests.post(f"{API_BASE}/api/operator/generate")
-        print(f"Generation response: {response.json()}")
+        req = urllib.request.Request(f"{API_BASE}/api/operator/generate", method='POST')
+        with urllib.request.urlopen(req) as response:
+            print(f"Generation response: {json.loads(response.read().decode())}")
     except Exception as e:
         print(f"Failed to generate operator entry: {e}")
 
@@ -31,19 +34,17 @@ def auto_generate_operator_entry():
 def dispatch_web_push(title: str, body: str, url: str = "/command", require_interaction: bool = True, tag: str = "vm-scheduler"):
     """Sends a native Web Push notification to all subscribers via the API."""
     try:
-        response = requests.post(
-            f"{API_BASE}/api/push/send",
-            json={
-                "title": title,
-                "body": body,
-                "url": url,
-                "tag": tag,
-                "requireInteraction": require_interaction,
-            },
-            timeout=10
-        )
-        result = response.json()
-        print(f"[SCHEDULER] Push dispatched: {result.get('sent', 0)} devices notified.")
+        data = json.dumps({
+            "title": title,
+            "body": body,
+            "url": url,
+            "tag": tag,
+            "requireInteraction": require_interaction,
+        }).encode('utf-8')
+        req = urllib.request.Request(f"{API_BASE}/api/push/send", data=data, headers={'Content-Type': 'application/json'})
+        with urllib.request.urlopen(req, timeout=10) as response:
+            result = json.loads(response.read().decode())
+            print(f"[SCHEDULER] Push dispatched: {result.get('sent', 0)} devices notified.")
     except Exception as e:
         print(f"[SCHEDULER] Push dispatch failed: {e}")
 
@@ -101,9 +102,9 @@ def check_salah_times():
         if date_str not in cache:
             print(f"[SCHEDULER] Cache miss for {date_str}. Fetching from API...")
             try:
-                # API_BASE is already set to localhost:8000 — this is the correct port
-                response = requests.get(f"{API_BASE}/api/deen/prayer-times", timeout=10)
-                timings_data = response.json()
+                req = urllib.request.Request(f"{API_BASE}/api/deen/prayer-times")
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    timings_data = json.loads(response.read().decode())
             except Exception as e:
                 print(f"[SCHEDULER] Failed to load prayer timings from API: {e}")
                 return
@@ -194,10 +195,11 @@ def check_salah_times():
 def check_hydration_reminder():
     """Fires hydration reminders at 10:00, 14:00, and 18:00 if below goal."""
     try:
-        response = requests.get(f"{API_BASE}/api/wellness/hydration/today", timeout=5)
-        if response.status_code != 200:
-            return
-        data = response.json()
+        req = urllib.request.Request(f"{API_BASE}/api/wellness/hydration/today")
+        with urllib.request.urlopen(req, timeout=5) as response:
+            if response.status != 200:
+                return
+            data = json.loads(response.read().decode())
         percent = data.get("percent", 100)
         today_L = data.get("today_L", 0)
         goal_L = data.get("goal_L", 3)
@@ -227,10 +229,11 @@ def check_hydration_reminder():
 def check_fasting_notification():
     """Sends milestone notifications during a fast at the 12h, 16h, 18h, 20h marks."""
     try:
-        response = requests.get(f"{API_BASE}/api/wellness/fast/today", timeout=5)
-        if response.status_code != 200:
-            return
-        data = response.json()
+        req = urllib.request.Request(f"{API_BASE}/api/wellness/fast/today")
+        with urllib.request.urlopen(req, timeout=5) as response:
+            if response.status != 200:
+                return
+            data = json.loads(response.read().decode())
         if not data.get("is_fasting", False):
             return
 
@@ -261,10 +264,11 @@ def check_fasting_notification():
 def check_workout_reminder():
     """Sends a workout reminder if today's session is not logged."""
     try:
-        response = requests.get(f"{API_BASE}/api/workout/today", timeout=5)
-        if response.status_code != 200:
-            return
-        data = response.json()
+        req = urllib.request.Request(f"{API_BASE}/api/workout/today")
+        with urllib.request.urlopen(req, timeout=5) as response:
+            if response.status != 200:
+                return
+            data = json.loads(response.read().decode())
 
         if data.get("logged", False):
             print("[SCHEDULER] Workout already logged today.")
@@ -314,43 +318,48 @@ def midnight_rollover():
     # Ensure fresh cache fetch next time it's asked
     check_salah_times()
 
-# ─── Core Schedule ──────────────────────────────────────────────────────────────
+# ─── Native Polling Scheduler ────────────────────────────────────────────────────────
 
-# 14-day operator log generation
-schedule.every(14).days.do(auto_generate_operator_entry)
+def run_scheduler_loop():
+    print(f"Virtual Mind Global Scheduler Running for {OPERATOR_NAME}...")
+    check_salah_times()
+    
+    last_run = {}
+    
+    def should_run(job_name, check_condition):
+        today_str = date.today().isoformat()
+        last = last_run.get(job_name)
+        if check_condition() and last != today_str:
+            last_run[job_name] = today_str
+            return True
+        return False
 
-# Midnight System Reset
-schedule.every().day.at("00:00").do(midnight_rollover)
-
-# Evening reflection alerts
-schedule.every().day.at("21:30").do(check_daily_log_completion)
-schedule.every().day.at("22:30").do(check_daily_log_completion)
-
-# Morning intention nudge (pre-Fajr)
-schedule.every().day.at("05:00").do(send_morning_intention)
-
-# Hydration reminders (3x daily)
-schedule.every().day.at("10:00").do(check_hydration_reminder)
-schedule.every().day.at("14:00").do(check_hydration_reminder)
-schedule.every().day.at("18:00").do(check_hydration_reminder)
-
-# Workout reminder (6:30 PM — adjust to your typical training time)
-schedule.every().day.at("18:30").do(check_workout_reminder)
-
-# Sleep window alert (10:30 PM)
-schedule.every().day.at("22:30").do(send_sleep_window_alert)
-
-# Fasting milestone checker (every hour)
-schedule.every(1).hours.do(check_fasting_notification)
-
-# Real-time Salah checking loop (every 1 minute)
-schedule.every(1).minutes.do(check_salah_times)
-
+    while True:
+        now = datetime.now()
+        h, m = now.hour, now.minute
+        
+        # Every minute tasks
+        check_salah_times()
+        
+        # Hourly tasks
+        if m == 0:
+            check_fasting_notification()
+            
+        # Daily specific times
+        if h == 0 and m == 0 and should_run("midnight", lambda: True):
+            midnight_rollover()
+        if h == 5 and m == 0 and should_run("morning_intent", lambda: True):
+            send_morning_intention()
+        if h in (10, 14, 18) and m == 0 and should_run(f"hydration_{h}", lambda: True):
+            check_hydration_reminder()
+        if h == 18 and m == 30 and should_run("workout", lambda: True):
+            check_workout_reminder()
+        if h in (21, 22) and m == 30 and should_run(f"daily_log_{h}", lambda: True):
+            check_daily_log_completion()
+        if h == 22 and m == 30 and should_run("sleep_window", lambda: True):
+            send_sleep_window_alert()
+            
+        time.sleep(60)
 
 if __name__ == "__main__":
-    print(f"Virtual Mind Global Scheduler Running for {OPERATOR_NAME}...")
-    # Seed prayer times on start
-    check_salah_times()
-    while True:
-        schedule.run_pending()
-        time.sleep(60)
+    run_scheduler_loop()

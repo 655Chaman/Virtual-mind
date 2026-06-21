@@ -1,5 +1,6 @@
 import os
-import requests
+import urllib.request
+import json
 from typing import Dict, Any, Optional
 
 def send_telegram_notification(token: str, chat_id: str, message: str) -> bool:
@@ -11,12 +12,14 @@ def send_telegram_notification(token: str, chat_id: str, message: str) -> bool:
         "parse_mode": "Markdown"
     }
     try:
-        response = requests.post(url, json=payload, timeout=8)
-        if response.status_code == 200:
-            return True
-        else:
-            print(f"[NOTIFICATION] Telegram failed with code {response.status_code}: {response.text}")
-            return False
+        data = json.dumps(payload).encode('utf-8')
+        req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'})
+        with urllib.request.urlopen(req, timeout=8) as response:
+            if response.status == 200:
+                return True
+            else:
+                print(f"[NOTIFICATION] Telegram failed with code {response.status}: {response.read().decode()}")
+                return False
     except Exception as e:
         print(f"[NOTIFICATION] Telegram error: {e}")
         return False
@@ -27,12 +30,14 @@ def send_discord_notification(webhook_url: str, message: str) -> bool:
         "content": message
     }
     try:
-        response = requests.post(webhook_url, json=payload, timeout=8)
-        if response.status_code in (200, 204):
-            return True
-        else:
-            print(f"[NOTIFICATION] Discord failed with code {response.status_code}: {response.text}")
-            return False
+        data = json.dumps(payload).encode('utf-8')
+        req = urllib.request.Request(webhook_url, data=data, headers={'Content-Type': 'application/json'})
+        with urllib.request.urlopen(req, timeout=8) as response:
+            if response.status in (200, 204):
+                return True
+            else:
+                print(f"[NOTIFICATION] Discord failed with code {response.status}: {response.read().decode()}")
+                return False
     except Exception as e:
         print(f"[NOTIFICATION] Discord error: {e}")
         return False
