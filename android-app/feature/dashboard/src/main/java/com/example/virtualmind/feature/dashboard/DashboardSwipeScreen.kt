@@ -39,7 +39,6 @@ import com.example.virtualmind.core.designsystem.theme.PillarWellness
 import com.example.virtualmind.core.designsystem.theme.PillarElesium
 import com.example.virtualmind.core.designsystem.theme.PillarFitness
 import com.example.virtualmind.core.designsystem.theme.PillarSelf
-import com.example.virtualmind.core.designsystem.theme.PillarTerminal
 import com.example.virtualmind.core.designsystem.theme.PillarQadr
 import com.example.virtualmind.core.designsystem.theme.VirtualMindTypography
 import java.util.Calendar
@@ -59,7 +58,6 @@ val AllPillars = listOf(
     PillarConfig("wellness", "RECOVERY", "Sleep · Fasting · Hydration", PillarWellness, "WELLNESS", "wellness_route"),
     PillarConfig("elesium", "ELESIUM", "Sales · Meetings · Revenue", PillarElesium, "EMPIRE", "elesium_route"),
     PillarConfig("self", "SELF", "Reflection · Patterns · Flaws", PillarSelf, "INNER", "self_route"),
-    PillarConfig("terminal", "TERMINAL", "AI · Chat · Neural Interface", PillarTerminal, "ORACLE", "terminal_route"),
     PillarConfig("oracle", "SYNC", "Nightly Algorithm Update", PillarQadr, "THE ORACLE", "oracle_route")
 )
 
@@ -78,7 +76,7 @@ fun DashboardSwipeScreen(
         if (hour in 4..8) {
             sorted.sortBy { listOf("fitness", "deen").indexOf(it.id).let { idx -> if (idx == -1) 99 else idx } }
         } else if (hour in 9..17) {
-            sorted.sortBy { listOf("elesium", "terminal", "deen").indexOf(it.id).let { idx -> if (idx == -1) 99 else idx } }
+            sorted.sortBy { listOf("elesium", "deen").indexOf(it.id).let { idx -> if (idx == -1) 99 else idx } }
         } else if (hour in 18..21) {
             sorted.sortBy { listOf("wellness", "elesium", "deen").indexOf(it.id).let { idx -> if (idx == -1) 99 else idx } }
         } else {

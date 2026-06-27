@@ -214,3 +214,42 @@ def content_streak():
     """Returns current posting streak and longest streak."""
     log = get_content_log()
     return log.get("streak", {"current_days": 0, "longest_days": 0, "last_post_date": None})
+
+# ─── AUTOMATED CONTENT PIPELINE ───────────────────────────────────────────────
+
+from api.services.content_pipeline import (
+    get_pipeline_status,
+    handle_make_webhook_detected,
+    handle_make_webhook_scheduled,
+    handle_make_webhook_failed
+)
+
+@router.get("/content-pipeline/status")
+async def get_content_pipeline_status():
+    """Returns the live status of the Drive -> Buffer automated pipeline."""
+    return await get_pipeline_status()
+
+class WebhookDetected(BaseModel):
+    file_id: str
+    file_name: str
+
+@router.post("/content-pipeline/webhook/detected")
+async def webhook_detected(data: WebhookDetected):
+    return await handle_make_webhook_detected(data.file_id, data.file_name)
+
+class WebhookScheduled(BaseModel):
+    file_id: str
+    buffer_id: str
+
+@router.post("/content-pipeline/webhook/scheduled")
+async def webhook_scheduled(data: WebhookScheduled):
+    return await handle_make_webhook_scheduled(data.file_id, data.buffer_id)
+
+class WebhookFailed(BaseModel):
+    file_id: str
+    error: str
+
+@router.post("/content-pipeline/webhook/failed")
+async def webhook_failed(data: WebhookFailed):
+    return await handle_make_webhook_failed(data.file_id, data.error)
+

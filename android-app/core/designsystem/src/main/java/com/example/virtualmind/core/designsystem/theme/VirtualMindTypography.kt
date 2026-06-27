@@ -33,9 +33,4 @@ object VirtualMindTypography {
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp
     )
-    val terminal = TextStyle(
-        fontFamily = ShareTechMono,
-        fontWeight = FontWeight.Normal,
-        fontSize = 14.sp
-    )
 }

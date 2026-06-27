@@ -21,6 +21,7 @@ export default function ElesiumPage() {
   // Data
   const [summary, setSummary] = useState<any>(null);
   const [content, setContent] = useState<any>(null);
+  const [pipelineStatus, setPipelineStatus] = useState<any>(null);
 
   // Forms
   const [outreachForm, setOutreachForm] = useState({ emails: 0, replies: 0, positive: 0 });
@@ -29,12 +30,14 @@ export default function ElesiumPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [sumRes, conRes] = await Promise.all([
+      const [sumRes, conRes, pipelineRes] = await Promise.all([
         fetch(`${API_BASE}/api/elesium/summary`).then(r => r.json()),
-        fetch(`${API_BASE}/api/elesium/content/summary`).then(r => r.json())
+        fetch(`${API_BASE}/api/elesium/content/summary`).then(r => r.json()),
+        fetch(`${API_BASE}/api/elesium/content-pipeline/status`).then(r => r.json()).catch(() => null)
       ]);
       setSummary(sumRes);
       setContent(conRes);
+      if (pipelineRes) setPipelineStatus(pipelineRes);
     } catch (err) {
       console.error('Elesium Data Load Error:', err);
       setStatusMessage({ type: 'error', text: 'HQ DISCONNECTED. FAILED TO LOAD METRICS.' });
@@ -361,7 +364,78 @@ export default function ElesiumPage() {
           </div>
           
         </div>
+
+        {/* AUTOMATION ENGINE: DRIVE -> BUFFER */}
+        <div className="mt-8 border border-cyan-900/40 bg-[#050c18] p-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(6,182,212,0.03)_0%,transparent_70%)] pointer-events-none" />
+          
+          <div className="flex justify-between items-center mb-6 border-b border-cyan-900/50 pb-3">
+            <h2 className="text-sm font-bold text-cyan-300 tracking-[0.3em] flex items-center gap-2 uppercase">
+              <Activity className="w-4 h-4 text-cyan-400" /> AUTOMATED CONTENT PIPELINE
+            </h2>
+            <div className="text-[10px] text-cyan-600 tracking-widest uppercase flex items-center gap-1.5">
+               DRIVE <ArrowLeft className="w-3 h-3 rotate-180" /> BUFFER
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+            {/* Health Meter */}
+            <div className="md:col-span-1 space-y-2">
+              <div className="text-[9px] text-cyan-700 tracking-widest uppercase">7-Day Buffer Health</div>
+              <div className="flex items-end gap-3">
+                <div className={`text-4xl font-bold ${
+                  (pipelineStatus?.buffer_health_days ?? 0) >= 7 ? 'text-cyan-400' : 'text-red-400'
+                }`}>
+                  {pipelineStatus?.buffer_health_days ?? 0} <span className="text-lg text-cyan-700">/ 7</span>
+                </div>
+                <div className="text-[10px] uppercase text-cyan-700 pb-1">Days Scheduled</div>
+              </div>
+              
+              <div className="h-1.5 w-full bg-cyan-950/50 rounded-full overflow-hidden mt-2">
+                <div 
+                  className={`h-full transition-all duration-1000 ${
+                    (pipelineStatus?.buffer_health_days ?? 0) >= 7 ? 'bg-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.8)]' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]'
+                  }`}
+                  style={{ width: `${Math.min(100, ((pipelineStatus?.buffer_health_days ?? 0) / 7) * 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Queue Stats */}
+            <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="bg-[#020813] border border-cyan-900/30 p-3 flex flex-col justify-between">
+                 <div className="text-[9px] text-cyan-600 tracking-widest uppercase">DETECTED (DRIVE)</div>
+                 <div className="text-xl text-white font-bold">{pipelineStatus?.status_counts?.DETECTED ?? 0}</div>
+              </div>
+              <div className="bg-[#020813] border border-cyan-900/30 p-3 flex flex-col justify-between">
+                 <div className="text-[9px] text-cyan-600 tracking-widest uppercase">UPLOADING</div>
+                 <div className="text-xl text-cyan-300 font-bold flex items-center gap-2">
+                    {pipelineStatus?.status_counts?.UPLOADING ?? 0}
+                    {((pipelineStatus?.status_counts?.UPLOADING ?? 0) > 0 || (pipelineStatus?.status_counts?.DOWNLOADING ?? 0) > 0) && (
+                      <RefreshCw className="w-3 h-3 animate-spin text-cyan-500" />
+                    )}
+                 </div>
+              </div>
+              <div className="bg-[#020813] border border-cyan-900/30 p-3 flex flex-col justify-between">
+                 <div className="text-[9px] text-cyan-600 tracking-widest uppercase">SCHEDULED (BUFFER)</div>
+                 <div className="text-xl text-white font-bold">{pipelineStatus?.status_counts?.SCHEDULED ?? 0}</div>
+              </div>
+              <div className="bg-red-950/10 border border-red-900/30 p-3 flex flex-col justify-between">
+                 <div className="text-[9px] text-red-500/70 tracking-widest uppercase">FAILED</div>
+                 <div className="text-xl text-red-400 font-bold">{pipelineStatus?.status_counts?.FAILED ?? 0}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-6 pt-4 border-t border-cyan-900/30">
+            <div className="flex items-center gap-2 text-[10px] text-cyan-700 tracking-widest uppercase mb-3">
+              <CheckCircle className="w-3 h-3" /> System Status: <span className="text-cyan-500">Awaiting API Keys (Google Drive & Buffer) to activate worker loop.</span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
+
   );
 }

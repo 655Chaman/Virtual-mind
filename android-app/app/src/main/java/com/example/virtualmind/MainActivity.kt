@@ -497,9 +497,7 @@ class MainActivity : ComponentActivity() {
                         @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
                         com.example.virtualmind.feature.dashboard.DashboardSwipeScreen(
                             onNavigateToPillar = { route ->
-                                if (route == "terminal_route") {
-                                    navController.navigate("native_terminal")
-                                } else if (route == "oracle_route") {
+                                if (route == "oracle_route") {
                                     navController.navigate("native_oracle")
                                 } else if (route == "elesium_route") {
                                     navController.navigate("native_elesium")
@@ -519,13 +517,6 @@ class MainActivity : ComponentActivity() {
                                     }
                                     navController.navigate("webview?path=$webRoute")
                                 }
-                            }
-                        )
-                    }
-                    composable("native_terminal") {
-                        com.example.virtualmind.feature.dashboard.TerminalScreen(
-                            onNavigateBack = {
-                                navController.popBackStack()
                             }
                         )
                     }
@@ -565,15 +556,11 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable("native_wellness") {
-                        Box(modifier = Modifier.fillMaxSize().background(Color(0xFF020813)), contentAlignment = Alignment.Center) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("RECOVERY (WELLNESS)", color = com.example.virtualmind.core.designsystem.theme.PillarWellness, fontFamily = com.example.virtualmind.core.designsystem.theme.ShareTechMono, fontWeight = FontWeight.Bold, fontSize = 24.sp)
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text("COMING IN PHASE 11", color = Color.Gray, fontFamily = com.example.virtualmind.core.designsystem.theme.ShareTechMono, fontSize = 14.sp)
-                                Spacer(modifier = Modifier.height(32.dp))
-                                Text("[ GO BACK ]", color = Color.White, fontFamily = com.example.virtualmind.core.designsystem.theme.ShareTechMono, modifier = Modifier.clickable { navController.popBackStack() })
+                        com.example.virtualmind.feature.dashboard.WellnessScreen(
+                            onNavigateBack = {
+                                navController.popBackStack()
                             }
-                        }
+                        )
                     }
                     composable(
                         route = "webview?path={path}",

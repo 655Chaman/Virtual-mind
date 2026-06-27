@@ -155,28 +155,29 @@ export const api = {
       const query = targetDate ? `?target_date=${targetDate}` : '';
       return request(`/api/workout/exercise/${encodeURIComponent(exerciseName)}${query}`);
     },
-    heatmap: (days = 7) => request(`/api/workout/heatmap?days=${days}`),
+    heatmap: (days = 7, localDate?: string) => request(`/api/workout/heatmap?days=${days}${localDate ? `&local_date=${localDate}` : ''}`),
+    graph: (days = 14, localDate?: string) => request(`/api/workout/graph?days=${days}${localDate ? `&local_date=${localDate}` : ''}`),
     homeProtocol: {
-      today: () => request('/api/workout/home-protocol/today'),
-      increment: (variant: string, count: number = 1) => request('/api/workout/home-protocol/increment', {
+      today: (localDate?: string) => request(`/api/workout/home-protocol/today${localDate ? `?local_date=${localDate}` : ''}`),
+      increment: (variant: string, count: number = 1, localDate?: string) => request('/api/workout/home-protocol/increment', {
         method: 'POST',
-        body: JSON.stringify({ variant, count }),
+        body: JSON.stringify({ variant, count, local_date: localDate }),
       }),
-      delete: (variant: string) => request('/api/workout/home-protocol/delete', {
+      delete: (variant: string, localDate?: string) => request('/api/workout/home-protocol/delete', {
         method: 'POST',
-        body: JSON.stringify({ variant }),
+        body: JSON.stringify({ variant, local_date: localDate }),
       }),
-      rename: (oldVariant: string, newVariant: string) => request('/api/workout/home-protocol/rename', {
+      rename: (oldVariant: string, newVariant: string, localDate?: string) => request('/api/workout/home-protocol/rename', {
         method: 'POST',
-        body: JSON.stringify({ old_variant: oldVariant, new_variant: newVariant }),
+        body: JSON.stringify({ old_variant: oldVariant, new_variant: newVariant, local_date: localDate }),
       }),
-      decrement: (variant: string, count: number = 1) => request('/api/workout/home-protocol/decrement', {
+      decrement: (variant: string, count: number = 1, localDate?: string) => request('/api/workout/home-protocol/decrement', {
         method: 'POST',
-        body: JSON.stringify({ variant, count }),
+        body: JSON.stringify({ variant, count, local_date: localDate }),
       }),
-      reorder: (order: string[]) => request('/api/workout/home-protocol/reorder', {
+      reorder: (order: string[], localDate?: string) => request('/api/workout/home-protocol/reorder', {
         method: 'POST',
-        body: JSON.stringify({ order }),
+        body: JSON.stringify({ order, local_date: localDate }),
       }),
     },
   },

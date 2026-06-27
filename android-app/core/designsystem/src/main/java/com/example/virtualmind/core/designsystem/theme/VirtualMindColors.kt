@@ -25,7 +25,7 @@ val PillarFitness = Color(0xFFF43F5E)   // Scarlet
 val PillarWellness = Color(0xFF22D3EE)  // Glacier Cyan
 val PillarElesium = Color(0xFF3B82F6)   // Sapphire Blue
 val PillarSelf = Color(0xFFA855F7)      // Amethyst
-val PillarTerminal = Color(0xFFE879F9)  // Fuchsia
+
 val PillarQadr = Color(0xFF818CF8)      // Starlight Indigo
 val PillarCommand = Color(0xFFF59E0B)   // Amber
 val PillarOracle = Color(0xFF22C55E)    // Matrix Green

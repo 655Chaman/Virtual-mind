@@ -8,10 +8,12 @@ import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
-import com.virtualmind.core.network.OracleApi
-import com.virtualmind.core.network.FitnessApi
 import com.virtualmind.core.network.DeenApi
+import com.virtualmind.core.network.FitnessApi
 import com.virtualmind.core.network.LogsApi
+import com.virtualmind.core.network.OracleApi
+import com.virtualmind.core.network.WellnessApi
+
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
@@ -57,5 +59,11 @@ object NetworkModule {
     @Singleton
     fun providesLogsApi(retrofit: retrofit2.Retrofit): LogsApi {
         return retrofit.create(LogsApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun providesWellnessApi(retrofit: retrofit2.Retrofit): WellnessApi {
+        return retrofit.create(WellnessApi::class.java)
     }
 }

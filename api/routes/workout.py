@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
+from .exercise_database import get_muscles_for_exercise_sync
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date, timedelta
 from api.database import get_db
@@ -193,26 +194,31 @@ def get_exercise_history(exercise_name: str, target_date: Optional[str] = None):
 class HomeProtocolIncrement(BaseModel):
     variant: str
     count: int = 1
+    local_date: Optional[str] = None
 
 class HomeProtocolDelete(BaseModel):
     variant: str
+    local_date: Optional[str] = None
 
 class HomeProtocolRename(BaseModel):
     old_variant: str
     new_variant: str
+    local_date: Optional[str] = None
 
 class HomeProtocolDecrement(BaseModel):
     variant: str
     count: int = 1
+    local_date: Optional[str] = None
 
 class HomeProtocolReorder(BaseModel):
     order: list[str]
+    local_date: Optional[str] = None
 
 
 @router.get("/home-protocol/today")
-def get_home_protocol_today():
+def get_home_protocol_today(local_date: Optional[str] = None):
     db = get_db()
-    today_str = date.today().isoformat()
+    today_str = local_date if local_date else date.today().isoformat()
     doc = db.home_protocols.find_one({"date": today_str}, {"_id": 0})
     if not doc:
         return {"pushups": 0, "pullups": 0, "squats": 0, "core": 0}
@@ -221,7 +227,7 @@ def get_home_protocol_today():
 @router.post("/home-protocol/increment")
 def increment_home_protocol(req: HomeProtocolIncrement):
     db = get_db()
-    today_str = date.today().isoformat()
+    today_str = req.local_date if req.local_date else date.today().isoformat()
     
     variant_key = req.variant.lower()
     db.home_protocols.update_one(
@@ -237,7 +243,7 @@ def increment_home_protocol(req: HomeProtocolIncrement):
 @router.post("/home-protocol/delete")
 def delete_home_protocol(req: HomeProtocolDelete):
     db = get_db()
-    today_str = date.today().isoformat()
+    today_str = req.local_date if req.local_date else date.today().isoformat()
     variant_key = req.variant.lower()
     db.home_protocols.update_one(
         {"date": today_str},
@@ -251,7 +257,7 @@ def delete_home_protocol(req: HomeProtocolDelete):
 @router.post("/home-protocol/rename")
 def rename_home_protocol(req: HomeProtocolRename):
     db = get_db()
-    today_str = date.today().isoformat()
+    today_str = req.local_date if req.local_date else date.today().isoformat()
     old_key = req.old_variant.lower()
     new_key = req.new_variant.lower()
     
@@ -267,7 +273,7 @@ def rename_home_protocol(req: HomeProtocolRename):
 @router.post("/home-protocol/decrement")
 def decrement_home_protocol(req: HomeProtocolDecrement):
     db = get_db()
-    today_str = date.today().isoformat()
+    today_str = req.local_date if req.local_date else date.today().isoformat()
     variant_key = req.variant.lower()
     
     # We shouldn't let it drop below 0 natively, but since we just store the number,
@@ -288,7 +294,7 @@ def decrement_home_protocol(req: HomeProtocolDecrement):
 @router.post("/home-protocol/reorder")
 def reorder_home_protocol(req: HomeProtocolReorder):
     db = get_db()
-    today_str = date.today().isoformat()
+    today_str = req.local_date if req.local_date else date.today().isoformat()
     
     db.home_protocols.update_one(
         {"date": today_str},
@@ -307,6 +313,12 @@ def reorder_home_protocol(req: HomeProtocolReorder):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def classify_exercise_muscles(exercise_name: str) -> dict:
+    # 1. Try massive static dictionary first (instant, 100% reliable)
+    static_result = get_muscles_for_exercise_sync(exercise_name)
+    if static_result:
+        return static_result
+
+    # 2. Fallback to cache and AI
     db = get_db()
     cached = db.ai_muscle_cache.find_one({"exercise_name": exercise_name})
     if cached:
@@ -369,7 +381,7 @@ def classify_exercise_muscles(exercise_name: str) -> dict:
     return {}
 
 @router.get("/heatmap")
-def get_muscle_heatmap(days: int = 7):
+def get_muscle_heatmap(days: int = 7, local_date: Optional[str] = None):
     """
     Calculates muscle growth metrics.
     Returns:
@@ -378,8 +390,10 @@ def get_muscle_heatmap(days: int = 7):
     """
     db = get_db()
     
-    today_str = date.today().isoformat()
-    target_date = (date.today() - timedelta(days=days)).isoformat()
+    today_str = local_date if local_date else date.today().isoformat()
+    # To compute target_date accurately we must parse today_str
+    today_date_obj = datetime.strptime(today_str, "%Y-%m-%d").date()
+    target_date = (today_date_obj - timedelta(days=days)).isoformat()
     
     # Fetch workouts from the last N days
     cursor = db.workouts.find({"date": {"$gte": target_date}}, {"_id": 0})
@@ -488,4 +502,67 @@ def start_workout_session(target_date: Optional[str] = None):
     )
     doc = db.workouts_active_sessions.find_one({"date": today_str})
     return {"start_time": doc["start_time"]}
+
+
+@router.get("/graph")
+def get_graph_data(days: int = 14, local_date: Optional[str] = None):
+    db = get_db()
+    today_str = local_date if local_date else date.today().isoformat()
+    today_date_obj = datetime.strptime(today_str, "%Y-%m-%d").date()
+    target_date = (today_date_obj - timedelta(days=days)).isoformat()
+    
+    # 1. Fetch workouts
+    w_cursor = db.workouts.find({"date": {"$gte": target_date}}, {"_id": 0, "date": 1, "exercises": 1})
+    workouts = list(w_cursor)
+    
+    # 2. Fetch home protocols
+    hp_cursor = db.home_protocols.find({"date": {"$gte": target_date}}, {"_id": 0})
+    home_protocols = list(hp_cursor)
+    
+    data_points = []
+    
+    # Process workouts
+    for w in workouts:
+        w_date = w.get("date")
+        for ex in w.get("exercises", []):
+            ex_name = ex.get("exercise_name", "").lower().strip()
+            if not ex_name: continue
+            
+            ex_vol = 0
+            for s in ex.get("sets", []):
+                if s.get("completed", True):
+                    weight = float(s.get("weight", 0) or 0)
+                    reps = int(s.get("reps", 0) or 0)
+                    if weight == 0 and reps > 0: weight = 70
+                    ex_vol += (weight * reps)
+                    
+            if ex_vol > 0:
+                data_points.append({"date": w_date, "exercise": ex_name, "volume": ex_vol})
+                
+    # Process home protocols
+    for hp in home_protocols:
+        hp_date = hp.get("date")
+        for variant, count in hp.items():
+            if variant in ["date", "_id", "_order"] or not isinstance(count, int) or count <= 0:
+                continue
+            
+            bw_weight = 70.0
+            if "pushup" in variant.lower(): ex_vol = bw_weight * 0.65 * count
+            elif "pullup" in variant.lower(): ex_vol = bw_weight * 1.0 * count
+            elif "squat" in variant.lower(): ex_vol = bw_weight * 1.0 * count
+            elif "core" in variant.lower() or "abs" in variant.lower(): ex_vol = bw_weight * 0.5 * count
+            else: ex_vol = bw_weight * 0.8 * count
+            
+            data_points.append({"date": hp_date, "exercise": variant, "volume": ex_vol})
+            
+    # Aggregate data points to combine volumes for the same exercise on the same day
+    aggregated = {}
+    for dp in data_points:
+        key = (dp["date"], dp["exercise"])
+        if key not in aggregated:
+            aggregated[key] = 0
+        aggregated[key] += dp["volume"]
+        
+    final_data = [{"date": k[0], "exercise": k[1], "volume": v} for k, v in aggregated.items()]
+    return final_data
 

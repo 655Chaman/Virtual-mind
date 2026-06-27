@@ -62,3 +62,11 @@ def get_sync_logs_collection():
 def get_sync_chat_history_collection():
     db = get_sync_client()[DB_NAME]
     return db["chat_history"]
+
+def get_content_pipeline_collection():
+    db = get_async_client()[DB_NAME]
+    return db["content_pipeline"]
+
+def get_sync_content_pipeline_collection():
+    db = get_sync_client()[DB_NAME]
+    return db["content_pipeline"]
