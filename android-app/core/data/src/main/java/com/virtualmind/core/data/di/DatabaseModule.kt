@@ -46,4 +46,9 @@ object DatabaseModule {
     fun providesProcessTaskDao(
         database: VirtualMindDatabase
     ): ProcessTaskDao = database.processTaskDao()
+
+    @Provides
+    fun providesWorkoutDao(
+        database: VirtualMindDatabase
+    ): com.virtualmind.core.data.local.dao.WorkoutDao = database.workoutDao()
 }

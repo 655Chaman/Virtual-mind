@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "846467102691",
+    "project_id": "vm-2-9208f",
+    "storage_bucket": "vm-2-9208f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:846467102691:android:3eca5838f95fda90f092d6",
+        "android_client_info": {
+          "package_name": "com.example.virtualmind"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-6Fn2iZTBfx_bYj50cuFKJI3fEas02C4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

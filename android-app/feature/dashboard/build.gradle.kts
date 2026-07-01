@@ -56,4 +56,6 @@ dependencies {
     // Compose Animation Extras
     implementation("androidx.compose.animation:animation:1.7.0")
     implementation("androidx.compose.foundation:foundation:1.7.0")
+    // YCharts
+    implementation("co.yml:ycharts:2.1.0")
 }

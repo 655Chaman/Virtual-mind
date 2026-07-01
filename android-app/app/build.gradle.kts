@@ -6,6 +6,7 @@ plugins {
   alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.ksp)
   alias(libs.plugins.hilt)
+  alias(libs.plugins.google.services)
 }
 
 android {
@@ -107,4 +108,12 @@ dependencies {
   // Retrofit
   implementation(libs.retrofit)
   implementation(libs.retrofit.converter.gson)
+
+  // Firebase
+  implementation(platform(libs.firebase.bom))
+  implementation(libs.firebase.messaging)
+  
+  // Hilt Work
+  implementation(libs.hilt.work)
+  ksp(libs.hilt.compiler.work)
 }

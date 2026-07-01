@@ -483,6 +483,22 @@ class MainActivity : ComponentActivity() {
         setContent {
             com.example.virtualmind.core.designsystem.theme.VirtualMindTheme {
                 val navController = rememberNavController()
+
+                // Deep-link handler: if the app was launched by a weekly summary notification,
+                // navigate directly to the correct pillar screen after the NavHost is ready.
+                val notifRoute = intent?.getStringExtra(
+                    com.example.virtualmind.notifications.WeeklySummaryWorker.EXTRA_NAVIGATE_ROUTE
+                )
+                LaunchedEffect(notifRoute) {
+                    if (!notifRoute.isNullOrEmpty()) {
+                        // Skip welcome screen and jump straight to dashboard then the pillar
+                        navController.navigate("dashboard") {
+                            popUpTo("welcome") { inclusive = true }
+                        }
+                        navController.navigate(notifRoute)
+                    }
+                }
+
                 NavHost(navController = navController, startDestination = "welcome") {
                     composable("welcome") {
                         com.example.virtualmind.feature.dashboard.WelcomeScreen(
@@ -537,6 +553,19 @@ class MainActivity : ComponentActivity() {
                     composable("native_fitness") {
                         com.example.virtualmind.feature.dashboard.FitnessScreen(
                             onNavigateBack = {
+                                navController.popBackStack()
+                            },
+                            onNavigateToSession = {
+                                navController.navigate("native_fitness_session")
+                            }
+                        )
+                    }
+                    composable("native_fitness_session") {
+                        com.example.virtualmind.feature.dashboard.FitnessSessionScreen(
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            },
+                            onComplete = {
                                 navController.popBackStack()
                             }
                         )

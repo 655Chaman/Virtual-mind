@@ -17,6 +17,8 @@ import com.virtualmind.core.data.local.dao.LogEntryDao;
 import com.virtualmind.core.data.local.dao.LogEntryDao_Impl;
 import com.virtualmind.core.data.local.dao.ProcessTaskDao;
 import com.virtualmind.core.data.local.dao.ProcessTaskDao_Impl;
+import com.virtualmind.core.data.local.dao.WorkoutDao;
+import com.virtualmind.core.data.local.dao.WorkoutDao_Impl;
 import java.lang.Class;
 import java.lang.Override;
 import java.lang.String;
@@ -38,17 +40,23 @@ public final class VirtualMindDatabase_Impl extends VirtualMindDatabase {
 
   private volatile ProcessTaskDao _processTaskDao;
 
+  private volatile WorkoutDao _workoutDao;
+
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(2) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(3) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `log_entries` (`id` TEXT NOT NULL, `pillarId` TEXT NOT NULL, `content` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `isSystemGenerated` INTEGER NOT NULL, PRIMARY KEY(`id`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS `content_items` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `platform` TEXT NOT NULL, `status` TEXT NOT NULL, `scheduledDateMillis` INTEGER NOT NULL, `createdAtMillis` INTEGER NOT NULL)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `process_tasks` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `questionnaireAnswers` TEXT NOT NULL, `assignedMinutes` INTEGER NOT NULL, `status` TEXT NOT NULL, `remainingSeconds` INTEGER NOT NULL, `createdAtMillis` INTEGER NOT NULL)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `workout_split` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `description` TEXT)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `workout_exercise` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `splitId` INTEGER NOT NULL, `name` TEXT NOT NULL, `targetMuscle` TEXT NOT NULL)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `workout_session` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `splitId` INTEGER NOT NULL, `dateTimestamp` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `workout_set` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sessionId` INTEGER NOT NULL, `exerciseId` INTEGER NOT NULL, `reps` INTEGER NOT NULL, `weight` REAL NOT NULL)");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'cdf098a44004548c1ee8e7207c022e15')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a3760bd7409b9100a799650d77d0f9aa')");
       }
 
       @Override
@@ -56,6 +64,10 @@ public final class VirtualMindDatabase_Impl extends VirtualMindDatabase {
         db.execSQL("DROP TABLE IF EXISTS `log_entries`");
         db.execSQL("DROP TABLE IF EXISTS `content_items`");
         db.execSQL("DROP TABLE IF EXISTS `process_tasks`");
+        db.execSQL("DROP TABLE IF EXISTS `workout_split`");
+        db.execSQL("DROP TABLE IF EXISTS `workout_exercise`");
+        db.execSQL("DROP TABLE IF EXISTS `workout_session`");
+        db.execSQL("DROP TABLE IF EXISTS `workout_set`");
         final List<? extends RoomDatabase.Callback> _callbacks = mCallbacks;
         if (_callbacks != null) {
           for (RoomDatabase.Callback _callback : _callbacks) {
@@ -146,9 +158,65 @@ public final class VirtualMindDatabase_Impl extends VirtualMindDatabase {
                   + " Expected:\n" + _infoProcessTasks + "\n"
                   + " Found:\n" + _existingProcessTasks);
         }
+        final HashMap<String, TableInfo.Column> _columnsWorkoutSplit = new HashMap<String, TableInfo.Column>(3);
+        _columnsWorkoutSplit.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsWorkoutSplit.put("name", new TableInfo.Column("name", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsWorkoutSplit.put("description", new TableInfo.Column("description", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysWorkoutSplit = new HashSet<TableInfo.ForeignKey>(0);
+        final HashSet<TableInfo.Index> _indicesWorkoutSplit = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoWorkoutSplit = new TableInfo("workout_split", _columnsWorkoutSplit, _foreignKeysWorkoutSplit, _indicesWorkoutSplit);
+        final TableInfo _existingWorkoutSplit = TableInfo.read(db, "workout_split");
+        if (!_infoWorkoutSplit.equals(_existingWorkoutSplit)) {
+          return new RoomOpenHelper.ValidationResult(false, "workout_split(com.virtualmind.core.data.local.entity.WorkoutSplitEntity).\n"
+                  + " Expected:\n" + _infoWorkoutSplit + "\n"
+                  + " Found:\n" + _existingWorkoutSplit);
+        }
+        final HashMap<String, TableInfo.Column> _columnsWorkoutExercise = new HashMap<String, TableInfo.Column>(4);
+        _columnsWorkoutExercise.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsWorkoutExercise.put("splitId", new TableInfo.Column("splitId", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsWorkoutExercise.put("name", new TableInfo.Column("name", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsWorkoutExercise.put("targetMuscle", new TableInfo.Column("targetMuscle", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysWorkoutExercise = new HashSet<TableInfo.ForeignKey>(0);
+        final HashSet<TableInfo.Index> _indicesWorkoutExercise = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoWorkoutExercise = new TableInfo("workout_exercise", _columnsWorkoutExercise, _foreignKeysWorkoutExercise, _indicesWorkoutExercise);
+        final TableInfo _existingWorkoutExercise = TableInfo.read(db, "workout_exercise");
+        if (!_infoWorkoutExercise.equals(_existingWorkoutExercise)) {
+          return new RoomOpenHelper.ValidationResult(false, "workout_exercise(com.virtualmind.core.data.local.entity.WorkoutExerciseEntity).\n"
+                  + " Expected:\n" + _infoWorkoutExercise + "\n"
+                  + " Found:\n" + _existingWorkoutExercise);
+        }
+        final HashMap<String, TableInfo.Column> _columnsWorkoutSession = new HashMap<String, TableInfo.Column>(4);
+        _columnsWorkoutSession.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsWorkoutSession.put("splitId", new TableInfo.Column("splitId", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsWorkoutSession.put("dateTimestamp", new TableInfo.Column("dateTimestamp", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsWorkoutSession.put("isSynced", new TableInfo.Column("isSynced", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysWorkoutSession = new HashSet<TableInfo.ForeignKey>(0);
+        final HashSet<TableInfo.Index> _indicesWorkoutSession = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoWorkoutSession = new TableInfo("workout_session", _columnsWorkoutSession, _foreignKeysWorkoutSession, _indicesWorkoutSession);
+        final TableInfo _existingWorkoutSession = TableInfo.read(db, "workout_session");
+        if (!_infoWorkoutSession.equals(_existingWorkoutSession)) {
+          return new RoomOpenHelper.ValidationResult(false, "workout_session(com.virtualmind.core.data.local.entity.WorkoutSessionEntity).\n"
+                  + " Expected:\n" + _infoWorkoutSession + "\n"
+                  + " Found:\n" + _existingWorkoutSession);
+        }
+        final HashMap<String, TableInfo.Column> _columnsWorkoutSet = new HashMap<String, TableInfo.Column>(5);
+        _columnsWorkoutSet.put("id", new TableInfo.Column("id", "INTEGER", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsWorkoutSet.put("sessionId", new TableInfo.Column("sessionId", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsWorkoutSet.put("exerciseId", new TableInfo.Column("exerciseId", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsWorkoutSet.put("reps", new TableInfo.Column("reps", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsWorkoutSet.put("weight", new TableInfo.Column("weight", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysWorkoutSet = new HashSet<TableInfo.ForeignKey>(0);
+        final HashSet<TableInfo.Index> _indicesWorkoutSet = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoWorkoutSet = new TableInfo("workout_set", _columnsWorkoutSet, _foreignKeysWorkoutSet, _indicesWorkoutSet);
+        final TableInfo _existingWorkoutSet = TableInfo.read(db, "workout_set");
+        if (!_infoWorkoutSet.equals(_existingWorkoutSet)) {
+          return new RoomOpenHelper.ValidationResult(false, "workout_set(com.virtualmind.core.data.local.entity.WorkoutSetEntity).\n"
+                  + " Expected:\n" + _infoWorkoutSet + "\n"
+                  + " Found:\n" + _existingWorkoutSet);
+        }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "cdf098a44004548c1ee8e7207c022e15", "e40b003fa7fbd9cfbcfcb338669e5aac");
+    }, "a3760bd7409b9100a799650d77d0f9aa", "aee419fc3cb0db2f6be9f3bd9e66865a");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;
@@ -159,7 +227,7 @@ public final class VirtualMindDatabase_Impl extends VirtualMindDatabase {
   protected InvalidationTracker createInvalidationTracker() {
     final HashMap<String, String> _shadowTablesMap = new HashMap<String, String>(0);
     final HashMap<String, Set<String>> _viewTables = new HashMap<String, Set<String>>(0);
-    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "log_entries","content_items","process_tasks");
+    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "log_entries","content_items","process_tasks","workout_split","workout_exercise","workout_session","workout_set");
   }
 
   @Override
@@ -171,6 +239,10 @@ public final class VirtualMindDatabase_Impl extends VirtualMindDatabase {
       _db.execSQL("DELETE FROM `log_entries`");
       _db.execSQL("DELETE FROM `content_items`");
       _db.execSQL("DELETE FROM `process_tasks`");
+      _db.execSQL("DELETE FROM `workout_split`");
+      _db.execSQL("DELETE FROM `workout_exercise`");
+      _db.execSQL("DELETE FROM `workout_session`");
+      _db.execSQL("DELETE FROM `workout_set`");
       super.setTransactionSuccessful();
     } finally {
       super.endTransaction();
@@ -188,6 +260,7 @@ public final class VirtualMindDatabase_Impl extends VirtualMindDatabase {
     _typeConvertersMap.put(LogEntryDao.class, LogEntryDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(ContentItemDao.class, ContentItemDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(ProcessTaskDao.class, ProcessTaskDao_Impl.getRequiredConverters());
+    _typeConvertersMap.put(WorkoutDao.class, WorkoutDao_Impl.getRequiredConverters());
     return _typeConvertersMap;
   }
 
@@ -244,6 +317,20 @@ public final class VirtualMindDatabase_Impl extends VirtualMindDatabase {
           _processTaskDao = new ProcessTaskDao_Impl(this);
         }
         return _processTaskDao;
+      }
+    }
+  }
+
+  @Override
+  public WorkoutDao workoutDao() {
+    if (_workoutDao != null) {
+      return _workoutDao;
+    } else {
+      synchronized(this) {
+        if(_workoutDao == null) {
+          _workoutDao = new WorkoutDao_Impl(this);
+        }
+        return _workoutDao;
       }
     }
   }

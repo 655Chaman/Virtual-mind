@@ -15,12 +15,16 @@ honor its STOP conditions, and update your row when done.
 | 005  | Separate Frontend Serving from FastAPI Backend | P1 | M | — | DONE |
 | 006  | Fix Next.js App Router Navigation Lag on Home Dashboard | P1 | S | — | DONE |
 | 007  | Refactor Web Push Notification Architecture for Concurrency and Thread Safety | P1 | M | — | TODO |
+| 008  | Fix Swallowed Workout API Exceptions with Toast Notifications | P1 | S | — | TODO |
+| 009  | Refactor Workout Monolith Page (`page.tsx`) into Components | P2 | M | 008 | TODO |
 
 ## Dependency notes
 
 - 002 requires 001 because we need a test suite and health check to ensure the backend still boots and handles requests properly after refactoring global error logic.
+- 009 requires 008 to ensure UI error surfaces exist before breaking out components.
 
 ## Findings considered and rejected
 
 - **Unmanaged Logs Cluttering Root**: Deferred for now. It is low impact and doesn't break functionality, though it is messy.
 - **Massive God Component (Pillar Page)**: Deferred for now. Splitting a 3,000-line React component without a solid test suite or clear component boundaries carries too much regression risk. It should be tackled after 001 and 002 are complete.
+- **Missing Workout Request Batching**: Deferred. Loading 5 parallel API calls for `/workout/page.tsx` on initial load is sub-optimal but works fine for local deployment.

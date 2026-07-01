@@ -326,7 +326,7 @@ def classify_exercise_muscles(exercise_name: str) -> dict:
 
     client = OpenAI(
         base_url="https://integrate.api.nvidia.com/v1",
-        api_key=os.environ.get("NVIDIA_API_KEY")
+        api_key=os.environ.get("NVIDIA_API_KEY", "mock_key")
     )
     
     prompt = f"""
@@ -337,6 +337,17 @@ def classify_exercise_muscles(exercise_name: str) -> dict:
     Return ONLY valid JSON and no other text or explanation.
     """
     
+    # Mock fallback if no real key
+    if not os.environ.get("NVIDIA_API_KEY"):
+        print(f"Mocking LLM muscle classification for {exercise_name}")
+        mock_result = {"chest": 0.5, "triceps": 0.3, "front-deltoids": 0.2}
+        db.ai_muscle_cache.update_one(
+            {"exercise_name": exercise_name}, 
+            {"$set": {"muscles": mock_result}}, 
+            upsert=True
+        )
+        return mock_result
+
     for attempt in range(3):
         try:
             response = client.chat.completions.create(
@@ -379,6 +390,13 @@ def classify_exercise_muscles(exercise_name: str) -> dict:
         upsert=True
     )
     return {}
+
+@router.get("/classify-muscles/{exercise_name}")
+def classify_muscles_endpoint(exercise_name: str):
+    """Dynamically classifies targeted muscles using LLM (cached in MongoDB)."""
+    result = classify_exercise_muscles(exercise_name)
+    return {"exercise": exercise_name, "muscles": result}
+
 
 @router.get("/heatmap")
 def get_muscle_heatmap(days: int = 7, local_date: Optional[str] = None):
